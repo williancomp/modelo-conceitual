@@ -162,8 +162,13 @@
     let selectedSpecConnection = null;    // para conexões de especialização
 
     // Variáveis para "drag from toolbar" (preview)
+    // As variáveis abaixo serão usadas tanto para o modo arraste quanto para o modo clique
     let draggingToolbarType = null; // "entity", "attribute", "derivedAttribute", "relationship", "specialization"
     let draggingNewObj = null;      // objeto de preview: { type, x, y }
+    // Variável para diferenciar o modo de clique para posicionar (quando o usuário clica rápido no botão do menu)
+    let clickPlacementMode = false;
+    // Variável auxiliar para detectar se o usuário está arrastando a partir do menu ou apenas clicou
+    let toolbarDrag = null;
 
     // Variáveis para mover objetos já criados
     let isDraggingObject = false, dragObject = null;
@@ -666,7 +671,6 @@
       const eBoundary = getRectBorderPoint(eCenter.x, eCenter.y, vertex.x - eCenter.x, vertex.y - eCenter.y, e.width/2, e.height/2);
       context.lineTo(eBoundary.x, eBoundary.y);
       context.stroke();
-      // Não exibe cardinalidade para especialização
       if (selectedSpecConnection && selectedSpecConnection.specializationId === spec.id && selectedSpecConnection.vertex === conn.vertex && selectedSpecConnection.entityId === conn.entityId) {
         const iconSize = 16;
         const midX = (vertex.x + eBoundary.x) / 2;
@@ -752,7 +756,6 @@
       context.closePath();
       context.fill();
       context.stroke();
-      // Exibe o tipo de especialização (genType) se definido – não há nome editável
       if(spec.genType){
         context.fillStyle = "#111827";
         drawWrappedText(context, spec.genType, spec.x, spec.y, side - 15, false);
@@ -782,7 +785,6 @@
         context.fillText("⇨", xLink + iconSize/2, yLink + iconSize/2);
         spec.linkRect = { x: xLink, y: yLink, width: iconSize, height: iconSize };
 
-        // Alças de redimensionamento para especialização – usamos o bounding box dos vértices
         let verts = getSpecializationVertices(spec);
         let minX = Math.min(verts[0].x, verts[1].x, verts[2].x);
         let minY = Math.min(verts[0].y, verts[1].y, verts[2].y);
@@ -894,10 +896,8 @@
       selectedSpecConnection = null;
     }
 
-    // Verifica se o ponto (x,y) está sobre uma alça de redimensionamento de algum objeto selecionado
     function checkResizeHandles(x, y) {
       let found = null;
-      // Checa entidades
       entities.forEach(e => {
         if (e.selected && e.resizeHandles) {
           e.resizeHandles.forEach((handle, idx) => {
@@ -907,7 +907,6 @@
           });
         }
       });
-      // Checa atributos
       attributes.forEach(a => {
         if (a.selected && a.resizeHandles) {
           a.resizeHandles.forEach((handle, idx) => {
@@ -917,7 +916,6 @@
           });
         }
       });
-      // Checa relacionamentos
       relationships.forEach(r => {
         if (r.selected && r.resizeHandles) {
           r.resizeHandles.forEach((handle, idx) => {
@@ -927,7 +925,6 @@
           });
         }
       });
-      // Checa especializações
       specializations.forEach(s => {
         if (s.selected && s.resizeHandles) {
           s.resizeHandles.forEach((handle, idx) => {
@@ -940,9 +937,7 @@
       return found;
     }
 
-    // Atualiza getDraggableAt para checar as alças de redimensionamento
     function getDraggableAt(x, y) {
-      // Verifica ícones dos objetos selecionados
       for (let e of entities) {
         if (e.selected) {
           if (e.deleteRect && isInsideRect({x,y}, e.deleteRect)) return { type: "entity-delete", element: e };
@@ -967,10 +962,8 @@
           if (s.linkRect && isInsideRect({x,y}, s.linkRect)) return { type: "specialization-link", element: s };
         }
       }
-      // Verifica alças de redimensionamento
       let resizeHit = checkResizeHandles(x, y);
       if (resizeHit) return resizeHit;
-      // Verifica se clicou na linha de conexão (para Relationship)
       for (let r of relationships) {
         for (let conn of r.connections) {
           let e = entities.find(en => en.id === conn.entityId);
@@ -981,7 +974,6 @@
             return { type: "connection", relationship: r, connection: conn };
         }
       }
-      // Verifica se clicou na linha de conexão (para Especialização)
       for (let s of specializations) {
         if (s.connections) {
           for (let conn of s.connections) {
@@ -993,7 +985,6 @@
           }
         }
       }
-      // Verifica bounding box dos objetos
       for (let i = attributes.length - 1; i >= 0; i--) {
         const a = attributes[i];
         let r = a.radius || defaultAttributeRadius;
@@ -1021,18 +1012,167 @@
       return null;
     }
 
+    /********* Lógica de "drag from menu" e clique para posicionar *********/
+    function startToolbarDrag(type, evt) {
+      evt.preventDefault();
+      toolbarDrag = {
+        type: type,
+        startX: evt.pageX,
+        startY: evt.pageY,
+        isDragging: false
+      };
+      $(document).on("mousemove.toolbarDrag", onToolbarDragMove);
+      $(document).on("mouseup.toolbarDrag", onToolbarDragEnd);
+    }
+    function onToolbarDragMove(evt) {
+      if (!toolbarDrag) return;
+      const dx = evt.pageX - toolbarDrag.startX;
+      const dy = evt.pageY - toolbarDrag.startY;
+      const distance = Math.sqrt(dx*dx + dy*dy);
+      if (!toolbarDrag.isDragging && distance > 5) {
+         toolbarDrag.isDragging = true;
+         draggingToolbarType = toolbarDrag.type;
+         const rect = canvas.getBoundingClientRect();
+         draggingNewObj = { type: toolbarDrag.type, x: evt.pageX - rect.left, y: evt.pageY - rect.top };
+      } else if (toolbarDrag.isDragging) {
+         const rect = canvas.getBoundingClientRect();
+         draggingNewObj.x = evt.pageX - rect.left;
+         draggingNewObj.y = evt.pageY - rect.top;
+      }
+      draw();
+    }
+    function onToolbarDragEnd(evt) {
+      if (!toolbarDrag) return;
+      $(document).off("mousemove.toolbarDrag");
+      $(document).off("mouseup.toolbarDrag");
+      const rect = canvas.getBoundingClientRect();
+      const cx = evt.pageX - rect.left;
+      const cy = evt.pageY - rect.top;
+      if (toolbarDrag.isDragging) {
+         if (cx >= 0 && cx <= rect.width && cy >= 0 && cy <= rect.height) {
+             createObjectAt(toolbarDrag.type, cx, cy);
+         }
+         cleanupToolbarDrag();
+      } else {
+         // Se não houve arraste, ativa o modo clique para posicionar
+         draggingToolbarType = toolbarDrag.type;
+         clickPlacementMode = true;
+         if (cx >= 0 && cx <= rect.width && cy >= 0 && cy <= rect.height) {
+             draggingNewObj = { type: toolbarDrag.type, x: cx, y: cy };
+         }
+         // Permanece no modo clique até que o usuário clique na área do canvas
+      }
+      toolbarDrag = null;
+      draw();
+    }
+    function createObjectAt(type, cx, cy) {
+      if (type === "attribute" || type === "derivedAttribute") {
+          const drop = getDraggableAt(cx, cy);
+          if (!drop || (drop.type !== "entity" && drop.type !== "relationship" && drop.type !== "attribute")) {
+            alert("O atributo deve ser arrastado sobre uma entidade, relacionamento ou outro atributo.");
+            cleanupToolbarDrag();
+            draw();
+            return;
+          }
+          let parentObj = drop.element;
+          let posX, posY;
+          if (drop.type === "entity") {
+            posX = parentObj.x + (parentObj.width || defaultEntityWidth) + defaultAttributeRadius + 10;
+            posY = parentObj.y + (parentObj.height || defaultEntityHeight)/2;
+          } else if (drop.type === "relationship") {
+            posX = parentObj.x + relationshipSize/2 + defaultAttributeRadius + 10;
+            posY = parentObj.y;
+          } else if (drop.type === "attribute") {
+            posX = parentObj.x + (parentObj.radius || defaultAttributeRadius) + 10;
+            posY = parentObj.y;
+          }
+          const newA = {
+            id: attributeIdCounter++,
+            x: posX,
+            y: posY,
+            name: (type === "derivedAttribute") ? "Atributo Derivado" : "Atributo",
+            parentType: drop.type,
+            parentId: parentObj.id,
+            derived: (type === "derivedAttribute"),
+            primary: false,
+            selected: true,
+            radius: defaultAttributeRadius,
+            objType: (type === "derivedAttribute") ? "derivedAttribute" : "attribute"
+          };
+          attributes.push(newA);
+          clearSelection();
+          newA.selected = true;
+      } else if (type === "entity") {
+          const newE = {
+            id: entityIdCounter++,
+            x: cx - defaultEntityWidth/2,
+            y: cy - defaultEntityHeight/2,
+            width: defaultEntityWidth,
+            height: defaultEntityHeight,
+            name: "Entidade",
+            selected: true,
+            objType: "entity"
+          };
+          entities.push(newE);
+          clearSelection();
+          newE.selected = true;
+      } else if (type === "relationship") {
+          const newR = {
+            id: relationshipIdCounter++,
+            x: cx,
+            y: cy,
+            size: relationshipSize,
+            name: "Relacionamento",
+            connections: [],
+            selected: true,
+            objType: "relationship"
+          };
+          relationships.push(newR);
+          clearSelection();
+          newR.selected = true;
+      } else if (type === "specialization") {
+          const newS = {
+            id: specializationIdCounter++,
+            x: cx,
+            y: cy,
+            size: defaultSpecializationSize,
+            genType: null,
+            connections: [],
+            selected: true,
+            objType: "specialization"
+          };
+          specializations.push(newS);
+          clearSelection();
+          newS.selected = true;
+      }
+      saveState();
+      cleanupToolbarDrag();
+      draw();
+    }
+    function cleanupToolbarDrag() {
+      draggingToolbarType = null;
+      draggingNewObj = null;
+      clickPlacementMode = false;
+      toolbarDrag = null;
+    }
+
     /********* Eventos do Canvas *********/
     $("#canvas").on("mousedown", function(evt) {
-      if (draggingToolbarType) return;
       let pos = getMousePos(evt);
-      // Verifica se clicou em alguma alça de redimensionamento
+      if (clickPlacementMode) {
+         createObjectAt(draggingToolbarType, pos.x, pos.y);
+         cleanupToolbarDrag();
+         draw();
+         return;
+      }
+      if (draggingToolbarType) return;
+      // Resto do código para seleção, arraste de objeto, redimensionamento, etc.
       let hit = getDraggableAt(pos.x, pos.y);
       if (hit && hit.type === "resize") {
         isResizing = true;
         resizingObject = hit.element;
         resizeHandleIndex = hit.handleIndex;
         resizeStartMouse = { x: pos.x, y: pos.y };
-        // Armazena as dimensões iniciais conforme o tipo do objeto
         if (resizingObject.objType === "entity") {
           resizingInitial = { x: resizingObject.x, y: resizingObject.y, width: resizingObject.width, height: resizingObject.height };
         } else if (resizingObject.objType === "attribute") {
@@ -1046,7 +1186,6 @@
         draw();
         return;
       }
-      // Se clicou no ícone de exclusão de conexão (Relationship)
       if (selectedConnection && selectedConnection.iconRect && isInsideRect(pos, selectedConnection.iconRect)) {
         const rel = relationships.find(r => r.id === selectedConnection.relationshipId);
         if (rel) {
@@ -1057,7 +1196,6 @@
         draw();
         return;
       }
-      // Se clicou no ícone de exclusão de conexão (Especialização)
       if (selectedSpecConnection && selectedSpecConnection.iconRect && isInsideRect(pos, selectedSpecConnection.iconRect)) {
         const spec = specializations.find(s => s.id === selectedSpecConnection.specializationId);
         if (spec && spec.connections) {
@@ -1141,7 +1279,6 @@
           case "attribute":
           case "relationship":
           case "specialization":
-            // Se o objeto clicado já está selecionado, inicia arraste em grupo
             if (hit.element.selected) {
               let selectedObjects = [];
               entities.forEach(e => { if (e.selected) selectedObjects.push(e); });
@@ -1179,14 +1316,18 @@
     });
 
     $("#canvas").on("mousemove", function(evt) {
+      if (clickPlacementMode) {
+         let pos = getMousePos(evt);
+         draggingNewObj = { type: draggingToolbarType, x: pos.x, y: pos.y };
+         draw();
+         return;
+      }
       if (draggingToolbarType) return;
       let pos = getMousePos(evt);
       if (isResizing) {
-        // Processa o redimensionamento conforme o tipo de objeto
         if (resizingObject.objType === "entity") {
-          // Para entidade, redimensionamento não uniforme com base na alça selecionada
           let init = resizingInitial;
-          if (resizeHandleIndex === 0) { // top-left
+          if (resizeHandleIndex === 0) {
             let newX = pos.x;
             let newY = pos.y;
             let newWidth = (init.x + init.width) - newX;
@@ -1197,7 +1338,7 @@
             resizingObject.y = newY;
             resizingObject.width = newWidth;
             resizingObject.height = newHeight;
-          } else if (resizeHandleIndex === 1) { // top-right
+          } else if (resizeHandleIndex === 1) {
             let newY = pos.y;
             let newWidth = pos.x - init.x;
             let newHeight = (init.y + init.height) - newY;
@@ -1206,7 +1347,7 @@
             resizingObject.y = newY;
             resizingObject.width = newWidth;
             resizingObject.height = newHeight;
-          } else if (resizeHandleIndex === 2) { // bottom-left
+          } else if (resizeHandleIndex === 2) {
             let newX = pos.x;
             let newWidth = (init.x + init.width) - newX;
             let newHeight = pos.y - init.y;
@@ -1215,7 +1356,7 @@
             resizingObject.x = newX;
             resizingObject.width = newWidth;
             resizingObject.height = newHeight;
-          } else if (resizeHandleIndex === 3) { // bottom-right
+          } else if (resizeHandleIndex === 3) {
             let newWidth = pos.x - init.x;
             let newHeight = pos.y - init.y;
             if(newWidth < 40) newWidth = 40;
@@ -1224,17 +1365,14 @@
             resizingObject.height = newHeight;
           }
         } else if (resizingObject.objType === "attribute" || resizingObject.objType === "derivedAttribute") {
-          // Para atributos, centro fixo; novo radius baseado na distância máxima do centro
           let newRadius = Math.max(Math.abs(pos.x - resizingObject.x), Math.abs(pos.y - resizingObject.y));
           if(newRadius < 20) newRadius = 20;
           resizingObject.radius = newRadius;
         } else if (resizingObject.objType === "relationship") {
-          // Para relacionamento, centro fixo; atualiza size uniformemente
           let newSize = 2 * Math.max(Math.abs(pos.x - resizingObject.x), Math.abs(pos.y - resizingObject.y));
           if(newSize < 40) newSize = 40;
           resizingObject.size = newSize;
         } else if (resizingObject.objType === "specialization") {
-          // Para especialização, centro fixo; atualiza size uniformemente
           let newSize = 2 * Math.max(Math.abs(pos.x - resizingObject.x), Math.abs(pos.y - resizingObject.y));
           if(newSize < 40) newSize = 40;
           resizingObject.size = newSize;
@@ -1274,6 +1412,7 @@
     });
 
     $("#canvas").on("mouseup", function(evt) {
+      if (clickPlacementMode) return;
       if (draggingToolbarType) return;
       let pos = getMousePos(evt);
       if (isResizing) {
@@ -1381,7 +1520,6 @@
           }
           showInlineEditor(hit.element, compX, compY);
         } else if (hit.type === "specialization") {
-          // Em vez de editar nome, abre o seletor para tipo de especialização/generalização
           showSpecTypeEditor(hit.element, hit.element.x, hit.element.y);
         } else if (hit.type === "connection") {
           const e = entities.find(en => en.id === hit.connection.entityId);
@@ -1444,7 +1582,6 @@
       });
     }
 
-    // Função para exibir o seletor de tipo de especialização/generalização
     function showSpecTypeEditor(spec, compX, compY) {
       if (inlineSpecSelect) { $(inlineSpecSelect).remove(); inlineSpecSelect = null; }
       inlineSpecSelect = $("<select class='p-1 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500'></select>")
@@ -1469,118 +1606,6 @@
         $(inlineSpecSelect).remove();
         inlineSpecSelect = null;
       });
-    }
-
-    /********* Lógica de "drag from menu" com preview *********/
-    function startToolbarDrag(type, evt) {
-      evt.preventDefault();
-      draggingToolbarType = type;
-      draggingNewObj = { type: type, x: evt.pageX, y: evt.pageY };
-      $(document).on("mousemove.toolbarDrag", onToolbarDragMove);
-      $(document).on("mouseup.toolbarDrag", onToolbarDragEnd);
-    }
-    function onToolbarDragMove(evt) {
-      if (!draggingToolbarType || !draggingNewObj) return;
-      const rect = canvas.getBoundingClientRect();
-      draggingNewObj.x = evt.pageX - rect.left;
-      draggingNewObj.y = evt.pageY - rect.top;
-      draw();
-    }
-    function onToolbarDragEnd(evt) {
-      if (!draggingToolbarType || !draggingNewObj) { cleanupToolbarDrag(); return; }
-      const rect = canvas.getBoundingClientRect();
-      const cx = evt.pageX - rect.left;
-      const cy = evt.pageY - rect.top;
-      if (cx >= 0 && cx <= rect.width && cy >= 0 && cy <= rect.height) {
-        if (draggingToolbarType === "attribute" || draggingToolbarType === "derivedAttribute") {
-          const drop = getDraggableAt(cx, cy);
-          if (!drop || (drop.type !== "entity" && drop.type !== "relationship" && drop.type !== "attribute")) {
-            alert("O atributo deve ser arrastado sobre uma entidade, relacionamento ou outro atributo.");
-            cleanupToolbarDrag();
-            draw();
-            return;
-          }
-          let parentObj = drop.element;
-          let posX, posY;
-          if (drop.type === "entity") {
-            posX = parentObj.x + (parentObj.width || defaultEntityWidth) + defaultAttributeRadius + 10;
-            posY = parentObj.y + (parentObj.height || defaultEntityHeight)/2;
-          } else if (drop.type === "relationship") {
-            posX = parentObj.x + relationshipSize/2 + defaultAttributeRadius + 10;
-            posY = parentObj.y;
-          } else if (drop.type === "attribute") {
-            posX = parentObj.x + (parentObj.radius || defaultAttributeRadius) + 10;
-            posY = parentObj.y;
-          }
-          const newA = {
-            id: attributeIdCounter++,
-            x: posX,
-            y: posY,
-            name: (draggingToolbarType === "derivedAttribute") ? "Atributo Derivado" : "Atributo",
-            parentType: drop.type,
-            parentId: parentObj.id,
-            derived: (draggingToolbarType === "derivedAttribute"),
-            primary: false,
-            selected: true,
-            radius: defaultAttributeRadius,
-            objType: (draggingToolbarType === "derivedAttribute") ? "derivedAttribute" : "attribute"
-          };
-          attributes.push(newA);
-          clearSelection();
-          newA.selected = true;
-        } else if (draggingToolbarType === "entity") {
-          const newE = {
-            id: entityIdCounter++,
-            x: cx - defaultEntityWidth/2,
-            y: cy - defaultEntityHeight/2,
-            width: defaultEntityWidth,
-            height: defaultEntityHeight,
-            name: "Entidade",
-            selected: true,
-            objType: "entity"
-          };
-          entities.push(newE);
-          clearSelection();
-          newE.selected = true;
-        } else if (draggingToolbarType === "relationship") {
-          const newR = {
-            id: relationshipIdCounter++,
-            x: cx,
-            y: cy,
-            size: relationshipSize,
-            name: "Relacionamento",
-            connections: [],
-            selected: true,
-            objType: "relationship"
-          };
-          relationships.push(newR);
-          clearSelection();
-          newR.selected = true;
-        } else if (draggingToolbarType === "specialization") {
-          const newS = {
-            id: specializationIdCounter++,
-            x: cx,
-            y: cy,
-            size: defaultSpecializationSize,
-            genType: null,
-            connections: [],
-            selected: true,
-            objType: "specialization"
-          };
-          specializations.push(newS);
-          clearSelection();
-          newS.selected = true;
-        }
-        saveState();
-      }
-      cleanupToolbarDrag();
-      draw();
-    }
-    function cleanupToolbarDrag() {
-      draggingToolbarType = null;
-      draggingNewObj = null;
-      $(document).off("mousemove.toolbarDrag");
-      $(document).off("mouseup.toolbarDrag");
     }
 
     /********* Inicialização *********/
