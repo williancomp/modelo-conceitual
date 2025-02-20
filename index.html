@@ -225,7 +225,24 @@
     let panOffsetStart = { x: 0, y: 0 };
     let isSpacePressed = false;
 
+    document.addEventListener('mousedown', function(e) {
+      if (inlineInput && !$(e.target).is(inlineInput) && $(e.target).closest(inlineInput).length === 0) {
+        inlineInput.blur();
+      }
+      if (inlineSelect && !$(e.target).is(inlineSelect) && $(e.target).closest(inlineSelect).length === 0) {
+        $(inlineSelect).blur();
+      }
+      if (inlineSpecSelect && !$(e.target).is(inlineSpecSelect) && $(e.target).closest(inlineSpecSelect).length === 0) {
+        $(inlineSpecSelect).blur();
+      }
+    });
+
     document.addEventListener('keydown', (e) => {
+      // Se estiver editando (input ou select ativo), não intercepta a tecla espaço
+      if (document.activeElement &&
+          (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) {
+        return;
+      }
       if (e.code === 'Space') {
         isSpacePressed = true;
         e.preventDefault();
@@ -731,6 +748,13 @@
       const cardY = midY + (eBoundary.y - rBoundary.y) * 0.25;
       context.fillStyle = "#000000";
       context.fillText(conn.cardinality, cardX, cardY - 5);
+      const textWidth = context.measureText(conn.cardinality).width;
+      conn.labelRect = {
+        x: cardX - textWidth / 2,
+        y: (cardY - 5) - fontSize,  // aproximado; ajuste conforme necessário
+        width: textWidth,
+        height: fontSize
+      };
       if (selectedConnection && selectedConnection.relationshipId === r.id && selectedConnection.entityId === conn.entityId) {
         let iconSize = globalIconSize + 4;
         context.save();
@@ -751,6 +775,7 @@
         context.restore();
         selectedConnection.iconRect = { x: delX - iconSize/2, y: delY - iconSize/2, width: iconSize, height: iconSize };
       }
+
     }
 
     function drawSpecConnectionLine(context, spec, conn, e) {
@@ -1513,7 +1538,26 @@
     canvas.addEventListener("mousemove", onCanvasMove);
     canvas.addEventListener("mouseup", onCanvasEnd);
 
+    
+
     let inlineInput = null, inlineSelect = null, inlineSpecSelect = null;
+
+    canvas.addEventListener("click", function(evt) {
+      // Converte a posição do clique considerando pan e zoom
+      let pos = getMousePos(evt);
+      // Verifica se o clique ocorreu sobre o rótulo de alguma conexão
+      for (let r of relationships) {
+        for (let conn of r.connections) {
+          if (conn.labelRect && isInsideRect(pos, conn.labelRect)) {
+            // Calcula a posição central do rótulo
+            let centerX = conn.labelRect.x + conn.labelRect.width / 2;
+            let centerY = conn.labelRect.y + conn.labelRect.height / 2;
+            showCardinalityEditor(conn, centerX, centerY);
+            return;  // Interrompe se encontrou um clique sobre o rótulo
+          }
+        }
+      }
+    });
 
     canvas.addEventListener("dblclick", function(evt) {
       if (submenuTimeout) { 
