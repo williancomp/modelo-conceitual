@@ -20,12 +20,13 @@
       position: fixed;
       left: 0;
       top: 0;
-      bottom: 0;
       width: 100px;
+      height: 100vh;         /* Garante que o sidebar tenha a altura total da viewport */
       background: #111827;
       padding: 20px 10px;
       transition: width 0.3s;
       z-index: 100;
+      overflow-y: auto;      /* Permite scroll se o conteúdo ultrapassar a altura */
     }
     #sidebar.expanded {
       width: 200px;
@@ -92,32 +93,7 @@
     .submenu-item:hover {
       background: #4b5563;
     }
-    /* Zoom controls no canto inferior direito */
-    #zoomControls {
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      z-index: 200;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    #zoomControls button {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      font-size: 24px;
-      border: none;
-      background-color: #1e40af;
-      color: #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      cursor: pointer;
-      transition: transform 0.2s, background-color 0.2s;
-    }
-    #zoomControls button:hover {
-      transform: scale(1.1);
-      background-color: #3b82f6;
-    }
+    
     @media (max-width: 768px) {
       #sidebar {
         width: 0;
@@ -232,11 +208,7 @@
   <!-- Canvas -->
   <main class="flex-grow" style="position: relative;">
     <canvas id="canvas"></canvas>
-    <!-- Controles de Zoom no canto inferior direito -->
-    <div id="zoomControls">
-      <button id="btnZoomIn">+</button>
-      <button id="btnZoomOut">–</button>
-    </div>
+    
   </main>
 
   <script>
@@ -1882,15 +1854,7 @@
       resizeCanvas();
     });
 
-    // Controles de zoom
-    document.getElementById("btnZoomIn").addEventListener("click", () => {
-      zoom *= 1.1;
-      draw();
-    });
-    document.getElementById("btnZoomOut").addEventListener("click", () => {
-      zoom /= 1.1;
-      draw();
-    });
+    
 
     resizeCanvas();
     saveState();
