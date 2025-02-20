@@ -2,214 +2,279 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <!-- Faz a página ser responsiva no mobile -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modelagem Conceitual – Responsiva</title>
-  <!-- Fonte Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <!-- Tailwind CSS -->
+  <title>Modelagem Conceitual – Nova Era</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- jQuery (para facilitar eventos) -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
   <style>
     body {
-      font-family: 'Inter', sans-serif;
-      margin: 0; padding: 0;
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #1f2937, #374151, #1e3a8a);
+      overflow: hidden;
+      color: #ffffff;
+    }
+    #sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 100px;
+      background: #111827;
+      padding: 20px 10px;
+      transition: width 0.3s;
+      z-index: 100;
+    }
+    #sidebar.expanded {
+      width: 200px;
+    }
+    #hamburger {
+      display: none;
+      cursor: pointer;
+    }
+    .toolbar-button {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      margin: 10px 0;
+      border-radius: 8px; 
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .toolbar-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    }
+    .toolbar-button span {
+      margin-top: 5px;
+      font-size: 12px;           /* ou ajuste se quiser menor */
+      color: #ffffff;
+      text-align: center;
+      white-space: normal;       /* permite quebra de linha */
+      word-wrap: break-word;     /* quebra a palavra se necessário */
+      overflow-wrap: break-word; /* fallback para navegadores diferentes */
+      display: block;
+      max-width: 80%;            /* limita a largura do texto dentro do botão */
+      margin-left: auto;
+      margin-right: auto;
     }
     canvas {
       display: block;
-      background-color: #ffffff;
-      /* Em telas pequenas, evitar que o toque no canvas gere scroll */
-      touch-action: none;
+      margin-left: 100px;
+      background: #ffffff;
+      border-radius: 10px;
     }
-    button, body {
-      user-select: none;
-      -webkit-user-drag: none;
+    .submenu {
+      position: absolute;
+      background: linear-gradient(to right, #374151, #1f2937);
+      border: 1px solid #4b5563;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      padding: 8px;
+      z-index: 1000;
+      display: flex;
+      gap: 10px;
+    }
+    .submenu-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .submenu-item:hover {
+      background: #4b5563;
+    }
+    /* Zoom controls no canto inferior direito */
+    #zoomControls {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #zoomControls button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 24px;
+      border: none;
+      background-color: #1e40af;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    #zoomControls button:hover {
+      transform: scale(1.1);
+      background-color: #3b82f6;
+    }
+    @media (max-width: 768px) {
+      #sidebar {
+        width: 0;
+        padding: 0;
+      }
+      #sidebar.expanded {
+        width: 100px;
+      }
+      #hamburger {
+        display: block;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 101;
+      }
+      canvas {
+        margin-left: 0;
+      }
     }
   </style>
 </head>
-<body class="flex flex-col h-screen">
+<body class="flex h-screen">
 
-  <!-- Header / Barra de menus com rolagem horizontal -->
-  <header class="bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg">
-    <div class="flex flex-nowrap overflow-x-auto whitespace-nowrap items-center px-4 py-3">
-      <h1 class="text-2xl font-semibold flex-shrink-0 mr-6">Modelagem Conceitual</h1>
-      <div id="toolbar" class="flex items-center space-x-4 flex-shrink-0">
-        <!-- Botão Entidade -->
-        <button
-          id="btnEntity"
-          class="flex flex-col items-center justify-center text-white hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-indigo-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <rect x="3" y="7" width="18" height="10" rx="2" ry="2"></rect>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Entidade</span>
-        </button>
-        <!-- Botão Atributo Simples -->
-        <button
-          id="btnAttribute"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-green-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="8"></circle>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Atributo</span>
-        </button>
-        <!-- Botão Atributo Derivado -->
-        <button
-          id="btnDerivedAttribute"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-yellow-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-dasharray="4,2" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="8"></circle>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Derivado</span>
-        </button>
-        <!-- Botão Relacionamento -->
-        <button
-          id="btnRelationship"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-pink-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <polygon points="12,2 22,12 12,22 2,12"></polygon>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Rel</span>
-        </button>
-        <!-- Botão Especialização/Generalização -->
-        <button
-          id="btnSpecialization"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-purple-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <polygon points="12,2 2,22 22,22"></polygon>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Esp./Gen.</span>
-        </button>
-        <!-- Botão Aumentar Fonte -->
-        <button
-          id="btnIncreaseFont"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-gray-700 rounded-full flex items-center justify-center shadow">
-            <span class="font-bold text-lg">A+</span>
-          </div>
-          <span class="text-xs mt-1">Aumentar</span>
-        </button>
-        <!-- Botão Diminuir Fonte -->
-        <button
-          id="btnDecreaseFont"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-gray-700 rounded-full flex items-center justify-center shadow">
-            <span class="font-bold text-lg">A-</span>
-          </div>
-          <span class="text-xs mt-1">Diminuir</span>
-        </button>
-        <!-- Botão Limpar -->
-        <button
-          id="btnClear"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-red-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Limpar</span>
-        </button>
-        <!-- Botão Exportar -->
-        <button
-          id="btnExport"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-blue-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <polyline points="4 16 12 8 20 16"></polyline>
-              <line x1="12" y1="8" x2="12" y2="20"></line>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Exportar</span>
-        </button>
-        <!-- Botão Desfazer -->
-        <button
-          id="btnUndo"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-yellow-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M15 4l-8 8 8 8"></path>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Desfazer</span>
-        </button>
-        <!-- Botão Refazer -->
-        <button
-          id="btnRedo"
-          class="flex flex-col items-center justify-center hover:opacity-90
-                 w-16 h-16 md:w-12 md:h-12 flex-shrink-0"
-        >
-          <div class="w-12 h-12 md:w-8 md:h-8 bg-white text-yellow-600 rounded-full flex items-center justify-center shadow">
-            <svg class="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M9 4l8 8-8 8"></path>
-            </svg>
-          </div>
-          <span class="text-xs mt-1">Refazer</span>
-        </button>
-      </div>
+  <!-- Barra Lateral -->
+  <aside id="sidebar" class="flex flex-col items-center">
+    <div id="hamburger" class="p-2">
+      <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+      </svg>
     </div>
-  </header>
+    <div id="toolbar" class="flex flex-col items-center">
+      <!-- Botão Entidade -->
+      <button id="btnEntity" class="toolbar-button bg-gradient-to-br from-blue-500 to-blue-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <rect x="4" y="6" width="16" height="12" rx="2" />
+        </svg>
+        <span>Entidade</span>
+      </button>
+      <!-- Botão Atributo -->
+      <button id="btnAttribute" class="toolbar-button bg-gradient-to-br from-green-500 to-green-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="12" rx="8" ry="4" />
+        </svg>
+        <span>Atributo</span>
+      </button>
+      <!-- Botão Atributo Derivado -->
+      <button id="btnDerivedAttribute" class="toolbar-button bg-gradient-to-br from-yellow-500 to-yellow-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-dasharray="4" stroke-width="3" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="12" rx="8" ry="4" />
+        </svg>
+        <span>Derivado</span>
+      </button>
+      <!-- Botão Relacionamento -->
+      <button id="btnRelationship" class="toolbar-button bg-gradient-to-br from-pink-500 to-purple-600">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <polygon points="12 4 20 12 12 20 4 12" />
+        </svg>
+        <span>Relacionamento</span>
+      </button>
+      <!-- Botão Especialização -->
+      <button id="btnSpecialization" class="toolbar-button bg-gradient-to-br from-yellow-400 to-yellow-600">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <polygon points="12 4 4 20 20 20" />
+        </svg>
+        <span>Esp./Gen.</span>
+      </button>
+      <!-- Botão Aumentar Fonte -->
+      <button id="btnIncreaseFont" class="toolbar-button bg-gradient-to-br from-gray-500 to-gray-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path d="M12 4v16m-8-8h16" />
+        </svg>
+        <span>Aumentar</span>
+      </button>
+      <!-- Botão Diminuir Fonte -->
+      <button id="btnDecreaseFont" class="toolbar-button bg-gradient-to-br from-gray-500 to-gray-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path d="M4 12h16" />
+        </svg>
+        <span>Diminuir</span>
+      </button>
+      <!-- Botão Limpar -->
+      <button id="btnClear" class="toolbar-button bg-gradient-to-br from-red-500 to-red-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        <span>Limpar</span>
+      </button>
+      <!-- Botão Exportar -->
+      <button id="btnExport" class="toolbar-button bg-gradient-to-br from-blue-500 to-blue-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path d="M4 16l8-8 8 8m-8-8v12" />
+        </svg>
+        <span>Exportar</span>
+      </button>
+      <!-- Botão Desfazer -->
+      <button id="btnUndo" class="toolbar-button bg-gradient-to-br from-yellow-500 to-yellow-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path d="M15 4l-8 8 8 8" />
+        </svg>
+        <span>Desfazer</span>
+      </button>
+      <!-- Botão Refazer -->
+      <button id="btnRedo" class="toolbar-button bg-gradient-to-br from-yellow-500 to-yellow-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path d="M9 4l8 8-8 8" />
+        </svg>
+        <span>Refazer</span>
+      </button>
+    </div>
+  </aside>
 
-  <!-- Área do canvas -->
-  <main class="flex-grow relative bg-gray-100">
-    <canvas id="canvas" class="absolute inset-0"></canvas>
+  <!-- Canvas -->
+  <main class="flex-grow" style="position: relative;">
+    <canvas id="canvas"></canvas>
+    <!-- Controles de Zoom no canto inferior direito -->
+    <div id="zoomControls">
+      <button id="btnZoomIn">+</button>
+      <button id="btnZoomOut">–</button>
+    </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-gray-800 text-gray-300 text-center py-2">
-    <p class="text-sm">© 2025 Direitos Reservados</p>
-  </footer>
-
   <script>
-    /********* Configurações e Variáveis Globais *********/
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
-    const header = document.querySelector("header");
-    const footer = document.querySelector("footer");
+    const sidebar = document.getElementById("sidebar");
+
+    // Fator de zoom global (inicial = 1)
+    let zoom = 1;
+
+    let panOffset = { x: 0, y: 0 };
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let panOffsetStart = { x: 0, y: 0 };
+    let isSpacePressed = false;
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        isSpacePressed = true;
+        e.preventDefault();
+      }
+    });
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        isSpacePressed = false;
+        isPanning = false;
+      }
+    });
 
     let mainWidth, mainHeight;
-
-    // Redimensiona o canvas ao mudar tamanho de tela
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight - header.offsetHeight - footer.offsetHeight;
+      canvas.width = window.innerWidth - (sidebar.offsetWidth || 0);
+      canvas.height = window.innerHeight;
       mainWidth = canvas.width;
       mainHeight = canvas.height;
       draw();
     }
 
-    // Ajuste dos tamanhos de alças e ícones conforme desktop/mobile
     let handleSize = window.innerWidth < 768 ? 16 : 8;
     let globalIconSize = window.innerWidth < 768 ? 32 : 24;
 
@@ -219,62 +284,29 @@
       resizeCanvas();
     });
 
-    // Arrays e contadores
     let entities = [], attributes = [], relationships = [], specializations = [];
     let entityIdCounter = 0, attributeIdCounter = 0, relationshipIdCounter = 0, specializationIdCounter = 0;
-    const defaultEntityWidth = 140, defaultEntityHeight = 60;
-    const defaultAttributeRadius = 35, relationshipSize = 100, defaultSpecializationSize = 100;
+    const defaultEntityWidth = 160, defaultEntityHeight = 80;
+    const defaultAttributeRadiusX = 40, defaultAttributeRadiusY = 20, relationshipSize = 120, defaultSpecializationSize = 100;
     let fontSize = 16;
 
-    // Conexões selecionadas
-    let selectedConnection = null;
-    let selectedSpecConnection = null;
-
-    // Variáveis para "drag from toolbar" (preview)
-    let draggingToolbarType = null;
-    let draggingNewObj = null;
-    let clickPlacementMode = false;
-    let toolbarDrag = null;
-
-    // Variáveis para mover objetos
-    let isDraggingObject = false, dragObject = null;
-    let dragOffset = { x: 0, y: 0 };
-
-    // Variáveis para arrastar grupo
-    let isDraggingGroup = false;
-    let groupDragData = [];
-    let groupMouseStart = { x: 0, y: 0 };
-
-    // Variáveis para redimensionamento
-    let isResizing = false;
-    let resizingObject = null;
-    let resizeHandleIndex = null;
-    let resizeStartMouse = { x: 0, y: 0 };
-    let resizingInitial = {};
-
-    // Seleção retangular
+    let selectedConnection = null, selectedSpecConnection = null;
+    let draggingToolbarType = null, draggingNewObj = null, clickPlacementMode = false, toolbarDrag = null;
+    let isDraggingObject = false, dragObject = null, dragOffset = { x: 0, y: 0 };
+    let isDraggingGroup = false, groupDragData = [], groupMouseStart = { x: 0, y: 0 };
+    let isResizing = false, resizingObject = null, resizeHandleIndex = null, resizeStartMouse = { x: 0, y: 0 }, resizingInitial = {};
     let isSelecting = false, selectionStart = { x: 0, y: 0 }, selectionRect = null;
-
-    // Arraste de conexão
     let isDraggingConnection = false, draggingConnection = null;
+    let submenu = null, submenuRect = null, submenuTimeout = null;
 
-    // Cores
     const normalColors = {
-      entity:         { fill: "#EFF6FF", stroke: "#3B82F6" },
-      attribute:      { fill: "#ECFDF5", stroke: "#10B981" },
-      derived:        { fill: "#FEF9C3", stroke: "#FCD34D" },
-      relationship:   { fill: "#FDF2F8", stroke: "#DB2777" },
-      specialization: { fill: "#F0E68C", stroke: "#DAA520" }
-    };
-    const previewColors = {
-      entity:         { fill: "#F0F9FF", stroke: "#93C5FD" },
-      attribute:      { fill: "#F0FFF4", stroke: "#6EE7B7" },
-      derived:        { fill: "#FEF9C3", stroke: "#FCD34D" },
-      relationship:   { fill: "#FDF2F8", stroke: "#F9A8D4" },
-      specialization: { fill: "#FAFAD2", stroke: "#FFD700" }
+      entity: { fill: "#3b82f6", stroke: "#1e40af" },
+      attribute: { fill: "#10b981", stroke: "#065f46" },
+      derived: { fill: "#fcd34d", stroke: "#d97706" },
+      relationship: { fill: "#ec4899", stroke: "#7e22ce" },
+      specialization: { fill: "#facc15", stroke: "#ca8a04" }
     };
 
-    /********* Undo/Redo *********/
     let undoStack = [], redoStack = [];
     function saveState() {
       const state = {
@@ -320,7 +352,6 @@
       }
     }
 
-    /********* Funções de Texto e Helpers de Desenho *********/
     function breakLongWord(word, maxWidth, context) {
       let lines = [], current = "";
       for (let i = 0; i < word.length; i++) {
@@ -367,7 +398,6 @@
       for (let i = 0; i < lines.length; i++) {
         let line = lines[i];
         context.fillText(line, centerX, y);
-        // sublinhado para PK
         if (isPrimary && i === 0) {
           const textWidth = context.measureText(line).width;
           context.fillRect(centerX - textWidth/2, y + fontSize*0.4, textWidth, 1);
@@ -383,10 +413,14 @@
       const f = Math.min(scaleX, scaleY);
       return { x: cx + dx * f, y: cy + dy * f };
     }
-    function getCircleBorderPoint(cx, cy, dx, dy, radius) {
-      const len = Math.sqrt(dx*dx + dy*dy);
-      if (len === 0) return { x: cx, y: cy };
-      return { x: cx + (dx/len)*radius, y: cy + (dy/len)*radius };
+    function getCircleBorderPoint(cx, cy, dx, dy, radiusX, radiusY) {
+      const angle = Math.atan2(dy, dx);
+      const rx = radiusX || defaultAttributeRadiusX;
+      const ry = radiusY || defaultAttributeRadiusY;
+      return {
+        x: cx + rx * Math.cos(angle),
+        y: cy + ry * Math.sin(angle)
+      };
     }
     function getDiamondBorderPoint(cx, cy, dx, dy, half) {
       const denom = Math.abs(dx) + Math.abs(dy);
@@ -394,24 +428,67 @@
       const f = half / denom;
       return { x: cx + dx * f, y: cy + dy * f };
     }
-    function isInsideRect(pos, rect) {
-      if (!rect) return false;
-      return (
-        pos.x >= rect.x &&
-        pos.x <= rect.x + rect.width &&
-        pos.y >= rect.y &&
-        pos.y <= rect.y + rect.height
-      );
+    function getSpecializationVertices(spec) {
+      let side = spec.size || defaultSpecializationSize;
+      let cx = spec.x, cy = spec.y;
+      let v1 = { x: cx, y: cy - (Math.sqrt(3)/3)*side };
+      let v2 = { x: cx - side/2, y: cy + (Math.sqrt(3)/6)*side };
+      let v3 = { x: cx + side/2, y: cy + (Math.sqrt(3)/6)*side };
+      return [v1, v2, v3];
     }
+    // Calcula a interseção entre a linha e os lados do triângulo (especialização)
+    function getTriangleBorderPoint(spec, mousePos) {
+      let vertices = getSpecializationVertices(spec);
+      let center = { x: spec.x, y: spec.y };
+      let dx = mousePos.x - center.x;
+      let dy = mousePos.y - center.y;
+      let intersections = [];
+      for (let i = 0; i < 3; i++) {
+        let v1 = vertices[i];
+        let v2 = vertices[(i+1)%3];
+        let inter = getLineIntersection(center, { x: center.x + dx, y: center.y + dy }, v1, v2);
+        if (inter) {
+          if ((inter.x - center.x)*dx + (inter.y - center.y)*dy >= 0) {
+            intersections.push(inter);
+          }
+        }
+      }
+      if (intersections.length > 0) {
+        let minDist = Infinity, chosen = null;
+        for (let p of intersections) {
+          let d = Math.hypot(p.x - center.x, p.y - center.y);
+          if (d < minDist) { minDist = d; chosen = p; }
+        }
+        return chosen;
+      }
+      return center;
+    }
+    function getLineIntersection(p0, p1, p2, p3) {
+      let s1_x = p1.x - p0.x;
+      let s1_y = p1.y - p0.y;
+      let s2_x = p3.x - p2.x;
+      let s2_y = p3.y - p2.y;
+      let denom = (-s2_x * s1_y + s1_x * s2_y);
+      if (denom === 0) return null;
+      let s = (-s1_y * (p0.x - p2.x) + s1_x * (p0.y - p2.y)) / denom;
+      let t = ( s2_x * (p0.y - p2.y) - s2_y * (p0.x - p2.x)) / denom;
+      if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+          return { x: p0.x + (t * s1_x), y: p0.y + (t * s1_y) };
+      }
+      return null;
+    }
+    function isInsideRect(pos, rect) {
+      return pos.x >= rect.x && pos.x <= rect.x + rect.width && pos.y >= rect.y && pos.y <= rect.y + rect.height;
+    }
+    // Ajusta a posição do mouse considerando o zoom
     function getMousePos(evt) {
       const rect = canvas.getBoundingClientRect();
       let clientX = evt.clientX, clientY = evt.clientY;
-      // Em mobile/touch, usar touches[0]
       if (evt.touches && evt.touches.length > 0) {
         clientX = evt.touches[0].clientX;
         clientY = evt.touches[0].clientY;
       }
-      return { x: clientX - rect.left, y: clientY - rect.top };
+      return { x: (clientX - rect.left) / zoom, y: (clientY - rect.top) / zoom };
     }
     function distancePointToSegment(p, a, b) {
       const A = p.x - a.x, B = p.y - a.y;
@@ -420,48 +497,26 @@
       const len_sq = C * C + D * D;
       let param = (len_sq !== 0) ? dot / len_sq : -1;
       let xx, yy;
-      if (param < 0) {
-        xx = a.x; yy = a.y;
-      } else if (param > 1) {
-        xx = b.x; yy = b.y;
-      } else {
-        xx = a.x + param * C;
-        yy = a.y + param * D;
-      }
+      if (param < 0) { xx = a.x; yy = a.y; }
+      else if (param > 1) { xx = b.x; yy = b.y; }
+      else { xx = a.x + param * C; yy = a.y + param * D; }
       let dx = p.x - xx, dy = p.y - yy;
       return Math.sqrt(dx * dx + dy * dy);
     }
 
-    /********* Funções Auxiliares para Especialização/Generalização *********/
-    function getSpecializationVertices(spec) {
-      let side = spec.size || defaultSpecializationSize;
-      let cx = spec.x, cy = spec.y;
-      // Triângulo equilátero centrado
-      let v1 = { x: cx, y: cy - (Math.sqrt(3)/3)*side };
-      let v2 = { x: cx - side/2, y: cy + (Math.sqrt(3)/(6))*side };
-      let v3 = { x: cx + side/2, y: cy + (Math.sqrt(3)/(6))*side };
-      return [v1, v2, v3];
-    }
-    function getSpecializationVertex(spec, index) {
-      let vertices = getSpecializationVertices(spec);
-      return vertices[index];
-    }
-
-    /********* Funções de Desenho *********/
     function drawAll(context) {
       context.clearRect(0, 0, mainWidth, mainHeight);
-      context.font = fontSize + "px Inter";
-      context.fillStyle = "#111827";
-      context.lineWidth = 2;
+      context.font = `${fontSize}px Poppins`;
 
-      // Conexões de Atributo -> Entidade/Relacionamento/Atributo
       attributes.forEach(a => {
         if (a.parentType && a.parentId != null) {
+          context.strokeStyle = "#000000";
+          context.lineWidth = 2;
           if (a.parentType === "entity") {
             const e = entities.find(en => en.id === a.parentId);
             if (e) {
               const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
-              const aBorder = getCircleBorderPoint(a.x, a.y, eCenter.x - a.x, eCenter.y - a.y, a.radius || defaultAttributeRadius);
+              const aBorder = getCircleBorderPoint(a.x, a.y, eCenter.x - a.x, eCenter.y - a.y, a.radiusX, a.radiusY);
               const eBorder = getRectBorderPoint(eCenter.x, eCenter.y, a.x - eCenter.x, a.y - eCenter.y, e.width/2, e.height/2);
               context.beginPath();
               context.moveTo(eBorder.x, eBorder.y);
@@ -471,17 +526,19 @@
           } else if (a.parentType === "relationship") {
             const r = relationships.find(rr => rr.id === a.parentId);
             if (r) {
+              const rBorder = getDiamondBorderPoint(r.x, r.y, a.x - r.x, a.y - r.y, r.size/2);
+              const aBorder = getCircleBorderPoint(a.x, a.y, r.x - a.x, r.y - a.y, a.radiusX, a.radiusY);
               context.beginPath();
-              context.moveTo(r.x, r.y);
-              context.lineTo(a.x, a.y);
+              context.moveTo(rBorder.x, rBorder.y);
+              context.lineTo(aBorder.x, aBorder.y);
               context.stroke();
             }
           } else if (a.parentType === "attribute") {
             const pA = attributes.find(at => at.id === a.parentId);
             if (pA) {
               const dx = a.x - pA.x, dy = a.y - pA.y;
-              const pBorder = getCircleBorderPoint(pA.x, pA.y, dx, dy, pA.radius || defaultAttributeRadius);
-              const cBorder = getCircleBorderPoint(a.x, a.y, -dx, -dy, a.radius || defaultAttributeRadius);
+              const pBorder = getCircleBorderPoint(pA.x, pA.y, dx, dy, pA.radiusX, pA.radiusY);
+              const cBorder = getCircleBorderPoint(a.x, a.y, -dx, -dy, a.radiusX, a.radiusY);
               context.beginPath();
               context.moveTo(pBorder.x, pBorder.y);
               context.lineTo(cBorder.x, cBorder.y);
@@ -491,7 +548,6 @@
         }
       });
 
-      // Conexões de Relationship → Entity (com cardinalidade)
       relationships.forEach(r => {
         r.connections.forEach(conn => {
           const e = entities.find(en => en.id === conn.entityId);
@@ -499,7 +555,6 @@
         });
       });
 
-      // Conexões de Especialização → Entidade
       specializations.forEach(spec => {
         if (spec.connections) {
           spec.connections.forEach(conn => {
@@ -509,20 +564,14 @@
         }
       });
 
-      // Desenho das Entidades
       entities.forEach(e => {
         context.save();
-        let fillC = normalColors.entity.fill, strokeC = normalColors.entity.stroke;
-        if (draggingNewObj === e) {
-          fillC = previewColors.entity.fill;
-          strokeC = previewColors.entity.stroke;
-        }
-        context.shadowColor = "rgba(0,0,0,0.1)";
-        context.shadowBlur = 4;
-        context.fillStyle = fillC;
-        context.strokeStyle = e.selected ? "#2563EB" : strokeC;
+        context.shadowColor = "rgba(0,0,0,0.5)";
+        context.shadowBlur = 10;
+        context.fillStyle = normalColors.entity.fill;
+        context.strokeStyle = e.selected ? "#60a5fa" : normalColors.entity.stroke;
         context.lineWidth = e.selected ? 3 : 2;
-        const margin = 12;
+        const margin = 16;
         let w = e.width || defaultEntityWidth;
         let h = e.height || defaultEntityHeight;
         const lines = wrapText(context, e.name, w - margin);
@@ -536,49 +585,13 @@
         let neededW = maxLineWidth + margin;
         e.width = Math.max(w, neededW);
         e.height = Math.max(h, neededH);
-        const radius = 8;
-        // Desenho do retângulo com cantos arredondados
         context.beginPath();
-        context.moveTo(e.x + radius, e.y);
-        context.lineTo(e.x + e.width - radius, e.y);
-        context.quadraticCurveTo(e.x + e.width, e.y, e.x + e.width, e.y + radius);
-        context.lineTo(e.x + e.width, e.y + e.height - radius);
-        context.quadraticCurveTo(e.x + e.width, e.y + e.height, e.x + e.width - radius, e.y + e.height);
-        context.lineTo(e.x + radius, e.y + e.height);
-        context.quadraticCurveTo(e.x, e.y + e.height, e.x, e.y + e.height - radius);
-        context.lineTo(e.x, e.y + radius);
-        context.quadraticCurveTo(e.x, e.y, e.x + radius, e.y);
-        context.closePath();
+        context.roundRect(e.x, e.y, e.width, e.height, 8);
         context.fill();
         context.stroke();
-        context.fillStyle = "#111827";
+        context.fillStyle = "#ffffff";
         drawWrappedText(context, e.name, e.x + e.width/2, e.y + e.height/2, e.width - margin, false);
-
-        // Ícones de exclusão e link (seta)
         if (e.selected) {
-          let iconSize = globalIconSize;
-          let xDel = e.x + e.width - iconSize - 2, yDel = e.y + 2;
-          context.fillStyle = "#DC2626";
-          context.beginPath();
-          context.arc(xDel + iconSize/2, yDel + iconSize/2, iconSize/2, 0, 2*Math.PI);
-          context.fill();
-          context.fillStyle = "#ffffff";
-          context.font = (iconSize - 8) + "px Inter";
-          context.textAlign = "center";
-          context.textBaseline = "middle";
-          context.fillText("X", xDel + iconSize/2, yDel + iconSize/2);
-          e.deleteRect = { x: xDel, y: yDel, width: iconSize, height: iconSize };
-
-          let xLink = e.x + e.width/2 - iconSize/2, yLink = e.y + e.height - iconSize - 2;
-          context.fillStyle = "#3B82F6";
-          context.beginPath();
-          context.arc(xLink + iconSize/2, yLink + iconSize/2, iconSize/2, 0, 2*Math.PI);
-          context.fill();
-          context.fillStyle = "#ffffff";
-          context.fillText("⇨", xLink + iconSize/2, yLink + iconSize/2);
-          e.linkRect = { x: xLink, y: yLink, width: iconSize, height: iconSize };
-
-          // Alças de redimensionamento
           e.resizeHandles = [
             { x: e.x - handleSize/2, y: e.y - handleSize/2, width: handleSize, height: handleSize },
             { x: e.x + e.width - handleSize/2, y: e.y - handleSize/2, width: handleSize, height: handleSize },
@@ -587,383 +600,254 @@
           ];
           e.resizeHandles.forEach(handle => {
             context.fillStyle = "#ffffff";
+            context.strokeStyle = "#000000";
             context.fillRect(handle.x, handle.y, handle.width, handle.height);
-            context.strokeStyle = "#000";
             context.strokeRect(handle.x, handle.y, handle.width, handle.height);
           });
         } else {
-          e.deleteRect = null;
-          e.linkRect = null;
           e.resizeHandles = [];
         }
         context.restore();
       });
 
-      // Desenho dos Atributos (círculos)
       attributes.forEach(a => {
         context.save();
-        let fillC, strokeC;
-        if (a.derived) {
-          fillC = normalColors.derived.fill;
-          strokeC = normalColors.derived.stroke;
-          if (draggingNewObj === a) {
-            fillC = previewColors.derived.fill;
-            strokeC = previewColors.derived.stroke;
-          }
-        } else {
-          fillC = normalColors.attribute.fill;
-          strokeC = normalColors.attribute.stroke;
-          if (draggingNewObj === a) {
-            fillC = previewColors.attribute.fill;
-            strokeC = previewColors.attribute.stroke;
-          }
-        }
-        context.shadowColor = "rgba(0,0,0,0.1)";
-        context.shadowBlur = 4;
-        context.fillStyle = fillC;
-        context.strokeStyle = a.selected ? "#2563EB" : strokeC;
+        context.shadowColor = "rgba(0,0,0,0.5)";
+        context.shadowBlur = 10;
+        context.fillStyle = a.derived ? normalColors.derived.fill : normalColors.attribute.fill;
+        context.strokeStyle = a.selected ? "#60a5fa" : (a.derived ? normalColors.derived.stroke : normalColors.attribute.stroke);
         context.lineWidth = a.selected ? 3 : 2;
-
-        const margin = 10;
-        let r = a.radius || defaultAttributeRadius;
-        const lines = wrapText(context, a.name, r*2 - margin);
+        if (a.derived) context.setLineDash([4, 2]);
+        const margin = 12;
+        let rx = a.radiusX || defaultAttributeRadiusX;
+        let ry = a.radiusY || defaultAttributeRadiusY;
+        const lines = wrapText(context, a.name, rx*2 - margin);
         let maxLineWidth = 0;
         lines.forEach(line => {
           let tw = context.measureText(line).width;
           if (tw > maxLineWidth) maxLineWidth = tw;
         });
-        let neededDiameter = Math.max(r*2, maxLineWidth + margin);
+        let neededWidth = maxLineWidth + margin;
         let neededHeight = lines.length*(fontSize*1.2) + margin;
-        neededDiameter = Math.max(neededDiameter, neededHeight);
-        a.radius = neededDiameter / 2;
-        if (a.derived) context.setLineDash([4,2]);
+        rx = Math.max(rx, neededWidth / 2);
+        ry = Math.max(ry, neededHeight / 2);
+        a.radiusX = rx;
+        a.radiusY = ry;
         context.beginPath();
-        context.arc(a.x, a.y, a.radius, 0, 2*Math.PI);
+        context.ellipse(a.x, a.y, rx, ry, 0, 0, 2*Math.PI);
         context.fill();
         context.stroke();
         context.setLineDash([]);
-        context.fillStyle = "#111827";
-        drawWrappedText(context, a.name, a.x, a.y, a.radius*2 - margin, a.primary);
-
+        context.fillStyle = "#ffffff";
+        drawWrappedText(context, a.name, a.x, a.y, rx*2 - margin, a.primary);
         if (a.selected) {
-          let iconSize = globalIconSize;
-          let xDel = a.x + a.radius - iconSize/2, yDel = a.y - a.radius - iconSize/2;
-          context.fillStyle = "#DC2626";
-          context.beginPath();
-          context.arc(xDel + iconSize/2, yDel + iconSize/2, iconSize/2, 0, 2*Math.PI);
-          context.fill();
-          context.fillStyle = "#ffffff";
-          context.font = (iconSize - 8) + "px Inter";
-          context.textAlign = "center";
-          context.textBaseline = "middle";
-          context.fillText("X", xDel + iconSize/2, yDel + iconSize/2);
-          a.deleteRect = { x: xDel, y: yDel, width: iconSize, height: iconSize };
-
-          if (!a.derived) {
-            let pkSize = iconSize;
-            let xPk = xDel - pkSize - 4, yPk = yDel;
-            context.fillStyle = "#F59E0B";
-            context.beginPath();
-            context.arc(xPk + pkSize/2, yPk + pkSize/2, pkSize/2, 0, 2*Math.PI);
-            context.fill();
-            context.fillStyle = "#ffffff";
-            context.fillText("PK", xPk + pkSize/2, yPk + pkSize/2);
-            a.pkRect = { x: xPk, y: yPk, width: pkSize, height: pkSize };
-          } else {
-            a.pkRect = null;
-          }
-          // Alças de redimensionamento
           a.resizeHandles = [
-            { x: a.x - a.radius - handleSize/2, y: a.y - a.radius - handleSize/2, width: handleSize, height: handleSize },
-            { x: a.x + a.radius - handleSize/2, y: a.y - a.radius - handleSize/2, width: handleSize, height: handleSize },
-            { x: a.x - a.radius - handleSize/2, y: a.y + a.radius - handleSize/2, width: handleSize, height: handleSize },
-            { x: a.x + a.radius - handleSize/2, y: a.y + a.radius - handleSize/2, width: handleSize, height: handleSize }
+            { x: a.x - rx - handleSize/2, y: a.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: a.x + rx - handleSize/2, y: a.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: a.x - handleSize/2, y: a.y - ry - handleSize/2, width: handleSize, height: handleSize },
+            { x: a.x - handleSize/2, y: a.y + ry - handleSize/2, width: handleSize, height: handleSize }
           ];
           a.resizeHandles.forEach(handle => {
             context.fillStyle = "#ffffff";
+            context.strokeStyle = "#000000";
             context.fillRect(handle.x, handle.y, handle.width, handle.height);
-            context.strokeStyle = "#000";
             context.strokeRect(handle.x, handle.y, handle.width, handle.height);
           });
         } else {
-          a.deleteRect = null;
-          a.pkRect = null;
           a.resizeHandles = [];
         }
         context.restore();
       });
 
-      // Desenho dos Relacionamentos (losango)
       relationships.forEach(r => {
         context.save();
-        drawRelationshipDiamond(context, r);
+        context.shadowColor = "rgba(0,0,0,0.5)";
+        context.shadowBlur = 10;
+        context.fillStyle = normalColors.relationship.fill;
+        context.strokeStyle = r.selected ? "#60a5fa" : normalColors.relationship.stroke;
+        context.lineWidth = r.selected ? 3 : 2;
+        const half = (r.size || relationshipSize)/2;
+        context.beginPath();
+        context.moveTo(r.x, r.y - half);
+        context.lineTo(r.x + half, r.y);
+        context.lineTo(r.x, r.y + half);
+        context.lineTo(r.x - half, r.y);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        // Desenha o texto do relacionamento por cima (não interfere nas conexões)
+        context.fillStyle = "#ffffff";
+        drawWrappedText(context, r.name, r.x, r.y, r.size - 20, false);
+        if (r.selected) {
+          r.resizeHandles = [
+            { x: r.x - half - handleSize/2, y: r.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: r.x + half - handleSize/2, y: r.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: r.x - handleSize/2, y: r.y - half - handleSize/2, width: handleSize, height: handleSize },
+            { x: r.x - handleSize/2, y: r.y + half - handleSize/2, width: handleSize, height: handleSize }
+          ];
+          r.resizeHandles.forEach(handle => {
+            context.fillStyle = "#ffffff";
+            context.strokeStyle = "#000000";
+            context.fillRect(handle.x, handle.y, handle.width, handle.height);
+            context.strokeRect(handle.x, handle.y, handle.width, handle.height);
+          });
+        } else {
+          r.resizeHandles = [];
+        }
         context.restore();
       });
 
-      // Desenho das Especializações (triângulos)
       specializations.forEach(spec => {
         context.save();
-        drawSpecializationTriangle(context, spec);
+        context.shadowColor = "rgba(0,0,0,0.5)";
+        context.shadowBlur = 10;
+        context.fillStyle = normalColors.specialization.fill;
+        context.strokeStyle = spec.selected ? "#60a5fa" : normalColors.specialization.stroke;
+        context.lineWidth = spec.selected ? 3 : 2;
+        const vertices = getSpecializationVertices(spec);
+        context.beginPath();
+        context.moveTo(vertices[0].x, vertices[0].y);
+        context.lineTo(vertices[1].x, vertices[1].y);
+        context.lineTo(vertices[2].x, vertices[2].y);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.fillStyle = "#ffffff";
+        drawWrappedText(context, spec.genType || "", spec.x, spec.y, spec.size - 20, false);
+        if (spec.selected) {
+          spec.resizeHandles = vertices.map(v => ({
+            x: v.x - handleSize/2,
+            y: v.y - handleSize/2,
+            width: handleSize,
+            height: handleSize
+          }));
+          spec.resizeHandles.forEach(handle => {
+            context.fillStyle = "#ffffff";
+            context.strokeStyle = "#000000";
+            context.fillRect(handle.x, handle.y, handle.width, handle.height);
+            context.strokeRect(handle.x, handle.y, handle.width, handle.height);
+          });
+        } else {
+          spec.resizeHandles = [];
+        }
         context.restore();
       });
 
-      // Desenha retângulo de seleção se estiver selecionando
       if (isSelecting && selectionRect) {
         context.save();
         context.setLineDash([4,2]);
-        context.strokeStyle = "rgba(37,99,235,0.5)";
+        context.strokeStyle = "rgba(96,165,250,0.7)";
         context.strokeRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
         context.restore();
       }
     }
 
     function drawConnectionLine(context, r, conn, e) {
-      const rCenter = { x: r.x, y: r.y };
       const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
-      const rBoundary = getDiamondBorderPoint(r.x, r.y, eCenter.x - r.x, eCenter.y - r.y, relationshipSize/2);
+      const rCenter = { x: r.x, y: r.y };
+      const rBoundary = getDiamondBorderPoint(r.x, r.y, eCenter.x - r.x, eCenter.y - r.y, r.size/2);
       const eBoundary = getRectBorderPoint(eCenter.x, eCenter.y, r.x - eCenter.x, r.y - eCenter.y, e.width/2, e.height/2);
       context.lineWidth = (selectedConnection && selectedConnection.relationshipId === r.id && selectedConnection.entityId === conn.entityId) ? 4 : 2;
+      context.strokeStyle = "#000000";
       context.beginPath();
       context.moveTo(rBoundary.x, rBoundary.y);
       context.lineTo(eBoundary.x, eBoundary.y);
       context.stroke();
-      // cardinalidade no meio
-      const midX = (rBoundary.x + eBoundary.x)/2;
-      const midY = (rBoundary.y + eBoundary.y)/2;
-      context.fillStyle = "#000";
-      context.textAlign = "center";
-      context.textBaseline = "bottom";
-      context.fillText(conn.cardinality, midX, midY - 5);
-
-      // Ícone de excluir a conexão
+      const midX = (rBoundary.x + eBoundary.x) / 2;
+      const midY = (rBoundary.y + eBoundary.y) / 2;
+      const cardX = midX + (eBoundary.x - rBoundary.x) * 0.25;
+      const cardY = midY + (eBoundary.y - rBoundary.y) * 0.25;
+      context.fillStyle = "#000000";
+      context.fillText(conn.cardinality, cardX, cardY - 5);
       if (selectedConnection && selectedConnection.relationshipId === r.id && selectedConnection.entityId === conn.entityId) {
-        let iconSize = globalIconSize;
+        let iconSize = globalIconSize + 4;
         context.save();
-        context.fillStyle = "#DC2626";
+        context.fillStyle = "#b91c1c";
         context.beginPath();
-        context.arc(midX, midY, iconSize/2, 0, 2*Math.PI);
+        const delX = midX - (eBoundary.x - rBoundary.x) * 0.25;
+        const delY = midY - (eBoundary.y - rBoundary.y) * 0.25;
+        context.arc(delX, delY, iconSize/2, 0, 2*Math.PI);
         context.fill();
-        context.fillStyle = "#ffffff";
-        context.font = (iconSize - 8) + "px Inter";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText("X", midX, midY);
+        context.strokeStyle = "#ffffff";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(delX - iconSize/4, delY - iconSize/4);
+        context.lineTo(delX + iconSize/4, delY + iconSize/4);
+        context.moveTo(delX + iconSize/4, delY - iconSize/4);
+        context.lineTo(delX - iconSize/4, delY + iconSize/4);
+        context.stroke();
         context.restore();
-        selectedConnection.iconRect = { x: midX - iconSize/2, y: midY - iconSize/2, width: iconSize, height: iconSize };
+        selectedConnection.iconRect = { x: delX - iconSize/2, y: delY - iconSize/2, width: iconSize, height: iconSize };
       }
     }
 
     function drawSpecConnectionLine(context, spec, conn, e) {
-      let vertex = getSpecializationVertex(spec, conn.vertex);
+      let vertex = getSpecializationVertices(spec)[conn.vertex];
       const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
       context.lineWidth = (selectedSpecConnection && selectedSpecConnection.specializationId === spec.id && selectedSpecConnection.vertex === conn.vertex && selectedSpecConnection.entityId === conn.entityId) ? 4 : 2;
+      context.strokeStyle = "#000000";
       context.beginPath();
       context.moveTo(vertex.x, vertex.y);
       const eBoundary = getRectBorderPoint(eCenter.x, eCenter.y, vertex.x - eCenter.x, vertex.y - eCenter.y, e.width/2, e.height/2);
       context.lineTo(eBoundary.x, eBoundary.y);
       context.stroke();
-
+      const midX = (vertex.x + eBoundary.x) / 2;
+      const midY = (vertex.y + eBoundary.y) / 2;
+      const delX = midX - (eBoundary.x - vertex.x) * 0.25;
+      const delY = midY - (eBoundary.y - vertex.y) * 0.25;
       if (selectedSpecConnection && selectedSpecConnection.specializationId === spec.id && selectedSpecConnection.vertex === conn.vertex && selectedSpecConnection.entityId === conn.entityId) {
-        let iconSize = globalIconSize;
-        const midX = (vertex.x + eBoundary.x) / 2;
-        const midY = (vertex.y + eBoundary.y) / 2;
+        let iconSize = globalIconSize + 4;
         context.save();
-        context.fillStyle = "#DC2626";
+        context.fillStyle = "#b91c1c";
         context.beginPath();
-        context.arc(midX, midY, iconSize/2, 0, 2*Math.PI);
+        context.arc(delX, delY, iconSize/2, 0, 2*Math.PI);
         context.fill();
-        context.fillStyle = "#ffffff";
-        context.font = (iconSize - 8) + "px Inter";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText("X", midX, midY);
+        context.strokeStyle = "#ffffff";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(delX - iconSize/4, delY - iconSize/4);
+        context.lineTo(delX + iconSize/4, delY + iconSize/4);
+        context.moveTo(delX + iconSize/4, delY - iconSize/4);
+        context.lineTo(delX - iconSize/4, delY + iconSize/4);
+        context.stroke();
         context.restore();
-        selectedSpecConnection.iconRect = { x: midX - iconSize/2, y: midY - iconSize/2, width: iconSize, height: iconSize };
+        selectedSpecConnection.iconRect = { x: delX - iconSize/2, y: delY - iconSize/2, width: iconSize, height: iconSize };
       }
     }
 
-    function drawRelationshipDiamond(context, r) {
-      const half = relationshipSize/2;
-      let fillC = normalColors.relationship.fill;
-      let strokeC = normalColors.relationship.stroke;
-      if (draggingNewObj === r) {
-        fillC = previewColors.relationship.fill;
-        strokeC = previewColors.relationship.stroke;
-      }
-      context.shadowColor = "rgba(0,0,0,0.1)";
-      context.shadowBlur = 4;
-      context.fillStyle = fillC;
-      context.strokeStyle = r.selected ? "#2563EB" : strokeC;
-      context.lineWidth = r.selected ? 3 : 2;
-      context.beginPath();
-      context.moveTo(r.x, r.y - half);
-      context.lineTo(r.x + half, r.y);
-      context.lineTo(r.x, r.y + half);
-      context.lineTo(r.x - half, r.y);
-      context.closePath();
-      context.fill();
-      context.stroke();
-      context.fillStyle = "#111827";
-      drawWrappedText(context, r.name, r.x, r.y, relationshipSize - 15, false);
-
-      // Se selecionado, desenhar ícones
-      if (r.selected) {
-        let iconSize = globalIconSize;
-        let xDel = r.x - half + 4, yDel = r.y - half + 4;
-        context.fillStyle = "#DC2626";
-        context.beginPath();
-        context.arc(xDel + iconSize/2, yDel + iconSize/2, iconSize/2, 0, 2*Math.PI);
-        context.fill();
-        context.fillStyle = "#ffffff";
-        context.font = (iconSize - 8) + "px Inter";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText("X", xDel + iconSize/2, yDel + iconSize/2);
-        r.deleteRect = { x: xDel, y: yDel, width: iconSize, height: iconSize };
-
-        let xLink = r.x - iconSize/2;
-        let yLink = r.y + half - iconSize - 2;
-        context.fillStyle = "#3B82F6";
-        context.beginPath();
-        context.arc(xLink + iconSize/2, yLink + iconSize/2, iconSize/2, 0, 2*Math.PI);
-        context.fill();
-        context.fillStyle = "#ffffff";
-        context.fillText("⇨", xLink + iconSize/2, yLink + iconSize/2);
-        r.linkRect = { x: xLink, y: yLink, width: iconSize, height: iconSize };
-
-        // Alças de redimensionamento
-        r.resizeHandles = [
-          { x: r.x - half - handleSize/2, y: r.y - half - handleSize/2, width: handleSize, height: handleSize },
-          { x: r.x + half - handleSize/2, y: r.y - half - handleSize/2, width: handleSize, height: handleSize },
-          { x: r.x - half - handleSize/2, y: r.y + half - handleSize/2, width: handleSize, height: handleSize },
-          { x: r.x + half - handleSize/2, y: r.y + half - handleSize/2, width: handleSize, height: handleSize }
-        ];
-        r.resizeHandles.forEach(handle => {
-          context.fillStyle = "#ffffff";
-          context.fillRect(handle.x, handle.y, handle.width, handle.height);
-          context.strokeStyle = "#000";
-          context.strokeRect(handle.x, handle.y, handle.width, handle.height);
-        });
-      } else {
-        r.deleteRect = null;
-        r.linkRect = null;
-        r.resizeHandles = [];
-      }
-    }
-
-    function drawSpecializationTriangle(context, spec) {
-      let fillC = normalColors.specialization.fill;
-      let strokeC = normalColors.specialization.stroke;
-      if (draggingNewObj === spec) {
-        fillC = previewColors.specialization.fill;
-        strokeC = previewColors.specialization.stroke;
-      }
-      context.shadowColor = "rgba(0,0,0,0.1)";
-      context.shadowBlur = 4;
-      context.fillStyle = fillC;
-      context.strokeStyle = spec.selected ? "#2563EB" : strokeC;
-      context.lineWidth = spec.selected ? 3 : 2;
-      const side = spec.size || defaultSpecializationSize;
-      const vertices = getSpecializationVertices(spec);
-      context.beginPath();
-      context.moveTo(vertices[0].x, vertices[0].y);
-      context.lineTo(vertices[1].x, vertices[1].y);
-      context.lineTo(vertices[2].x, vertices[2].y);
-      context.closePath();
-      context.fill();
-      context.stroke();
-      // Mostrar o tipo (T,C), (T,D), (P,C), (P,D)
-      if (spec.genType) {
-        context.fillStyle = "#111827";
-        drawWrappedText(context, spec.genType, spec.x, spec.y, side - 15, false);
-      }
-      if (spec.selected) {
-        let iconSize = globalIconSize;
-        let half = side/2;
-        let xDel = spec.x - half + 4, yDel = spec.y - half + 4;
-        context.fillStyle = "#DC2626";
-        context.beginPath();
-        context.arc(xDel + iconSize/2, yDel + iconSize/2, iconSize/2, 0, 2*Math.PI);
-        context.fill();
-        context.fillStyle = "#ffffff";
-        context.font = (iconSize - 8) + "px Inter";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText("X", xDel + iconSize/2, yDel + iconSize/2);
-        spec.deleteRect = { x: xDel, y: yDel, width: iconSize, height: iconSize };
-
-        let xLink = spec.x - iconSize/2;
-        let yLink = spec.y + half - iconSize - 2;
-        context.fillStyle = "#3B82F6";
-        context.beginPath();
-        context.arc(xLink + iconSize/2, yLink + iconSize/2, iconSize/2, 0, 2*Math.PI);
-        context.fill();
-        context.fillStyle = "#ffffff";
-        context.fillText("⇨", xLink + iconSize/2, yLink + iconSize/2);
-        spec.linkRect = { x: xLink, y: yLink, width: iconSize, height: iconSize };
-
-        let verts = getSpecializationVertices(spec);
-        let minX = Math.min(verts[0].x, verts[1].x, verts[2].x);
-        let minY = Math.min(verts[0].y, verts[1].y, verts[2].y);
-        let maxX = Math.max(verts[0].x, verts[1].x, verts[2].x);
-        let maxY = Math.max(verts[0].y, verts[1].y, verts[2].y);
-        spec.resizeHandles = [
-          { x: minX - handleSize/2, y: minY - handleSize/2, width: handleSize, height: handleSize },
-          { x: maxX - handleSize/2, y: minY - handleSize/2, width: handleSize, height: handleSize },
-          { x: minX - handleSize/2, y: maxY - handleSize/2, width: handleSize, height: handleSize },
-          { x: maxX - handleSize/2, y: maxY - handleSize/2, width: handleSize, height: handleSize }
-        ];
-        spec.resizeHandles.forEach(handle => {
-          context.fillStyle = "#ffffff";
-          context.fillRect(handle.x, handle.y, handle.width, handle.height);
-          context.strokeStyle = "#000";
-          context.strokeRect(handle.x, handle.y, handle.width, handle.height);
-        });
-      } else {
-        spec.deleteRect = null;
-        spec.linkRect = null;
-        spec.resizeHandles = [];
-      }
-    }
-
+    // Desenha o objeto de preview (ao arrastar da toolbar)
     function drawPreview() {
       if (!draggingToolbarType || !draggingNewObj) return;
       ctx.save();
       ctx.globalAlpha = 0.7;
       switch(draggingToolbarType) {
         case "entity":
-          ctx.fillStyle = previewColors.entity.fill;
-          ctx.strokeStyle = previewColors.entity.stroke;
-          ctx.lineWidth = 2;
-          let ex = draggingNewObj.x - defaultEntityWidth/2;
-          let ey = draggingNewObj.y - defaultEntityHeight/2;
+          ctx.fillStyle = normalColors.entity.fill;
+          ctx.strokeStyle = normalColors.entity.stroke;
           ctx.beginPath();
-          ctx.rect(ex, ey, defaultEntityWidth, defaultEntityHeight);
+          ctx.roundRect(draggingNewObj.x - defaultEntityWidth/2, draggingNewObj.y - defaultEntityHeight/2, defaultEntityWidth, defaultEntityHeight, 8);
           ctx.fill();
           ctx.stroke();
           break;
         case "attribute":
-          ctx.fillStyle = previewColors.attribute.fill;
-          ctx.strokeStyle = previewColors.attribute.stroke;
-          ctx.lineWidth = 2;
+          ctx.fillStyle = normalColors.attribute.fill;
+          ctx.strokeStyle = normalColors.attribute.stroke;
           ctx.beginPath();
-          ctx.arc(draggingNewObj.x, draggingNewObj.y, defaultAttributeRadius, 0, Math.PI*2);
+          ctx.ellipse(draggingNewObj.x, draggingNewObj.y, defaultAttributeRadiusX, defaultAttributeRadiusY, 0, 0, Math.PI*2);
           ctx.fill();
           ctx.stroke();
           break;
         case "derivedAttribute":
-          ctx.fillStyle = previewColors.derived.fill;
-          ctx.strokeStyle = previewColors.derived.stroke;
-          ctx.lineWidth = 2;
+          ctx.fillStyle = normalColors.derived.fill;
+          ctx.strokeStyle = normalColors.derived.stroke;
           ctx.beginPath();
-          ctx.arc(draggingNewObj.x, draggingNewObj.y, defaultAttributeRadius, 0, Math.PI*2);
+          ctx.ellipse(draggingNewObj.x, draggingNewObj.y, defaultAttributeRadiusX, defaultAttributeRadiusY, 0, 0, Math.PI*2);
           ctx.fill();
           ctx.stroke();
           break;
         case "relationship":
-          ctx.fillStyle = previewColors.relationship.fill;
-          ctx.strokeStyle = previewColors.relationship.stroke;
-          ctx.lineWidth = 2;
+          ctx.fillStyle = normalColors.relationship.fill;
+          ctx.strokeStyle = normalColors.relationship.stroke;
           let half = relationshipSize/2;
           ctx.beginPath();
           ctx.moveTo(draggingNewObj.x, draggingNewObj.y - half);
@@ -975,12 +859,9 @@
           ctx.stroke();
           break;
         case "specialization":
-          ctx.fillStyle = previewColors.specialization.fill;
-          ctx.strokeStyle = previewColors.specialization.stroke;
-          ctx.lineWidth = 2;
-          let side = defaultSpecializationSize;
-          let spec = draggingNewObj;
-          let vertices = getSpecializationVertices({ x: spec.x, y: spec.y, size: side });
+          ctx.fillStyle = normalColors.specialization.fill;
+          ctx.strokeStyle = normalColors.specialization.stroke;
+          let vertices = getSpecializationVertices({ x: draggingNewObj.x, y: draggingNewObj.y, size: defaultSpecializationSize });
           ctx.beginPath();
           ctx.moveTo(vertices[0].x, vertices[0].y);
           ctx.lineTo(vertices[1].x, vertices[1].y);
@@ -993,23 +874,44 @@
       ctx.restore();
     }
 
+    // Função de desenho principal, agora aplicando a transformação de zoom
     function draw() {
+      ctx.save();
+      ctx.clearRect(0, 0, mainWidth, mainHeight);
+      ctx.translate(panOffset.x, panOffset.y); // <-- ADICIONE esta linha
+      ctx.scale(zoom, zoom);
       drawAll(ctx);
-      if (draggingToolbarType && draggingNewObj) {
-        drawPreview();
-      }
+      if (draggingToolbarType && draggingNewObj) drawPreview();
       if (isDraggingConnection && draggingConnection) {
         ctx.save();
         ctx.setLineDash([5,3]);
+        ctx.strokeStyle = "#000000";
         ctx.beginPath();
-        ctx.moveTo(draggingConnection.start.x, draggingConnection.start.y);
-        ctx.lineTo(draggingConnection.current.x, draggingConnection.current.y);
+        // Calcula o ponto de partida da linha de preview conforme a borda do objeto de origem
+        let startPoint = { x: draggingConnection.start.x, y: draggingConnection.start.y };
+        const currentPos = draggingConnection.current;
+        const obj = draggingConnection.element;
+        if (obj.objType === "entity") {
+          let center = { x: obj.x + (obj.width || defaultEntityWidth)/2, y: obj.y + (obj.height || defaultEntityHeight)/2 };
+          let dx = currentPos.x - center.x;
+          let dy = currentPos.y - center.y;
+          startPoint = getRectBorderPoint(center.x, center.y, dx, dy, obj.width/2, obj.height/2);
+        } else if (obj.objType === "relationship") {
+          let center = { x: obj.x, y: obj.y };
+          let dx = currentPos.x - center.x;
+          let dy = currentPos.y - center.y;
+          startPoint = getDiamondBorderPoint(center.x, center.y, dx, dy, obj.size/2);
+        } else if (obj.objType === "specialization") {
+          startPoint = getTriangleBorderPoint(obj, currentPos);
+        }
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineTo(currentPos.x, currentPos.y);
         ctx.stroke();
         ctx.restore();
       }
+      ctx.restore();
     }
 
-    /********* Seleção, Drag em Grupo e Redimensionamento *********/
     function clearSelection() {
       entities.forEach(e => e.selected = false);
       attributes.forEach(a => a.selected = false);
@@ -1017,6 +919,14 @@
       specializations.forEach(s => s.selected = false);
       selectedConnection = null;
       selectedSpecConnection = null;
+      if (submenu) {
+        $(submenu).remove();
+        submenu = null;
+      }
+      if (submenuTimeout) {
+        clearTimeout(submenuTimeout);
+        submenuTimeout = null;
+      }
     }
 
     function checkResizeHandles(x, y) {
@@ -1034,36 +944,38 @@
     }
 
     function getDraggableAt(x, y) {
-      // Verifica primeiro ícones e handles das entidades selecionadas
-      for (let e of entities) {
-        if (e.selected) {
-          if (e.deleteRect && isInsideRect({x,y}, e.deleteRect)) return { type: "entity-delete", element: e };
-          if (e.linkRect && isInsideRect({x,y}, e.linkRect)) return { type: "entity-link", element: e };
-        }
-      }
-      for (let a of attributes) {
-        if (a.selected) {
-          if (a.deleteRect && isInsideRect({x,y}, a.deleteRect)) return { type: "attribute-delete", element: a };
-          if (a.pkRect && isInsideRect({x,y}, a.pkRect)) return { type: "attribute-pk", element: a };
-        }
-      }
-      for (let r of relationships) {
-        if (r.selected) {
-          if (r.deleteRect && isInsideRect({x,y}, r.deleteRect)) return { type: "relationship-delete", element: r };
-          if (r.linkRect && isInsideRect({x,y}, r.linkRect)) return { type: "relationship-link", element: r };
-        }
-      }
-      for (let s of specializations) {
-        if (s.selected) {
-          if (s.deleteRect && isInsideRect({x,y}, s.deleteRect)) return { type: "specialization-delete", element: s };
-          if (s.linkRect && isInsideRect({x,y}, s.linkRect)) return { type: "specialization-link", element: s };
-        }
-      }
-      // Verifica handles de redimensionamento
+      if (submenu && isInsideRect({x,y}, submenuRect)) return { type: "submenu" };
       let resizeHit = checkResizeHandles(x, y);
       if (resizeHit) return resizeHit;
-
-      // Verifica se clicou em alguma conexão (relationship-entity)
+      for (let i = entities.length - 1; i >= 0; i--) {
+        const e = entities[i];
+        let w = e.width || defaultEntityWidth, h = e.height || defaultEntityHeight;
+        if (x >= e.x && x <= e.x + w && y >= e.y && y <= e.y + h) {
+          return { type: "entity", element: e };
+        }
+      }
+      for (let i = attributes.length - 1; i >= 0; i--) {
+        const a = attributes[i];
+        let rx = a.radiusX || defaultAttributeRadiusX;
+        let ry = a.radiusY || defaultAttributeRadiusY;
+        if (Math.pow((x - a.x)/rx, 2) + Math.pow((y - a.y)/ry, 2) <= 1) {
+          return { type: a.derived ? "derivedAttribute" : "attribute", element: a };
+        }
+      }
+      for (let i = relationships.length - 1; i >= 0; i--) {
+        const rel = relationships[i];
+        let half = (rel.size || relationshipSize)/2;
+        if (x >= rel.x - half && x <= rel.x + half && y >= rel.y - half && y <= rel.y + half) {
+          return { type: "relationship", element: rel };
+        }
+      }
+      for (let i = specializations.length - 1; i >= 0; i--) {
+        const spec = specializations[i];
+        let half = (spec.size || defaultSpecializationSize)/2;
+        if (x >= spec.x - half && x <= spec.x + half && y >= spec.y - half && y <= spec.y + half) {
+          return { type: "specialization", element: spec };
+        }
+      }
       for (let r of relationships) {
         for (let conn of r.connections) {
           let e = entities.find(en => en.id === conn.entityId);
@@ -1075,60 +987,22 @@
           }
         }
       }
-      // Verifica se clicou em alguma conexão (specialization-entity)
       for (let s of specializations) {
         if (s.connections) {
           for (let conn of s.connections) {
             let e = entities.find(en => en.id === conn.entityId);
             if (!e) continue;
-            let vertex = getSpecializationVertex(s, conn.vertex);
-            let dist = distancePointToSegment(
-              {x,y},
-              vertex,
-              { x: e.x + e.width/2, y: e.y + e.height/2 }
-            );
+            let vertex = getSpecializationVertices(s)[conn.vertex];
+            let dist = distancePointToSegment({x,y}, vertex, { x: e.x + e.width/2, y: e.y + e.height/2 });
             if (dist < 5) {
               return { type: "specialization-connection", specialization: s, connection: conn };
             }
           }
         }
       }
-      // Verifica atributos
-      for (let i = attributes.length - 1; i >= 0; i--) {
-        const a = attributes[i];
-        let r = a.radius || defaultAttributeRadius;
-        if (Math.hypot(x - a.x, y - a.y) <= r) {
-          return { type: "attribute", element: a };
-        }
-      }
-      // Verifica entidades
-      for (let i = entities.length - 1; i >= 0; i--) {
-        const e = entities[i];
-        let w = e.width || defaultEntityWidth, h = e.height || defaultEntityHeight;
-        if (x >= e.x && x <= e.x + w && y >= e.y && y <= e.y + h) {
-          return { type: "entity", element: e };
-        }
-      }
-      // Verifica relacionamentos
-      for (let i = relationships.length - 1; i >= 0; i--) {
-        const rel = relationships[i];
-        let half = relationshipSize/2;
-        if (x >= rel.x - half && x <= rel.x + half && y >= rel.y - half && y <= rel.y + half) {
-          return { type: "relationship", element: rel };
-        }
-      }
-      // Verifica especializações
-      for (let i = specializations.length - 1; i >= 0; i--) {
-        const spec = specializations[i];
-        let half = (spec.size || defaultSpecializationSize)/2;
-        if (x >= spec.x - half && x <= spec.x + half && y >= spec.y - half && y <= spec.y + half) {
-          return { type: "specialization", element: spec };
-        }
-      }
       return null;
     }
 
-    /********* Lógica de "drag from menu" e clique para posicionar *********/
     function startToolbarDrag(type, evt) {
       evt.preventDefault();
       toolbarDrag = {
@@ -1174,7 +1048,6 @@
         }
         cleanupToolbarDrag();
       } else {
-        // Modo clique
         draggingToolbarType = toolbarDrag.type;
         clickPlacementMode = true;
         if (cx >= 0 && cx <= rect.width && cy >= 0 && cy <= rect.height) {
@@ -1187,7 +1060,7 @@
     function createObjectAt(type, cx, cy) {
       if (type === "attribute" || type === "derivedAttribute") {
         const drop = getDraggableAt(cx, cy);
-        if (!drop || (drop.type !== "entity" && drop.type !== "relationship" && drop.type !== "attribute")) {
+        if (!drop || (drop.type !== "entity" && drop.type !== "relationship" && drop.type !== "attribute" && drop.type !== "derivedAttribute")) {
           alert("O atributo deve ser arrastado sobre uma entidade, relacionamento ou outro atributo.");
           cleanupToolbarDrag();
           draw();
@@ -1196,13 +1069,13 @@
         let parentObj = drop.element;
         let posX, posY;
         if (drop.type === "entity") {
-          posX = parentObj.x + (parentObj.width || defaultEntityWidth) + defaultAttributeRadius + 10;
+          posX = parentObj.x + (parentObj.width || defaultEntityWidth) + defaultAttributeRadiusX + 10;
           posY = parentObj.y + (parentObj.height || defaultEntityHeight)/2;
         } else if (drop.type === "relationship") {
-          posX = parentObj.x + relationshipSize/2 + defaultAttributeRadius + 10;
+          posX = parentObj.x + (parentObj.size || relationshipSize)/2 + defaultAttributeRadiusX + 10;
           posY = parentObj.y;
-        } else if (drop.type === "attribute") {
-          posX = parentObj.x + (parentObj.radius || defaultAttributeRadius) + 10;
+        } else if (drop.type === "attribute" || drop.type === "derivedAttribute") {
+          posX = parentObj.x + (parentObj.radiusX || defaultAttributeRadiusX) + 10;
           posY = parentObj.y;
         }
         const newA = {
@@ -1210,17 +1083,16 @@
           x: posX,
           y: posY,
           name: (type === "derivedAttribute") ? "Atributo Derivado" : "Atributo",
-          parentType: drop.type,
+          parentType: drop.type === "derivedAttribute" ? "attribute" : drop.type,
           parentId: parentObj.id,
           derived: (type === "derivedAttribute"),
           primary: false,
-          selected: true,
-          radius: defaultAttributeRadius,
+          selected: false,
+          radiusX: defaultAttributeRadiusX,
+          radiusY: defaultAttributeRadiusY,
           objType: (type === "derivedAttribute") ? "derivedAttribute" : "attribute"
         };
         attributes.push(newA);
-        clearSelection();
-        newA.selected = true;
       } else if (type === "entity") {
         const newE = {
           id: entityIdCounter++,
@@ -1229,12 +1101,10 @@
           width: defaultEntityWidth,
           height: defaultEntityHeight,
           name: "Entidade",
-          selected: true,
+          selected: false,
           objType: "entity"
         };
         entities.push(newE);
-        clearSelection();
-        newE.selected = true;
       } else if (type === "relationship") {
         const newR = {
           id: relationshipIdCounter++,
@@ -1243,26 +1113,22 @@
           size: relationshipSize,
           name: "Relacionamento",
           connections: [],
-          selected: true,
+          selected: false,
           objType: "relationship"
         };
         relationships.push(newR);
-        clearSelection();
-        newR.selected = true;
       } else if (type === "specialization") {
         const newS = {
           id: specializationIdCounter++,
           x: cx,
           y: cy,
           size: defaultSpecializationSize,
-          genType: null,
+          genType: "T,C",
           connections: [],
-          selected: true,
+          selected: false,
           objType: "specialization"
         };
         specializations.push(newS);
-        clearSelection();
-        newS.selected = true;
       }
       saveState();
       cleanupToolbarDrag();
@@ -1275,10 +1141,15 @@
       toolbarDrag = null;
     }
 
-    /********* Eventos do Canvas (Mouse e Touch) *********/
     function onCanvasStart(evt) {
       evt.preventDefault();
       let pos = getMousePos(evt);
+      if (isSpacePressed) {
+        isPanning = true;
+        panStart = { x: evt.clientX, y: evt.clientY };
+        panOffsetStart = { x: panOffset.x, y: panOffset.y };
+        return;
+      }
       if (clickPlacementMode) {
         createObjectAt(draggingToolbarType, pos.x, pos.y);
         cleanupToolbarDrag();
@@ -1295,8 +1166,12 @@
         resizeStartMouse = { x: pos.x, y: pos.y };
         if (resizingObject.objType === "entity") {
           resizingInitial = { x: resizingObject.x, y: resizingObject.y, width: resizingObject.width, height: resizingObject.height };
-        } else if (resizingObject.objType === "attribute") {
-          resizingInitial = { radius: resizingObject.radius };
+        } else if (resizingObject.objType === "attribute" || resizingObject.objType === "derivedAttribute") {
+          resizingInitial = {
+            radiusX: resizingObject.radiusX,
+            radiusY: resizingObject.radiusY,
+            ratio: resizingObject.radiusY / resizingObject.radiusX  // <--- adicionado
+          };
         } else if (resizingObject.objType === "relationship") {
           resizingInitial = { size: resizingObject.size };
         } else if (resizingObject.objType === "specialization") {
@@ -1306,94 +1181,34 @@
         draw();
         return;
       }
-      if (selectedConnection && selectedConnection.iconRect && isInsideRect(pos, selectedConnection.iconRect)) {
-        const rel = relationships.find(r => r.id === selectedConnection.relationshipId);
-        if (rel) {
-          rel.connections = rel.connections.filter(conn => conn.entityId !== selectedConnection.entityId);
-        }
-        selectedConnection = null;
-        saveState();
-        draw();
+      if (hit && hit.type === "submenu") {
+        let submenuHit = getSubmenuHit(pos.x, pos.y);
+        if (submenuHit) submenuHit.action();
         return;
       }
-      if (selectedSpecConnection && selectedSpecConnection.iconRect && isInsideRect(pos, selectedSpecConnection.iconRect)) {
-        const spec = specializations.find(s => s.id === selectedSpecConnection.specializationId);
-        if (spec && spec.connections) {
-          spec.connections = spec.connections.filter(conn => !(conn.entityId === selectedSpecConnection.entityId && conn.vertex === selectedSpecConnection.vertex));
+      if (hit && hit.type === "connection" && selectedConnection && selectedConnection.iconRect && isInsideRect(pos, selectedConnection.iconRect)) {
+        const r = relationships.find(r => r.id === selectedConnection.relationshipId);
+        if (r) {
+          r.connections = r.connections.filter(c => c.entityId !== selectedConnection.entityId);
+          saveState();
+          clearSelection();
+          draw();
         }
-        selectedSpecConnection = null;
-        saveState();
-        draw();
+        return;
+      }
+      if (hit && hit.type === "specialization-connection" && selectedSpecConnection && selectedSpecConnection.iconRect && isInsideRect(pos, selectedSpecConnection.iconRect)) {
+        const s = specializations.find(s => s.id === selectedSpecConnection.specializationId);
+        if (s) {
+          s.connections = s.connections.filter(c => c.entityId !== selectedSpecConnection.entityId || c.vertex !== selectedSpecConnection.vertex);
+          saveState();
+          clearSelection();
+          draw();
+        }
         return;
       }
 
       if (hit) {
         switch(hit.type) {
-          case "entity-delete":
-            entities = entities.filter(en => en.id !== hit.element.id);
-            attributes = attributes.filter(a => !(a.parentType==="entity" && a.parentId===hit.element.id));
-            relationships.forEach(r => {
-              r.connections = r.connections.filter(conn => conn.entityId !== hit.element.id);
-            });
-            specializations.forEach(s => {
-              if (s.connections) s.connections = s.connections.filter(conn => conn.entityId !== hit.element.id);
-            });
-            saveState();
-            draw();
-            return;
-          case "entity-link":
-            isDraggingConnection = true;
-            draggingConnection = {
-              type: "entity",
-              entity: hit.element,
-              start: {
-                x: hit.element.x + (hit.element.width || defaultEntityWidth)/2,
-                y: hit.element.y + (hit.element.height || defaultEntityHeight)/2
-              },
-              current: pos
-            };
-            return;
-          case "attribute-delete":
-            // Apaga o atributo e eventuais filhos
-            attributes = attributes.filter(a => a.id !== hit.element.id);
-            attributes = attributes.filter(a => !(a.parentType==="attribute" && a.parentId===hit.element.id));
-            saveState();
-            draw();
-            return;
-          case "attribute-pk":
-            hit.element.primary = !hit.element.primary;
-            saveState();
-            draw();
-            return;
-          case "relationship-delete":
-            relationships = relationships.filter(r => r.id !== hit.element.id);
-            attributes = attributes.filter(a => !(a.parentType==="relationship" && a.parentId===hit.element.id));
-            saveState();
-            draw();
-            return;
-          case "relationship-link":
-            isDraggingConnection = true;
-            draggingConnection = {
-              type: "relationship",
-              relationship: hit.element,
-              start: { x: hit.element.x, y: hit.element.y + relationshipSize/2 },
-              current: pos
-            };
-            return;
-          case "specialization-delete":
-            specializations = specializations.filter(s => s.id !== hit.element.id);
-            saveState();
-            draw();
-            return;
-          case "specialization-link":
-            isDraggingConnection = true;
-            draggingConnection = {
-              type: "specialization",
-              specialization: hit.element,
-              start: { x: hit.element.x, y: hit.element.y + (hit.element.size || defaultSpecializationSize)/2 },
-              current: pos
-            };
-            return;
           case "connection":
             clearSelection();
             selectedConnection = {
@@ -1415,43 +1230,43 @@
             return;
           case "entity":
           case "attribute":
+          case "derivedAttribute":
           case "relationship":
           case "specialization":
-            if (hit.element.selected) {
-              // Se já está selecionado, pode ser arraste de grupo
-              let selectedObjects = [];
-              entities.forEach(e => { if (e.selected) selectedObjects.push(e); });
-              attributes.forEach(a => { if (a.selected) selectedObjects.push(a); });
-              relationships.forEach(r => { if (r.selected) selectedObjects.push(r); });
-              specializations.forEach(s => { if (s.selected) selectedObjects.push(s); });
-              if (selectedObjects.length > 1) {
-                isDraggingGroup = true;
-                groupMouseStart = { x: pos.x, y: pos.y };
-                groupDragData = selectedObjects.map(obj => ({
-                  obj: obj,
-                  startX: obj.x,
-                  startY: obj.y
-                }));
-              } else {
-                isDraggingObject = true;
-                dragObject = hit.element;
-                dragOffset.x = pos.x - (hit.element.x || 0);
-                dragOffset.y = pos.y - (hit.element.y || 0);
-              }
-            } else {
+            // Se já estiver selecionado, mantém a seleção para permitir arrastar grupo
+            if (!hit.element.selected) {
               clearSelection();
               hit.element.selected = true;
+            }
+            let selectedObjects = [...entities, ...attributes, ...relationships, ...specializations].filter(obj => obj.selected);
+            if (selectedObjects.length > 1) {
+              isDraggingGroup = true;
+              groupMouseStart = pos;
+              groupDragData = selectedObjects.map(obj => ({
+                obj: obj,
+                startX: obj.x,
+                startY: obj.y
+              }));
+            } else {
               isDraggingObject = true;
               dragObject = hit.element;
-              dragOffset.x = pos.x - (hit.element.x || 0);
-              dragOffset.y = pos.y - (hit.element.y || 0);
+              dragOffset = { x: pos.x - hit.element.x, y: pos.y - hit.element.y };
+              submenuTimeout = setTimeout(() => {
+                if (!isDraggingObject && !isDraggingGroup) {
+                  showSubmenu(hit.element, pos.x, pos.y);
+                }
+              }, 200);
             }
-            saveState();
+            $(canvas).on("mousemove.drag", onCanvasMove);
+            $(canvas).on("mouseup.drag", () => {
+              $(canvas).off("mousemove.drag");
+              $(canvas).off("mouseup.drag");
+              onCanvasEnd(evt);
+            });
             draw();
             return;
         }
       } else {
-        // Seleção retangular
         clearSelection();
         isSelecting = true;
         selectionStart = pos;
@@ -1461,6 +1276,13 @@
     function onCanvasMove(evt) {
       evt.preventDefault();
       let pos = getMousePos(evt);
+      
+      if (isPanning) {
+        panOffset.x = panOffsetStart.x + (evt.clientX - panStart.x) / zoom;
+        panOffset.y = panOffsetStart.y + (evt.clientY - panStart.y) / zoom;
+        draw();
+        return;
+      }
       if (clickPlacementMode) {
         draggingNewObj = { type: draggingToolbarType, x: pos.x, y: pos.y };
         draw();
@@ -1509,26 +1331,45 @@
             resizingObject.height = newHeight;
           }
         } else if (resizingObject.objType === "attribute" || resizingObject.objType === "derivedAttribute") {
-          let newRadius = Math.max(Math.abs(pos.x - resizingObject.x), Math.abs(pos.y - resizingObject.y));
-          if(newRadius < 20) newRadius = 20;
-          resizingObject.radius = newRadius;
-        } else if (resizingObject.objType === "relationship") {
+  if (resizeHandleIndex === 0 || resizeHandleIndex === 1) {
+    // Arrastando alças esquerda/direita: baseie-se em newRadiusX
+    let newRadiusX = Math.abs(pos.x - resizingObject.x);
+    let newRadiusY = newRadiusX * resizingInitial.ratio;
+    
+    // Impõe mínimos, se desejar
+    if (newRadiusX < 20) {
+      newRadiusX = 20;
+      newRadiusY = newRadiusX * resizingInitial.ratio;
+    }
+
+    resizingObject.radiusX = newRadiusX;
+    resizingObject.radiusY = newRadiusY;
+
+  } else if (resizeHandleIndex === 2 || resizeHandleIndex === 3) {
+    // Arrastando alças superior/inferior: baseie-se em newRadiusY
+    let newRadiusY = Math.abs(pos.y - resizingObject.y);
+    let newRadiusX = newRadiusY / resizingInitial.ratio;
+
+    if (newRadiusY < 10) {
+      newRadiusY = 10;
+      newRadiusX = newRadiusY / resizingInitial.ratio;
+    }
+
+    resizingObject.radiusX = newRadiusX;
+    resizingObject.radiusY = newRadiusY;
+  }} else if (resizingObject.objType === "relationship") {
           let newSize = 2 * Math.max(Math.abs(pos.x - resizingObject.x), Math.abs(pos.y - resizingObject.y));
           if(newSize < 40) newSize = 40;
           resizingObject.size = newSize;
         } else if (resizingObject.objType === "specialization") {
-          let newSize = 2 * Math.max(Math.abs(pos.x - resizingObject.x), Math.abs(pos.y - resizingObject.y));
+          let newSize = Math.abs(pos.y - resizingObject.y) * (2 / (Math.sqrt(3)/3));
           if(newSize < 40) newSize = 40;
           resizingObject.size = newSize;
         }
         draw();
         return;
       }
-      if (isDraggingConnection && draggingConnection) {
-        draggingConnection.current = pos;
-        draw();
-        return;
-      }
+      
       if (isSelecting) {
         selectionRect.x = Math.min(selectionStart.x, pos.x);
         selectionRect.y = Math.min(selectionStart.y, pos.y);
@@ -1553,11 +1394,25 @@
         draw();
         return;
       }
+      if (isDraggingConnection && draggingConnection) {
+        draggingConnection.current = pos;
+        draw();
+        return;
+      }
     }
     function onCanvasEnd(evt) {
       evt.preventDefault();
       let pos = getMousePos(evt);
-      if (clickPlacementMode) return;
+      if (isPanning) {
+        isPanning = false;
+        return;
+      }
+      if (clickPlacementMode) {
+        createObjectAt(draggingToolbarType, pos.x, pos.y);
+        cleanupToolbarDrag();
+        draw();
+        return;
+      }
       if (draggingToolbarType) return;
 
       if (isResizing) {
@@ -1567,45 +1422,7 @@
         draw();
         return;
       }
-      if (isDraggingConnection && draggingConnection) {
-        let drop = getDraggableAt(pos.x, pos.y);
-        if (drop) {
-          if (draggingConnection.type === "relationship" && drop.type === "entity") {
-            if (!draggingConnection.relationship.connections.find(conn => conn.entityId === drop.element.id)) {
-              draggingConnection.relationship.connections.push({ entityId: drop.element.id, cardinality: "1,1" });
-            }
-          } else if (draggingConnection.type === "entity" && drop.type === "relationship") {
-            if (!drop.element.connections.find(conn => conn.entityId === draggingConnection.entity.id)) {
-              drop.element.connections.push({ entityId: draggingConnection.entity.id, cardinality: "1,1" });
-            }
-          } else if (draggingConnection.type === "specialization" && drop.type === "entity") {
-            let spec = draggingConnection.specialization;
-            let vertices = getSpecializationVertices(spec);
-            let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
-            let vertexIndex = distances.indexOf(Math.min(...distances));
-            if (!spec.connections) spec.connections = [];
-            if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === drop.element.id)) {
-              spec.connections.push({ vertex: vertexIndex, entityId: drop.element.id });
-            }
-          } else if (draggingConnection.type === "entity" && drop.type === "specialization") {
-            let spec = drop.element;
-            let vertices = getSpecializationVertices(spec);
-            let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
-            let vertexIndex = distances.indexOf(Math.min(...distances));
-            if (!spec.connections) spec.connections = [];
-            if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === draggingConnection.entity.id)) {
-              spec.connections.push({ vertex: vertexIndex, entityId: draggingConnection.entity.id });
-            }
-          }
-        }
-        isDraggingConnection = false;
-        draggingConnection = null;
-        saveState();
-        draw();
-        return;
-      }
       if (isSelecting) {
-        // Seleciona tudo que estiver dentro do retângulo
         entities.forEach(e => {
           let w = e.width || defaultEntityWidth, h = e.height || defaultEntityHeight;
           if (!(e.x+w < selectionRect.x || e.x > selectionRect.x+selectionRect.width ||
@@ -1614,14 +1431,15 @@
           }
         });
         attributes.forEach(a => {
-          let r = a.radius || defaultAttributeRadius;
-          if (!(a.x+r < selectionRect.x || a.x-r > selectionRect.x+selectionRect.width ||
-                a.y+r < selectionRect.y || a.y-r > selectionRect.y+selectionRect.height)) {
+          let rx = a.radiusX || defaultAttributeRadiusX;
+          let ry = a.radiusY || defaultAttributeRadiusY;
+          if (!(a.x+rx < selectionRect.x || a.x-rx > selectionRect.x+selectionRect.width ||
+                a.y+ry < selectionRect.y || a.y-ry > selectionRect.y+selectionRect.height)) {
             a.selected = true;
           }
         });
         relationships.forEach(r => {
-          let half = relationshipSize/2;
+          let half = (r.size || relationshipSize)/2;
           if (!(r.x+half < selectionRect.x || r.x-half > selectionRect.x+selectionRect.width ||
                 r.y+half < selectionRect.y || r.y-half > selectionRect.y+selectionRect.height)) {
             r.selected = true;
@@ -1651,296 +1469,432 @@
         dragObject = null;
         saveState();
         draw();
+        return;
+      }
+      if (isDraggingConnection) {
+        let drop = getDraggableAt(pos.x, pos.y);
+        if (drop) {
+          // Se arrastar de entidade para entidade, cria automaticamente um relacionamento (losango)
+          if (draggingConnection.type === "entity" && drop.type === "entity") {
+            if (draggingConnection.element.id !== drop.element.id) {
+              let source = draggingConnection.element;
+              let target = drop.element;
+              let sourceCenter = { x: source.x + (source.width || defaultEntityWidth)/2, y: source.y + (source.height || defaultEntityHeight)/2 };
+              let targetCenter = { x: target.x + (target.width || defaultEntityWidth)/2, y: target.y + (target.height || defaultEntityHeight)/2 };
+              let midX = (sourceCenter.x + targetCenter.x) / 2;
+              let midY = (sourceCenter.y + targetCenter.y) / 2;
+              let newR = {
+                id: relationshipIdCounter++,
+                x: midX,
+                y: midY,
+                size: relationshipSize,
+                name: "Relacionamento",
+                connections: [],
+                selected: false,
+                objType: "relationship"
+              };
+              relationships.push(newR);
+              newR.connections.push({ entityId: source.id, cardinality: "1,1" });
+              newR.connections.push({ entityId: target.id, cardinality: "1,1" });
+            }
+          } else if (draggingConnection.type === "relationship" && drop.type === "entity") {
+            if (!draggingConnection.element.connections.find(conn => conn.entityId === drop.element.id)) {
+              draggingConnection.element.connections.push({ entityId: drop.element.id, cardinality: "1,1" });
+            }
+          } else if (draggingConnection.type === "entity" && drop.type === "relationship") {
+            if (!drop.element.connections.find(conn => conn.entityId === draggingConnection.element.id)) {
+              drop.element.connections.push({ entityId: draggingConnection.element.id, cardinality: "1,1" });
+            }
+          } else if (draggingConnection.type === "specialization" && drop.type === "entity") {
+            let spec = draggingConnection.element;
+            let vertices = getSpecializationVertices(spec);
+            let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
+            let vertexIndex = distances.indexOf(Math.min(...distances));
+            if (!spec.connections) spec.connections = [];
+            if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === drop.element.id)) {
+              spec.connections.push({ vertex: vertexIndex, entityId: drop.element.id });
+            }
+          } else if (draggingConnection.type === "entity" && drop.type === "specialization") {
+            let spec = drop.element;
+            let vertices = getSpecializationVertices(spec);
+            let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
+            let vertexIndex = distances.indexOf(Math.min(...distances));
+            if (!spec.connections) spec.connections = [];
+            if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === draggingConnection.element.id)) {
+              spec.connections.push({ vertex: vertexIndex, entityId: draggingConnection.element.id });
+            }
+          }
+        }
+        isDraggingConnection = false;
+        draggingConnection = null;
+        saveState();
+        draw();
+        return;
       }
     }
 
-    // Eventos Touch
     canvas.addEventListener("touchstart", onCanvasStart);
     canvas.addEventListener("touchmove", onCanvasMove);
     canvas.addEventListener("touchend", onCanvasEnd);
     canvas.addEventListener("touchcancel", onCanvasEnd);
-    // Eventos Mouse
     canvas.addEventListener("mousedown", onCanvasStart);
     canvas.addEventListener("mousemove", onCanvasMove);
     canvas.addEventListener("mouseup", onCanvasEnd);
 
-    // Dblclick (para edição inline)
-    let inlineInput = null;
-    let inlineSelect = null;
-    let inlineSpecSelect = null;
+    let inlineInput = null, inlineSelect = null, inlineSpecSelect = null;
 
     canvas.addEventListener("dblclick", function(evt) {
-  if (draggingToolbarType) return;
-  let pos = getMousePos(evt);
-  let hit = getDraggableAt(pos.x, pos.y);
-
-  if (hit) {
-    // Se for uma Entidade, Atributo ou Relacionamento, abrimos o editor de texto
-    if (hit.type === "entity" || hit.type === "attribute" || hit.type === "relationship") {
-      let compX, compY;
-      if (hit.type === "entity") {
-        compX = hit.element.x + (hit.element.width || defaultEntityWidth)/2;
-        compY = hit.element.y + (hit.element.height || defaultEntityHeight)/2;
-      } else {
-        // Para atributo ou relacionamento, usamos o próprio x,y
-        compX = hit.element.x;
-        compY = hit.element.y;
+      if (submenuTimeout) { 
+        clearTimeout(submenuTimeout);
+        submenuTimeout = null;
       }
-      showInlineEditor(hit.element, compX, compY);
-
-    // Se for uma Especialização, abrimos o editor de tipo (T,C / T,D / P,C / P,D)
-    } else if (hit.type === "specialization") {
-      showSpecTypeEditor(hit.element, hit.element.x, hit.element.y);
-
-    // Se clicou na "conexão" (linha) entre relacionamento e entidade,
-    // abrimos o editor de cardinalidade
-    } else if (hit.type === "connection") {
-      const e = entities.find(en => en.id === hit.connection.entityId);
-      if (e) {
-        const rCenter = { x: hit.relationship.x, y: hit.relationship.y };
-        const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
-        // Borda do relacionamento (losango)
-        const rBoundary = getDiamondBorderPoint(
-          hit.relationship.x,
-          hit.relationship.y,
-          eCenter.x - hit.relationship.x,
-          eCenter.y - hit.relationship.y,
-          relationshipSize/2
-        );
-        // Borda da entidade (retângulo)
-        const eBoundary = getRectBorderPoint(
-          eCenter.x,
-          eCenter.y,
-          rCenter.x - eCenter.x,
-          rCenter.y - eCenter.y,
-          e.width/2,
-          e.height/2
-        );
-        // Posição intermediária para exibir editor de cardinalidade
-        const midX = (rBoundary.x + eBoundary.x) / 2;
-        const midY = (rBoundary.y + eBoundary.y) / 2;
-        showCardinalityEditor(hit.connection, midX, midY);
+      if (draggingToolbarType) return;
+      let pos = getMousePos(evt);
+      let hit = getDraggableAt(pos.x, pos.y);
+      if (hit) {
+        if (hit.type === "entity" || hit.type === "attribute" || hit.type === "relationship" || hit.type === "derivedAttribute") {
+          let compX = hit.type === "entity" ? hit.element.x + (hit.element.width || defaultEntityWidth)/2 : hit.element.x;
+          let compY = hit.type === "entity" ? hit.element.y + (hit.element.height || defaultEntityHeight)/2 : hit.element.y;
+          showInlineEditor(hit.element, compX, compY);
+        } else if (hit.type === "specialization") {
+          showSpecTypeEditor(hit.element, hit.element.x, hit.element.y);
+        } else if (hit.type === "connection") {
+          const e = entities.find(en => en.id === hit.connection.entityId);
+          if (e) {
+            const rCenter = { x: hit.relationship.x, y: hit.relationship.y };
+            const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
+            const rBoundary = getDiamondBorderPoint(hit.relationship.x, hit.relationship.y, eCenter.x - hit.relationship.x, eCenter.y - hit.relationship.y, hit.relationship.size/2);
+            const eBoundary = getRectBorderPoint(eCenter.x, eCenter.y, rCenter.x - eCenter.x, rCenter.y - eCenter.y, e.width/2, e.height/2);
+            const midX = (rBoundary.x + eBoundary.x) / 2;
+            const midY = (rBoundary.y + eBoundary.y) / 2;
+            showCardinalityEditor(hit.connection, midX, midY);
+          }
+        }
       }
+    });
+
+    function showInlineEditor(item, compX, compY) {
+      if (inlineInput) $(inlineInput).remove();
+      inlineInput = $("<input type='text' class='p-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white' />")
+        .val(item.name)
+        .css({
+          position: "absolute",
+          fontSize: "16px",
+          zIndex: 1000,
+          width: "160px",
+          left: (canvas.getBoundingClientRect().left + compX - 80) + "px",
+          top: (canvas.getBoundingClientRect().top + compY - 20) + "px"
+        });
+      $("body").append(inlineInput);
+      inlineInput.focus().select();
+      inlineInput.on("blur", function() {
+        item.name = inlineInput.val();
+        $(inlineInput).remove();
+        inlineInput = null;
+        saveState();
+        draw();
+      }).on("keydown", function(e) {
+        if (e.key === "Enter") inlineInput.blur();
+      });
     }
-  }
-});
 
-/**
- * Exibe um input de texto para editar o "nome" de entidades, atributos, relacionamentos.
- */
-function showInlineEditor(item, compX, compY) {
-  // Se já existir um input aberto, remove
-  if (inlineInput) {
-    $(inlineInput).remove();
-    inlineInput = null;
-  }
-
-  // Cria o input
-  inlineInput = $("<input type='text' class='p-1 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500' />")
-    .val(item.name)
-    .css({
-      position: "absolute",
-      fontSize: "16px",
-      zIndex: 1000,
-      width: "140px",
-      left: (canvas.getBoundingClientRect().left + compX - 70) + "px",
-      top: (canvas.getBoundingClientRect().top + compY - 18) + "px"
-    });
-
-  $("body").append(inlineInput);
-  inlineInput.focus().select();
-
-  // Ao perder foco, atualiza o nome e remove o input
-  inlineInput.on("blur", function() {
-    item.name = inlineInput.val();
-    $(inlineInput).remove();
-    inlineInput = null;
-    saveState();
-    draw();
-  }).on("keydown", function(e) {
-    if(e.key === "Enter") {
-      inlineInput.blur();
+    function showSpecTypeEditor(spec, compX, compY) {
+      if (inlineSpecSelect) $(inlineSpecSelect).remove();
+        let canvasRect = canvas.getBoundingClientRect();
+        let screenX = canvasRect.left + (compX + panOffset.x) * zoom;
+        let screenY = canvasRect.top + (compY + panOffset.y) * zoom;
+        inlineSpecSelect = $("<select class='p-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white'></select>")
+          .css({
+            position: "absolute",
+            fontSize: "16px",
+            zIndex: 1000,
+            width: "100px",
+            left: (screenX - 50) + "px",
+            top: (screenY - 20) + "px"
+          });
+      const options = ["T,C", "T,D", "P,C", "P,D"];
+      options.forEach(opt => {
+        const option = $("<option></option>").val(opt).text(opt);
+        if (opt === spec.genType) option.prop("selected", true);
+        inlineSpecSelect.append(option);
+      });
+      $("body").append(inlineSpecSelect);
+      inlineSpecSelect.focus();
+      inlineSpecSelect.on("change", function() {
+        spec.genType = inlineSpecSelect.val();
+        $(inlineSpecSelect).remove();
+        inlineSpecSelect = null;
+        saveState();
+        draw();
+      }).on("blur", function() {
+        $(inlineSpecSelect).remove();
+        inlineSpecSelect = null;
+      });
     }
-  });
-}
 
-/**
- * Exibe um select para editar o tipo de Especialização/Generalização (T,C / T,D / P,C / P,D).
- */
-function showSpecTypeEditor(spec, compX, compY) {
-  // Se já existir um select aberto, remove
-  if (inlineSpecSelect) {
-    $(inlineSpecSelect).remove();
-    inlineSpecSelect = null;
-  }
+    function showCardinalityEditor(connection, compX, compY) {
+      if (inlineSelect) $(inlineSelect).remove();
+      inlineSelect = $("<select class='p-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white'></select>")
+        .css({
+          position: "absolute",
+          fontSize: "16px",
+          zIndex: 1000,
+          width: "100px",
+          left: (canvas.getBoundingClientRect().left + compX - 50) + "px",
+          top: (canvas.getBoundingClientRect().top + compY - 20) + "px"
+        });
+      const options = ["0,N", "1,N", "0,1", "1,1"];
+      options.forEach(opt => {
+        const option = $("<option></option>").val(opt).text(opt);
+        if (opt === connection.cardinality) option.prop("selected", true);
+        inlineSelect.append(option);
+      });
+      $("body").append(inlineSelect);
+      inlineSelect.focus();
+      inlineSelect.on("change", function() {
+        connection.cardinality = inlineSelect.val();
+        $(inlineSelect).remove();
+        inlineSelect = null;
+        saveState();
+        draw();
+      }).on("blur", function() {
+        $(inlineSelect).remove();
+        inlineSelect = null;
+      });
+    }
 
-  // Cria o select
-  inlineSpecSelect = $("<select class='p-1 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500'></select>")
-    .css({
-      position: "absolute",
-      fontSize: "16px",
-      zIndex: 1000,
-      width: "80px",
-      left: (canvas.getBoundingClientRect().left + compX - 40) + "px",
-      top: (canvas.getBoundingClientRect().top + compY - 18) + "px"
+    function showSubmenu(element, x, y) {
+      if (submenu) $(submenu).remove();
+      submenu = document.createElement("div");
+      submenu.className = "submenu";
+      document.body.appendChild(submenu);
+
+      let items = [];
+      if (element.objType === "entity" || element.objType === "relationship" || element.objType === "specialization") {
+        items.push({
+          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+          label: "Deletar",
+          action: () => {
+            if (element.objType === "entity") {
+              entities = entities.filter(e => e.id !== element.id);
+              attributes = attributes.filter(a => !(a.parentType === "entity" && a.parentId === element.id));
+              relationships.forEach(r => r.connections = r.connections.filter(c => c.entityId !== element.id));
+              specializations.forEach(s => s.connections = s.connections.filter(c => c.entityId !== element.id));
+            } else if (element.objType === "relationship") {
+              relationships = relationships.filter(r => r.id !== element.id);
+              attributes = attributes.filter(a => !(a.parentType === "relationship" && a.parentId === element.id));
+            } else if (element.objType === "specialization") {
+              specializations = specializations.filter(s => s.id !== element.id);
+            }
+            saveState();
+            clearSelection();
+            draw();
+          }
+        });
+        items.push({
+          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
+          label: "Relacionar",
+          action: () => {
+            isDraggingConnection = true;
+            draggingConnection = {
+              type: element.objType,
+              element: element,
+              start: { x: element.x + (element.width || element.size || 0)/2, y: element.y + (element.height || element.size || 0)/2 },
+              current: { x: x, y: y }
+            };
+            clearSelection();
+            draw();
+          }
+        });
+      }
+      if (element.objType === "attribute") {
+        items.push({
+          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+          label: "Deletar",
+          action: () => {
+            attributes = attributes.filter(a => a.id !== element.id);
+            attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
+            saveState();
+            clearSelection();
+            draw();
+          }
+        });
+        items.push({
+          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16"/></svg>',
+          label: element.primary ? "Remover Chave" : "Definir Chave",
+          action: () => {
+            element.primary = !element.primary;
+            saveState();
+            clearSelection();
+            draw();
+          }
+        });
+      }
+      if (element.objType === "derivedAttribute") {
+        items.push({
+          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+          label: "Deletar",
+          action: () => {
+            attributes = attributes.filter(a => a.id !== element.id);
+            attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
+            saveState();
+            clearSelection();
+            draw();
+          }
+        });
+      }
+
+      items.forEach(item => {
+        let div = document.createElement("div");
+        div.className = "submenu-item";
+        div.innerHTML = `${item.icon}<span class="text-white">${item.label}</span>`;
+        div.onclick = item.action;
+        submenu.appendChild(div);
+      });
+
+      // Calcule as coordenadas do objeto em tela, considerando panOffset e zoom:
+  let rect = element.objType === "entity" 
+      ? { x: element.x, y: element.y, width: element.width, height: element.height }
+      : (element.objType === "attribute" || element.objType === "derivedAttribute") 
+          ? { x: element.x - element.radiusX, y: element.y - element.radiusY, width: element.radiusX * 2, height: element.radiusY * 2 }
+          : element.objType === "relationship" 
+              ? { x: element.x - element.size/2, y: element.y - element.size/2, width: element.size, height: element.size }
+              : { x: element.x - element.size/2, y: element.y - element.size/2, width: element.size, height: element.size };
+
+      let canvasRect = canvas.getBoundingClientRect();
+      let screenX = canvasRect.left + (rect.x + panOffset.x) * zoom;
+      let screenY = canvasRect.top + (rect.y + panOffset.y) * zoom;
+      let screenWidth = rect.width * zoom;
+      let screenHeight = rect.height * zoom;
+      let submenuX = screenX + (screenWidth / 2) - (submenu.offsetWidth / 2);
+      let submenuY = screenY + screenHeight + 10;
+
+      if (submenuX < 0) submenuX = 0;
+      if (submenuX + submenu.offsetWidth > window.innerWidth) submenuX = window.innerWidth - submenu.offsetWidth;
+      if (submenuY + submenu.offsetHeight > window.innerHeight) submenuY = screenY - submenu.offsetHeight - 10;
+      submenu.style.left = `${submenuX}px`;
+      submenu.style.top = `${submenuY}px`;
+      submenuRect = {
+        x: submenuX - canvasRect.left,
+        y: submenuY - canvasRect.top,
+        width: submenu.offsetWidth,
+        height: submenu.offsetHeight
+      };  
+    }
+
+    function getSubmenuHit(x, y) {
+      if (!submenu || !isInsideRect({x,y}, submenuRect)) return null;
+      let items = submenu.children;
+      for (let i = 0; i < items.length; i++) {
+        let rect = items[i].getBoundingClientRect();
+        let canvasRect = canvas.getBoundingClientRect();
+        let itemRect = {
+          x: rect.left - canvasRect.left,
+          y: rect.top - canvasRect.top,
+          width: rect.width,
+          height: rect.height
+        };
+        if (isInsideRect({x,y}, itemRect)) {
+          return { action: items[i].onclick };
+        }
+      }
+      return null;
+    }
+
+    // Listener para ESC e Delete (exclusão dos objetos selecionados)
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape") {
+        if (isDraggingConnection) {
+          isDraggingConnection = false;
+          draggingConnection = null;
+          draw();
+        }
+        if (draggingToolbarType) {
+          cleanupToolbarDrag();
+          draw();
+        }
+      } else if (e.key === "Delete") {
+        deleteSelectedObjects();
+      }
+    });
+    function deleteSelectedObjects() {
+      const deletedEntityIds = entities.filter(e => e.selected).map(e => e.id);
+      const deletedRelationshipIds = relationships.filter(r => r.selected).map(r => r.id);
+      entities = entities.filter(e => !e.selected);
+      relationships = relationships.filter(r => !r.selected);
+      specializations = specializations.filter(s => !s.selected);
+      attributes = attributes.filter(a => {
+        if (a.selected) return false;
+        if (a.parentType === "entity" && deletedEntityIds.includes(a.parentId)) return false;
+        if (a.parentType === "relationship" && deletedRelationshipIds.includes(a.parentId)) return false;
+        return true;
+      });
+      relationships.forEach(r => {
+        r.connections = r.connections.filter(c => !deletedEntityIds.includes(c.entityId));
+      });
+      specializations.forEach(s => {
+        if (s.connections) s.connections = s.connections.filter(c => !deletedEntityIds.includes(c.entityId));
+      });
+      saveState();
+      clearSelection();
+      draw();
+    }
+
+    document.getElementById("btnEntity").addEventListener("mousedown", (e) => startToolbarDrag("entity", e));
+    document.getElementById("btnAttribute").addEventListener("mousedown", (e) => startToolbarDrag("attribute", e));
+    document.getElementById("btnDerivedAttribute").addEventListener("mousedown", (e) => startToolbarDrag("derivedAttribute", e));
+    document.getElementById("btnRelationship").addEventListener("mousedown", (e) => startToolbarDrag("relationship", e));
+    document.getElementById("btnSpecialization").addEventListener("mousedown", (e) => startToolbarDrag("specialization", e));
+    document.getElementById("btnIncreaseFont").addEventListener("click", () => { fontSize += 2; draw(); });
+    document.getElementById("btnDecreaseFont").addEventListener("click", () => { fontSize = Math.max(8, fontSize - 2); draw(); });
+    document.getElementById("btnClear").addEventListener("click", () => {
+      saveState();
+      entities = [];
+      attributes = [];
+      relationships = [];
+      specializations = [];
+      clearSelection();
+      draw();
+    });
+    document.getElementById("btnExport").addEventListener("click", () => {
+      const exportScale = 3; // Fator de escala para maior qualidade (ajuste se necessário)
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = canvas.width * exportScale;
+      exportCanvas.height = canvas.height * exportScale;
+      const exportCtx = exportCanvas.getContext("2d");
+      exportCtx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+      // Aplique as mesmas transformações de pan e zoom (multiplicadas pelo exportScale)
+      exportCtx.translate(panOffset.x * exportScale, panOffset.y * exportScale);
+      exportCtx.scale(zoom * exportScale, zoom * exportScale);
+      // Desenha o conteúdo (use drawAll para renderizar somente o modelo)
+      drawAll(exportCtx);
+      const dataUrl = exportCanvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = "modelagem_conceitual.png";
+      link.click();
+    });
+    document.getElementById("btnUndo").addEventListener("click", undo);
+    document.getElementById("btnRedo").addEventListener("click", redo);
+
+    document.getElementById("hamburger").addEventListener("click", () => {
+      sidebar.classList.toggle("expanded");
+      resizeCanvas();
     });
 
-  // Opções possíveis
-  const options = ["T,C", "T,D", "P,C", "P,D"];
-  options.forEach(opt => {
-    const option = $("<option></option>").val(opt).text(opt);
-    if (opt === spec.genType) option.prop("selected", true);
-    inlineSpecSelect.append(option);
-  });
-
-  $("body").append(inlineSpecSelect);
-  inlineSpecSelect.focus();
-
-  // Ao mudar valor ou perder foco, aplica e remove
-  inlineSpecSelect.on("change", function() {
-    spec.genType = inlineSpecSelect.val();
-    $(inlineSpecSelect).remove();
-    inlineSpecSelect = null;
-    saveState();
-    draw();
-  }).on("blur", function() {
-    $(inlineSpecSelect).remove();
-    inlineSpecSelect = null;
-  });
-}
-
-/**
- * Exibe um select para editar a cardinalidade de uma conexão (0,N / 1,N / 0,1 / 1,1).
- */
-function showCardinalityEditor(connection, compX, compY) {
-  // Se já existir um select aberto, remove
-  if (inlineSelect) {
-    $(inlineSelect).remove();
-    inlineSelect = null;
-  }
-
-  // Cria o select
-  inlineSelect = $("<select class='p-1 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500'></select>")
-    .css({
-      position: "absolute",
-      fontSize: "16px",
-      zIndex: 1000,
-      width: "80px",
-      left: (canvas.getBoundingClientRect().left + compX - 40) + "px",
-      top: (canvas.getBoundingClientRect().top + compY - 18) + "px"
+    // Controles de zoom
+    document.getElementById("btnZoomIn").addEventListener("click", () => {
+      zoom *= 1.1;
+      draw();
+    });
+    document.getElementById("btnZoomOut").addEventListener("click", () => {
+      zoom /= 1.1;
+      draw();
     });
 
-  // Opções de cardinalidade
-  const options = ["0,N", "1,N", "0,1", "1,1"];
-  options.forEach(opt => {
-    const option = $("<option></option>").val(opt).text(opt);
-    if (opt === connection.cardinality) option.prop("selected", true);
-    inlineSelect.append(option);
-  });
-
-  $("body").append(inlineSelect);
-  inlineSelect.focus();
-
-  // Ao mudar valor ou perder foco, aplica e remove
-  inlineSelect.on("change", function() {
-    connection.cardinality = inlineSelect.val();
-    $(inlineSelect).remove();
-    inlineSelect = null;
+    resizeCanvas();
     saveState();
     draw();
-  }).on("blur", function() {
-    $(inlineSelect).remove();
-    inlineSelect = null;
-  });
-}
-
-/**
- * Inicialização: redimensiona o canvas e faz o primeiro draw.
- */
-function init() {
-  resizeCanvas();
-  saveState();
-  draw();
-}
-init();
-
-/* ====== Event Listeners dos botões da Toolbar ====== */
-$("#btnEntity").on("mousedown", function(e) {
-  startToolbarDrag("entity", e);
-});
-$("#btnAttribute").on("mousedown", function(e) {
-  startToolbarDrag("attribute", e);
-});
-$("#btnDerivedAttribute").on("mousedown", function(e) {
-  startToolbarDrag("derivedAttribute", e);
-});
-$("#btnRelationship").on("mousedown", function(e) {
-  startToolbarDrag("relationship", e);
-});
-$("#btnSpecialization").on("mousedown", function(e) {
-  startToolbarDrag("specialization", e);
-});
-
-$("#btnIncreaseFont").on("click", function() {
-  fontSize += 2;
-  draw();
-});
-$("#btnDecreaseFont").on("click", function() {
-  if (fontSize > 6) {
-    fontSize -= 2;
-    draw();
-  }
-});
-
-$("#btnClear").on("click", function() {
-  entities = [];
-  attributes = [];
-  relationships = [];
-  specializations = [];
-  clearSelection();
-  saveState();
-  draw();
-});
-
-$("#btnExport").on("click", function() {
-  const scaleFactor = 3;
-  const exportCanvas = document.createElement("canvas");
-  exportCanvas.width = mainWidth * scaleFactor;
-  exportCanvas.height = mainHeight * scaleFactor;
-  const exportCtx = exportCanvas.getContext("2d");
-  exportCtx.fillStyle = "#ffffff";
-  exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-
-  exportCtx.save();
-  exportCtx.scale(scaleFactor, scaleFactor);
-  drawAll(exportCtx);
-  exportCtx.restore();
-
-  const dataURL = exportCanvas.toDataURL("image/png");
-  const link = document.createElement("a");
-  link.download = "modelo_conceitual.png";
-  link.href = dataURL;
-  link.click();
-});
-
-$("#btnUndo").on("click", function() {
-  undo();
-});
-$("#btnRedo").on("click", function() {
-  redo();
-});
-
-// Atalhos de teclado para Undo/Redo
-$(window).on("keydown", function(evt) {
-  if (evt.ctrlKey && evt.key === "z") {
-    evt.preventDefault();
-    undo();
-  } else if (evt.ctrlKey && evt.key === "y") {
-    evt.preventDefault();
-    redo();
-  }
-});
-</script>
+  </script>
 </body>
 </html>
-
