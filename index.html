@@ -216,6 +216,8 @@
     const ctx = canvas.getContext("2d");
     const sidebar = document.getElementById("sidebar");
 
+    
+
     // Fator de zoom global (inicial = 1)
     let zoom = 1;
 
@@ -284,6 +286,7 @@
 
     let entities = [], attributes = [], relationships = [], specializations = [];
     let entityIdCounter = 0, attributeIdCounter = 0, relationshipIdCounter = 0, specializationIdCounter = 0;
+    let undoStack = [], redoStack = [];
     const defaultEntityWidth = 160, defaultEntityHeight = 80;
     const defaultAttributeRadiusX = 40, defaultAttributeRadiusY = 20, relationshipSize = 120, defaultSpecializationSize = 100;
     let fontSize = 16;
@@ -308,8 +311,10 @@
       specialization: { fill: "#facc15", stroke: "#ca8a04" }
     };
 
-    let undoStack = [], redoStack = [];
+    
+
     function saveState() {
+      // Salva no stack de Undo/Redo
       const state = {
         entities: JSON.parse(JSON.stringify(entities)),
         attributes: JSON.parse(JSON.stringify(attributes)),
@@ -318,7 +323,88 @@
       };
       undoStack.push(state);
       redoStack = [];
+
+      // Salva também no localStorage
+      saveToLocalStorage();
     }
+
+    function saveToLocalStorage() {
+    const currentData = {
+      entities,
+      attributes,
+      relationships,
+      specializations,
+      entityIdCounter,
+      attributeIdCounter,
+      relationshipIdCounter,
+      specializationIdCounter
+    };
+    localStorage.setItem("diagramData", JSON.stringify(currentData));
+  }
+
+  function loadFromLocalStorage() {
+    const dataStr = localStorage.getItem("diagramData");
+    if (!dataStr) return; // não tem nada salvo ainda
+
+    try {
+      const data = JSON.parse(dataStr);
+
+      // Restaura arrays
+      entities = data.entities || [];
+      attributes = data.attributes || [];
+      relationships = data.relationships || [];
+      specializations = data.specializations || [];
+
+      // Restaura contadores (se quiser manter consistência)
+      entityIdCounter = data.entityIdCounter || 0;
+      attributeIdCounter = data.attributeIdCounter || 0;
+      relationshipIdCounter = data.relationshipIdCounter || 0;
+      specializationIdCounter = data.specializationIdCounter || 0;
+
+    } catch (err) {
+      console.error("Falha ao carregar do localStorage:", err);
+    }
+  }
+  
+  function saveToLocalStorage() {
+      const currentData = {
+        entities,
+        attributes,
+        relationships,
+        specializations,
+        entityIdCounter,
+        attributeIdCounter,
+        relationshipIdCounter,
+        specializationIdCounter
+      };
+      localStorage.setItem("diagramData", JSON.stringify(currentData));
+    }
+
+    function loadFromLocalStorage() {
+      const dataStr = localStorage.getItem("diagramData");
+      if (!dataStr) return; // não tem nada salvo ainda
+
+      try {
+        const data = JSON.parse(dataStr);
+
+        // Restaura arrays
+        entities = data.entities || [];
+        attributes = data.attributes || [];
+        relationships = data.relationships || [];
+        specializations = data.specializations || [];
+
+        // Restaura contadores (se quiser manter consistência)
+        entityIdCounter = data.entityIdCounter || 0;
+        attributeIdCounter = data.attributeIdCounter || 0;
+        relationshipIdCounter = data.relationshipIdCounter || 0;
+        specializationIdCounter = data.specializationIdCounter || 0;
+
+      } catch (err) {
+        console.error("Falha ao carregar do localStorage:", err);
+      }
+    }
+
+     // Adapte sua restoreState (usada para Undo/Redo) para chamar draw() ao final
     function restoreState(state) {
       entities = JSON.parse(JSON.stringify(state.entities));
       attributes = JSON.parse(JSON.stringify(state.attributes));
@@ -326,6 +412,26 @@
       specializations = JSON.parse(JSON.stringify(state.specializations));
       draw();
     }
+
+    // Exemplo de evento que roda quando a página terminou de carregar
+    window.addEventListener("DOMContentLoaded", () => {
+      // 1) Ajusta canvas
+      resizeCanvas();
+
+      // 2) Carrega do localStorage
+      loadFromLocalStorage();
+
+      // 3) Se, depois de carregar, estiver tudo vazio, grava um estado inicial
+      if (entities.length === 0 && attributes.length === 0 &&
+          relationships.length === 0 && specializations.length === 0) {
+        saveState(); // estado inicial vazio
+      }
+
+      // 4) Finalmente, desenha
+      draw();
+    });
+
+
     function undo() {
       if (undoStack.length > 0) {
         const currentState = {
@@ -2333,6 +2439,15 @@ function drawSpecConnectionLine(context, spec, conn, e) {
 
     function showInlineEditor(item, compX, compY) {
       if (inlineInput) $(inlineInput).remove();
+      
+      // 1) Pega o bounding do canvas
+      let rect = canvas.getBoundingClientRect();
+      
+      // 2) Converte (compX, compY) do “mundo” para tela
+      let screenX = rect.left + (compX + panOffset.x) * zoom;
+      let screenY = rect.top  + (compY + panOffset.y) * zoom;
+      
+      // 3) Cria o input na posição correta
       inlineInput = $("<input type='text' class='p-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white' />")
         .val(item.name)
         .css({
@@ -2340,11 +2455,14 @@ function drawSpecConnectionLine(context, spec, conn, e) {
           fontSize: "16px",
           zIndex: 1000,
           width: "160px",
-          left: (canvas.getBoundingClientRect().left + compX - 80) + "px",
-          top: (canvas.getBoundingClientRect().top + compY - 20) + "px"
+          // Ajuste se quiser centralizar exatamente no compX, compY
+          left: (screenX - 80) + "px",
+          top:  (screenY - 20) + "px"
         });
+      
       $("body").append(inlineInput);
       inlineInput.focus().select();
+      
       inlineInput.on("blur", function() {
         item.name = inlineInput.val();
         $(inlineInput).remove();
@@ -2390,23 +2508,31 @@ function drawSpecConnectionLine(context, spec, conn, e) {
       });
     }
 
+
     function showCardinalityEditor(connection, compX, compY) {
       if (inlineSelect) $(inlineSelect).remove();
+
+      let rect = canvas.getBoundingClientRect();
+      let screenX = rect.left + (compX + panOffset.x) * zoom;
+      let screenY = rect.top  + (compY + panOffset.y) * zoom;
+
       inlineSelect = $("<select class='p-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white'></select>")
         .css({
           position: "absolute",
           fontSize: "16px",
           zIndex: 1000,
           width: "100px",
-          left: (canvas.getBoundingClientRect().left + compX - 50) + "px",
-          top: (canvas.getBoundingClientRect().top + compY - 20) + "px"
+          left: (screenX - 50) + "px",
+          top:  (screenY - 20) + "px"
         });
+
       const options = ["0,N", "1,N", "0,1", "1,1"];
       options.forEach(opt => {
         const option = $("<option></option>").val(opt).text(opt);
         if (opt === connection.cardinality) option.prop("selected", true);
         inlineSelect.append(option);
       });
+
       $("body").append(inlineSelect);
       inlineSelect.focus();
       inlineSelect.on("change", function() {
@@ -2420,6 +2546,8 @@ function drawSpecConnectionLine(context, spec, conn, e) {
         inlineSelect = null;
       });
     }
+
+    
 
     function showSubmenu(element, x, y) {
       if (submenu) $(submenu).remove();
@@ -2652,6 +2780,7 @@ function drawSpecConnectionLine(context, spec, conn, e) {
       clearSelection();
       draw();
     });
+    
     document.getElementById("btnExport").addEventListener("click", () => {
       const exportScale = 3; // Fator de escala para maior qualidade (ajuste se necessário)
       const exportCanvas = document.createElement("canvas");
