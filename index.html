@@ -225,6 +225,15 @@
     let panOffsetStart = { x: 0, y: 0 };
     let isSpacePressed = false;
 
+    
+
+    let breakpointTimeout = null;
+    let isDraggingBreakpoint = false;
+    let activeBreakpoint = null;  // Guarda { connection, index } do breakpoint atual
+    let pendingConnectionHit = null; // Guarda o hit de conexão para diferenciar click curto de longo
+
+      
+
     document.addEventListener('mousedown', function(e) {
       if (inlineInput && !$(e.target).is(inlineInput) && $(e.target).closest(inlineInput).length === 0) {
         inlineInput.blur();
@@ -731,30 +740,60 @@
       }
     }
 
+
     function drawConnectionLine(context, r, conn, e) {
       const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
-      const rCenter = { x: r.x, y: r.y };
       const rBoundary = getDiamondBorderPoint(r.x, r.y, eCenter.x - r.x, eCenter.y - r.y, r.size/2);
       const eBoundary = getRectBorderPoint(eCenter.x, eCenter.y, r.x - eCenter.x, r.y - eCenter.y, e.width/2, e.height/2);
+
+      // Destaca a espessura se for a conexão selecionada
       context.lineWidth = (selectedConnection && selectedConnection.relationshipId === r.id && selectedConnection.entityId === conn.entityId) ? 4 : 2;
       context.strokeStyle = "#000000";
       context.beginPath();
-      context.moveTo(rBoundary.x, rBoundary.y);
-      context.lineTo(eBoundary.x, eBoundary.y);
+
+      // Se houver breakpoints, desenha em segmentos
+      if (conn.breakpoints && conn.breakpoints.length > 0) {
+        context.moveTo(rBoundary.x, rBoundary.y);
+        for (let bp of conn.breakpoints) {
+          context.lineTo(bp.x, bp.y);
+        }
+        context.lineTo(eBoundary.x, eBoundary.y);
+      } else {
+        // Sem breakpoints, apenas uma linha reta
+        context.moveTo(rBoundary.x, rBoundary.y);
+        context.lineTo(eBoundary.x, eBoundary.y);
+      }
       context.stroke();
+
+      // Desenha as "bolinhas" de cada breakpoint
+      if (conn.breakpoints && conn.breakpoints.length > 0) {
+        for (let i = 0; i < conn.breakpoints.length; i++) {
+          let bp = conn.breakpoints[i];
+          context.beginPath();
+          context.arc(bp.x, bp.y, 5, 0, 2*Math.PI);
+          context.fillStyle = "#ff0000"; // Cor da bolinha
+          context.fill();
+        }
+      }
+
+      // Cálculo e desenho da cardinalidade
       const midX = (rBoundary.x + eBoundary.x) / 2;
       const midY = (rBoundary.y + eBoundary.y) / 2;
       const cardX = midX + (eBoundary.x - rBoundary.x) * 0.25;
       const cardY = midY + (eBoundary.y - rBoundary.y) * 0.25;
       context.fillStyle = "#000000";
       context.fillText(conn.cardinality, cardX, cardY - 5);
+
+      // Exemplo de labelRect, se quiser detectar clique no texto
       const textWidth = context.measureText(conn.cardinality).width;
       conn.labelRect = {
         x: cardX - textWidth / 2,
-        y: (cardY - 5) - fontSize,  // aproximado; ajuste conforme necessário
+        y: (cardY - 5) - fontSize,
         width: textWidth,
         height: fontSize
       };
+
+      // Ícone de exclusão se a conexão estiver selecionada
       if (selectedConnection && selectedConnection.relationshipId === r.id && selectedConnection.entityId === conn.entityId) {
         let iconSize = globalIconSize + 4;
         context.save();
@@ -762,22 +801,20 @@
         context.beginPath();
         const delX = midX - (eBoundary.x - rBoundary.x) * 0.25;
         const delY = midY - (eBoundary.y - rBoundary.y) * 0.25;
-        context.arc(delX, delY, iconSize/2, 0, 2*Math.PI);
+        context.arc(delX, delY, iconSize / 2, 0, 2 * Math.PI);
         context.fill();
         context.strokeStyle = "#ffffff";
         context.lineWidth = 2;
         context.beginPath();
-        context.moveTo(delX - iconSize/4, delY - iconSize/4);
-        context.lineTo(delX + iconSize/4, delY + iconSize/4);
-        context.moveTo(delX + iconSize/4, delY - iconSize/4);
-        context.lineTo(delX - iconSize/4, delY + iconSize/4);
+        context.moveTo(delX - iconSize / 4, delY - iconSize / 4);
+        context.lineTo(delX + iconSize / 4, delY + iconSize / 4);
+        context.moveTo(delX + iconSize / 4, delY - iconSize / 4);
+        context.lineTo(delX - iconSize / 4, delY + iconSize / 4);
         context.stroke();
         context.restore();
-        selectedConnection.iconRect = { x: delX - iconSize/2, y: delY - iconSize/2, width: iconSize, height: iconSize };
+        selectedConnection.iconRect = { x: delX - iconSize / 2, y: delY - iconSize / 2, width: iconSize, height: iconSize };
       }
-
     }
-
     function drawSpecConnectionLine(context, spec, conn, e) {
       let vertex = getSpecializationVertices(spec)[conn.vertex];
       const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
@@ -1141,6 +1178,14 @@
     function onCanvasStart(evt) {
       evt.preventDefault();
       let pos = getMousePos(evt);
+      let hit = getDraggableAt(pos.x, pos.y); 
+
+      if (hit && hit.type === "breakpoint") {
+        isDraggingBreakpoint = true;
+        activeBreakpoint = { connection: hit.connection, index: hit.index };
+        return; // Evita seleção de outra coisa
+      }
+
       if (isSpacePressed) {
         isPanning = true;
         panStart = { x: evt.clientX, y: evt.clientY };
@@ -1155,7 +1200,7 @@
       }
       if (draggingToolbarType) return;
 
-      let hit = getDraggableAt(pos.x, pos.y);
+      
       if (hit && hit.type === "resize") {
         isResizing = true;
         resizingObject = hit.element;
@@ -1183,15 +1228,23 @@
         if (submenuHit) submenuHit.action();
         return;
       }
-      if (hit && hit.type === "connection" && selectedConnection && selectedConnection.iconRect && isInsideRect(pos, selectedConnection.iconRect)) {
-        const r = relationships.find(r => r.id === selectedConnection.relationshipId);
-        if (r) {
-          r.connections = r.connections.filter(c => c.entityId !== selectedConnection.entityId);
-          saveState();
+      if (hit && hit.type === "connection") {
+        // Armazena o hit para uso no onCanvasEnd caso seja um clique curto
+        pendingConnectionHit = hit;
+        breakpointTimeout = setTimeout(() => {
+          isDraggingBreakpoint = true;
+          pendingConnectionHit = null; // Agora a ação é de breakpoint
+          // Se ainda não existir array de breakpoints, inicialize-o
+          if (!hit.connection.breakpoints) {
+            hit.connection.breakpoints = [];
+          }
+          // Adiciona um novo breakpoint na posição atual
+          hit.connection.breakpoints.push({ x: pos.x, y: pos.y });
+          activeBreakpoint = { connection: hit.connection, index: hit.connection.breakpoints.length - 1 };
           clearSelection();
           draw();
-        }
-        return;
+        }, 300);
+        // Não retorne imediatamente, permitindo que o timeout seja cancelado se o clique for curto
       }
       if (hit && hit.type === "specialization-connection" && selectedSpecConnection && selectedSpecConnection.iconRect && isInsideRect(pos, selectedSpecConnection.iconRect)) {
         const s = specializations.find(s => s.id === selectedSpecConnection.specializationId);
@@ -1273,6 +1326,18 @@
     function onCanvasMove(evt) {
       evt.preventDefault();
       let pos = getMousePos(evt);
+
+      if (isDraggingBreakpoint && activeBreakpoint) {
+        activeBreakpoint.connection.breakpoints[activeBreakpoint.index] = { x: pos.x, y: pos.y };
+        draw();
+        return;
+      }
+
+      if (isDraggingBreakpoint && activeBreakpoint) {
+        activeBreakpoint.connection.breakpoints[activeBreakpoint.index] = { x: pos.x, y: pos.y };
+        draw();
+        return;
+      }
       
       if (isPanning) {
         panOffset.x = panOffsetStart.x + (evt.clientX - panStart.x) / zoom;
@@ -1400,134 +1465,168 @@
     function onCanvasEnd(evt) {
       evt.preventDefault();
       let pos = getMousePos(evt);
-      if (isPanning) {
-        isPanning = false;
-        return;
-      }
-      if (clickPlacementMode) {
-        createObjectAt(draggingToolbarType, pos.x, pos.y);
-        cleanupToolbarDrag();
-        draw();
-        return;
-      }
-      if (draggingToolbarType) return;
 
-      if (isResizing) {
-        isResizing = false;
-        resizingObject = null;
+      if (isDraggingBreakpoint) {
+        isDraggingBreakpoint = false;
+        activeBreakpoint = null;
+        saveState(); // Salva a nova posição do breakpoint
+        draw();
+        return;
+      }
+
+      if (breakpointTimeout) {
+        clearTimeout(breakpointTimeout);
+        breakpointTimeout = null;
+      }
+      if (pendingConnectionHit) {
+        // Se o timeout não disparou, trata-se de um clique curto: seleciona a conexão normalmente.
+        clearSelection();
+        selectedConnection = {
+          relationshipId: pendingConnectionHit.relationship.id,
+          entityId: pendingConnectionHit.connection.entityId,
+          iconRect: null
+        };
+        pendingConnectionHit = null;
+        draw();
+        return;
+      }
+      if (isDraggingBreakpoint) {
+        isDraggingBreakpoint = false;
+        activeBreakpoint = null;
         saveState();
         draw();
         return;
       }
-      if (isSelecting) {
-        entities.forEach(e => {
-          let w = e.width || defaultEntityWidth, h = e.height || defaultEntityHeight;
-          if (!(e.x+w < selectionRect.x || e.x > selectionRect.x+selectionRect.width ||
-                e.y+h < selectionRect.y || e.y > selectionRect.y+selectionRect.height)) {
-            e.selected = true;
-          }
-        });
-        attributes.forEach(a => {
-          let rx = a.radiusX || defaultAttributeRadiusX;
-          let ry = a.radiusY || defaultAttributeRadiusY;
-          if (!(a.x+rx < selectionRect.x || a.x-rx > selectionRect.x+selectionRect.width ||
-                a.y+ry < selectionRect.y || a.y-ry > selectionRect.y+selectionRect.height)) {
-            a.selected = true;
-          }
-        });
-        relationships.forEach(r => {
-          let half = (r.size || relationshipSize)/2;
-          if (!(r.x+half < selectionRect.x || r.x-half > selectionRect.x+selectionRect.width ||
-                r.y+half < selectionRect.y || r.y-half > selectionRect.y+selectionRect.height)) {
-            r.selected = true;
-          }
-        });
-        specializations.forEach(s => {
-          let half = (s.size || defaultSpecializationSize)/2;
-          if (!(s.x+half < selectionRect.x || s.x-half > selectionRect.x+selectionRect.width ||
-                s.y+half < selectionRect.y || s.y-half > selectionRect.y+selectionRect.height)) {
-            s.selected = true;
-          }
-        });
-        isSelecting = false;
-        selectionRect = null;
-        draw();
-        return;
-      }
-      if (isDraggingGroup) {
-        isDraggingGroup = false;
-        groupDragData = [];
-        saveState();
-        draw();
-        return;
-      }
-      if (isDraggingObject) {
-        isDraggingObject = false;
-        dragObject = null;
-        saveState();
-        draw();
-        return;
-      }
-      if (isDraggingConnection) {
-        let drop = getDraggableAt(pos.x, pos.y);
-        if (drop) {
-          // Se arrastar de entidade para entidade, cria automaticamente um relacionamento (losango)
-          if (draggingConnection.type === "entity" && drop.type === "entity") {
-            if (draggingConnection.element.id !== drop.element.id) {
-              let source = draggingConnection.element;
-              let target = drop.element;
-              let sourceCenter = { x: source.x + (source.width || defaultEntityWidth)/2, y: source.y + (source.height || defaultEntityHeight)/2 };
-              let targetCenter = { x: target.x + (target.width || defaultEntityWidth)/2, y: target.y + (target.height || defaultEntityHeight)/2 };
-              let midX = (sourceCenter.x + targetCenter.x) / 2;
-              let midY = (sourceCenter.y + targetCenter.y) / 2;
-              let newR = {
-                id: relationshipIdCounter++,
-                x: midX,
-                y: midY,
-                size: relationshipSize,
-                name: "Relacionamento",
-                connections: [],
-                selected: false,
-                objType: "relationship"
-              };
-              relationships.push(newR);
-              newR.connections.push({ entityId: source.id, cardinality: "1,1" });
-              newR.connections.push({ entityId: target.id, cardinality: "1,1" });
-            }
-          } else if (draggingConnection.type === "relationship" && drop.type === "entity") {
-            if (!draggingConnection.element.connections.find(conn => conn.entityId === drop.element.id)) {
-              draggingConnection.element.connections.push({ entityId: drop.element.id, cardinality: "1,1" });
-            }
-          } else if (draggingConnection.type === "entity" && drop.type === "relationship") {
-            if (!drop.element.connections.find(conn => conn.entityId === draggingConnection.element.id)) {
-              drop.element.connections.push({ entityId: draggingConnection.element.id, cardinality: "1,1" });
-            }
-          } else if (draggingConnection.type === "specialization" && drop.type === "entity") {
-            let spec = draggingConnection.element;
-            let vertices = getSpecializationVertices(spec);
-            let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
-            let vertexIndex = distances.indexOf(Math.min(...distances));
-            if (!spec.connections) spec.connections = [];
-            if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === drop.element.id)) {
-              spec.connections.push({ vertex: vertexIndex, entityId: drop.element.id });
-            }
-          } else if (draggingConnection.type === "entity" && drop.type === "specialization") {
-            let spec = drop.element;
-            let vertices = getSpecializationVertices(spec);
-            let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
-            let vertexIndex = distances.indexOf(Math.min(...distances));
-            if (!spec.connections) spec.connections = [];
-            if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === draggingConnection.element.id)) {
-              spec.connections.push({ vertex: vertexIndex, entityId: draggingConnection.element.id });
-            }
-          }
+
+
+        if (isPanning) {
+          isPanning = false;
+          return;
         }
-        isDraggingConnection = false;
-        draggingConnection = null;
-        saveState();
-        draw();
-        return;
-      }
+        if (clickPlacementMode) {
+          createObjectAt(draggingToolbarType, pos.x, pos.y);
+          cleanupToolbarDrag();
+          draw();
+          return;
+        }
+        if (draggingToolbarType) return;
+
+        if (isResizing) {
+          isResizing = false;
+          resizingObject = null;
+          saveState();
+          draw();
+          return;
+        }
+        if (isSelecting) {
+          entities.forEach(e => {
+            let w = e.width || defaultEntityWidth, h = e.height || defaultEntityHeight;
+            if (!(e.x+w < selectionRect.x || e.x > selectionRect.x+selectionRect.width ||
+                  e.y+h < selectionRect.y || e.y > selectionRect.y+selectionRect.height)) {
+              e.selected = true;
+            }
+          });
+          attributes.forEach(a => {
+            let rx = a.radiusX || defaultAttributeRadiusX;
+            let ry = a.radiusY || defaultAttributeRadiusY;
+            if (!(a.x+rx < selectionRect.x || a.x-rx > selectionRect.x+selectionRect.width ||
+                  a.y+ry < selectionRect.y || a.y-ry > selectionRect.y+selectionRect.height)) {
+              a.selected = true;
+            }
+          });
+          relationships.forEach(r => {
+            let half = (r.size || relationshipSize)/2;
+            if (!(r.x+half < selectionRect.x || r.x-half > selectionRect.x+selectionRect.width ||
+                  r.y+half < selectionRect.y || r.y-half > selectionRect.y+selectionRect.height)) {
+              r.selected = true;
+            }
+          });
+          specializations.forEach(s => {
+            let half = (s.size || defaultSpecializationSize)/2;
+            if (!(s.x+half < selectionRect.x || s.x-half > selectionRect.x+selectionRect.width ||
+                  s.y+half < selectionRect.y || s.y-half > selectionRect.y+selectionRect.height)) {
+              s.selected = true;
+            }
+          });
+          isSelecting = false;
+          selectionRect = null;
+          draw();
+          return;
+        }
+        if (isDraggingGroup) {
+          isDraggingGroup = false;
+          groupDragData = [];
+          saveState();
+          draw();
+          return;
+        }
+        if (isDraggingObject) {
+          isDraggingObject = false;
+          dragObject = null;
+          saveState();
+          draw();
+          return;
+        }
+        if (isDraggingConnection) {
+          let drop = getDraggableAt(pos.x, pos.y);
+          if (drop) {
+            // Se arrastar de entidade para entidade, cria automaticamente um relacionamento (losango)
+            if (draggingConnection.type === "entity" && drop.type === "entity") {
+              if (draggingConnection.element.id !== drop.element.id) {
+                let source = draggingConnection.element;
+                let target = drop.element;
+                let sourceCenter = { x: source.x + (source.width || defaultEntityWidth)/2, y: source.y + (source.height || defaultEntityHeight)/2 };
+                let targetCenter = { x: target.x + (target.width || defaultEntityWidth)/2, y: target.y + (target.height || defaultEntityHeight)/2 };
+                let midX = (sourceCenter.x + targetCenter.x) / 2;
+                let midY = (sourceCenter.y + targetCenter.y) / 2;
+                let newR = {
+                  id: relationshipIdCounter++,
+                  x: midX,
+                  y: midY,
+                  size: relationshipSize,
+                  name: "Relacionamento",
+                  connections: [],
+                  selected: false,
+                  objType: "relationship"
+                };
+                relationships.push(newR);
+                newR.connections.push({ entityId: source.id, cardinality: "1,1" });
+                newR.connections.push({ entityId: target.id, cardinality: "1,1" });
+              }
+            } else if (draggingConnection.type === "relationship" && drop.type === "entity") {
+              if (!draggingConnection.element.connections.find(conn => conn.entityId === drop.element.id)) {
+                draggingConnection.element.connections.push({ entityId: drop.element.id, cardinality: "1,1" });
+              }
+            } else if (draggingConnection.type === "entity" && drop.type === "relationship") {
+              if (!drop.element.connections.find(conn => conn.entityId === draggingConnection.element.id)) {
+                drop.element.connections.push({ entityId: draggingConnection.element.id, cardinality: "1,1" });
+              }
+            } else if (draggingConnection.type === "specialization" && drop.type === "entity") {
+              let spec = draggingConnection.element;
+              let vertices = getSpecializationVertices(spec);
+              let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
+              let vertexIndex = distances.indexOf(Math.min(...distances));
+              if (!spec.connections) spec.connections = [];
+              if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === drop.element.id)) {
+                spec.connections.push({ vertex: vertexIndex, entityId: drop.element.id });
+              }
+            } else if (draggingConnection.type === "entity" && drop.type === "specialization") {
+              let spec = drop.element;
+              let vertices = getSpecializationVertices(spec);
+              let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
+              let vertexIndex = distances.indexOf(Math.min(...distances));
+              if (!spec.connections) spec.connections = [];
+              if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === draggingConnection.element.id)) {
+                spec.connections.push({ vertex: vertexIndex, entityId: draggingConnection.element.id });
+              }
+            }
+          }
+          isDraggingConnection = false;
+          draggingConnection = null;
+          saveState();
+          draw();
+          return;
+        }
     }
 
     canvas.addEventListener("touchstart", onCanvasStart);
@@ -1548,6 +1647,16 @@
       // Verifica se o clique ocorreu sobre o rótulo de alguma conexão
       for (let r of relationships) {
         for (let conn of r.connections) {
+          // Verifica cada breakpoint
+          if (conn.breakpoints) {
+            for (let i = 0; i < conn.breakpoints.length; i++) {
+              let bp = conn.breakpoints[i];
+              // Se o clique estiver perto o suficiente do breakpoint (raio ~ 8)
+              if (Math.hypot(x - bp.x, y - bp.y) < 8) {
+                return { type: "breakpoint", connection: conn, index: i };
+              }
+            }
+          }
           if (conn.labelRect && isInsideRect(pos, conn.labelRect)) {
             // Calcula a posição central do rótulo
             let centerX = conn.labelRect.x + conn.labelRect.width / 2;
@@ -1556,6 +1665,23 @@
             return;  // Interrompe se encontrou um clique sobre o rótulo
           }
         }
+      }
+    });
+
+    canvas.addEventListener("contextmenu", function(evt) {
+      evt.preventDefault();
+      let pos = getMousePos(evt);
+      // Se o clique ocorrer próximo de uma conexão, adicione um breakpoint
+      let hit = getDraggableAt(pos.x, pos.y);
+      if (hit && hit.type === "connection") {
+        // Se o objeto connection não tiver o array, inicialize-o
+        if (!hit.connection.breakpoints) {
+          hit.connection.breakpoints = [];
+        }
+        // Adiciona o breakpoint na posição atual
+        hit.connection.breakpoints.push({ x: pos.x, y: pos.y });
+        saveState();
+        draw();
       }
     });
 
