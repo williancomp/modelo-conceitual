@@ -90,8 +90,57 @@
       border-radius: 4px;
       transition: background 0.2s;
     }
+    .submenu-item:active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+    }
     .submenu-item:hover {
       background: #4b5563;
+    }
+
+    /* Cursor especial para indicar arrastar */
+    #menuRelate {
+      cursor: grab;
+    }
+
+    #menuRelate:active {
+      cursor: grabbing;
+    }
+
+    /* Efeito de feedback visual quando o mouse está sobre um alvo válido */
+    .hover-target {
+      box-shadow: 0 0 0 2px #60a5fa, 0 0 10px 4px rgba(96, 165, 250, 0.5);
+      transition: box-shadow 0.2s ease;
+    }
+
+    /* Estilo para a linha de conexão durante o arraste */
+    .dragging-connection-line {
+      stroke: #3b82f6;
+      stroke-width: 2.5;
+      stroke-dasharray: 5,3;
+      animation: dash 1s linear infinite;
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -8;
+      }
+    }
+
+
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
     }
     
     @media (max-width: 768px) {
@@ -113,6 +162,66 @@
         margin-left: 0;
       }
     }
+
+    /* Estilo para quando arrastar um arquivo sobre o canvas */
+    #canvas.border-dashed {
+      transition: all 0.3s;
+    }
+
+    /* Melhoria para o indicador de autosave */
+    #autosave-indicator {
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    /* Animação de pulsação para os botões da barra de ferramentas no hover */
+    .toolbar-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      }
+      50% {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+      100% {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    /* Transição suave para o modal */
+    #loadModal {
+      transition: opacity 0.3s ease;
+    }
+
+    #loadModal.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #loadModal:not(.hidden) {
+      opacity: 1;
+    }
+
+    /* Melhorias nos botões do modal */
+    #loadCancelBtn, #loadConfirmBtn {
+      transition: background-color 0.2s, transform 0.2s;
+    }
+
+    #loadCancelBtn:hover, #loadConfirmBtn:hover {
+      transform: translateY(-2px);
+    }
+
+    #loadCancelBtn:active, #loadConfirmBtn:active {
+      transform: translateY(1px);
+    }
+
+    
   </style>
 </head>
 <body class="flex h-screen">
@@ -202,6 +311,34 @@
         </svg>
         <span>Refazer</span>
       </button>
+      <!-- Botão Salvar Arquivo -->
+      <button id="btnSaveFile" class="toolbar-button bg-gradient-to-br from-green-500 to-green-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path d="M8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+        </svg>
+        <span>Salvar Arquivo</span>
+      </button>
+      <!-- Botão Abrir Arquivo -->
+      <button id="btnOpenFile" class="toolbar-button bg-gradient-to-br from-blue-500 to-blue-700">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h4a2 2 0 0 1 2 2v1M5 19h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2z" />
+        </svg>
+        <span>Abrir Arquivo</span>
+      </button>
+      <!-- Input de arquivo oculto para o botão de abrir arquivo -->
+      <input type="file" id="fileInput" accept=".merdb" style="display: none;" />
+
+      <!-- Modal de confirmação para carregar arquivo -->
+      <div id="loadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+          <h3 class="text-xl font-bold text-white mb-4">Carregar diagrama</h3>
+          <p class="text-white mb-6">Tem certeza que deseja carregar um novo diagrama? O diagrama atual será substituído.</p>
+          <div class="flex justify-end gap-3">
+            <button id="loadCancelBtn" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition">Cancelar</button>
+            <button id="loadConfirmBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition">Carregar</button>
+          </div>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -209,6 +346,10 @@
   <main class="flex-grow" style="position: relative;">
     <canvas id="canvas"></canvas>
     
+    <!-- Adicione este elemento ao final da tag <main> (antes de </main>) -->
+    <div id="autosave-indicator" class="fixed bottom-4 right-4 bg-gray-800 text-green-400 px-4 py-2 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300">
+      Salvando...
+    </div>
   </main>
 
   <script>
@@ -233,6 +374,9 @@
     let isDraggingBreakpoint = false;
     let activeBreakpoint = null;  // Guarda { connection, index } do breakpoint atual
     let pendingConnectionHit = null; // Guarda o hit de conexão para diferenciar click curto de longo
+
+    // Variável para controlar se há mudanças não salvas
+    let hasUnsavedChanges = false;
 
       
 
@@ -303,6 +447,10 @@
     // Array global para armazenar info de breakpoints durante o arraste em grupo
     let groupBreakpointsData = [];
 
+    // Variáveis para controlar o arraste de relacionamento a partir do menu
+    let draggingRelationFromMenu = false;
+    let relationMenuSource = null;
+
     const normalColors = {
       entity: { fill: "#3b82f6", stroke: "#1e40af" },
       attribute: { fill: "#10b981", stroke: "#065f46" },
@@ -312,97 +460,38 @@
     };
 
     
-
-    function saveState() {
-      // Salva no stack de Undo/Redo
-      const state = {
-        entities: JSON.parse(JSON.stringify(entities)),
-        attributes: JSON.parse(JSON.stringify(attributes)),
-        relationships: JSON.parse(JSON.stringify(relationships)),
-        specializations: JSON.parse(JSON.stringify(specializations))
-      };
-      undoStack.push(state);
-      redoStack = [];
-
-      // Salva também no localStorage
-      saveToLocalStorage();
-    }
-
-    function saveToLocalStorage() {
-    const currentData = {
-      entities,
-      attributes,
-      relationships,
-      specializations,
-      entityIdCounter,
-      attributeIdCounter,
-      relationshipIdCounter,
-      specializationIdCounter
-    };
-    localStorage.setItem("diagramData", JSON.stringify(currentData));
-  }
-
-  function loadFromLocalStorage() {
-    const dataStr = localStorage.getItem("diagramData");
-    if (!dataStr) return; // não tem nada salvo ainda
-
-    try {
-      const data = JSON.parse(dataStr);
-
-      // Restaura arrays
-      entities = data.entities || [];
-      attributes = data.attributes || [];
-      relationships = data.relationships || [];
-      specializations = data.specializations || [];
-
-      // Restaura contadores (se quiser manter consistência)
-      entityIdCounter = data.entityIdCounter || 0;
-      attributeIdCounter = data.attributeIdCounter || 0;
-      relationshipIdCounter = data.relationshipIdCounter || 0;
-      specializationIdCounter = data.specializationIdCounter || 0;
-
-    } catch (err) {
-      console.error("Falha ao carregar do localStorage:", err);
-    }
-  }
-  
-  function saveToLocalStorage() {
-      const currentData = {
-        entities,
-        attributes,
-        relationships,
-        specializations,
-        entityIdCounter,
-        attributeIdCounter,
-        relationshipIdCounter,
-        specializationIdCounter
-      };
-      localStorage.setItem("diagramData", JSON.stringify(currentData));
-    }
-
-    function loadFromLocalStorage() {
-      const dataStr = localStorage.getItem("diagramData");
-      if (!dataStr) return; // não tem nada salvo ainda
-
+    // Adicione um flag para verificar se o localStorage está disponível
+    function isLocalStorageAvailable() {
       try {
-        const data = JSON.parse(dataStr);
-
-        // Restaura arrays
-        entities = data.entities || [];
-        attributes = data.attributes || [];
-        relationships = data.relationships || [];
-        specializations = data.specializations || [];
-
-        // Restaura contadores (se quiser manter consistência)
-        entityIdCounter = data.entityIdCounter || 0;
-        attributeIdCounter = data.attributeIdCounter || 0;
-        relationshipIdCounter = data.relationshipIdCounter || 0;
-        specializationIdCounter = data.specializationIdCounter || 0;
-
-      } catch (err) {
-        console.error("Falha ao carregar do localStorage:", err);
+        const test = 'test';
+        localStorage.setItem(test, test);
+        localStorage.removeItem(test);
+        return true;
+      } catch(e) {
+        console.error("LocalStorage não está disponível:", e);
+        return false;
       }
     }
+
+
+
+  // Método para salvar antes de fechar a página
+  window.addEventListener('beforeunload', (e) => {
+    if (hasUnsavedChanges) {
+      saveToLocalStorage();
+    }
+  });
+
+
+  // Adicionando auto-save a cada 30 segundos
+  const autoSaveInterval = 30000; // 30 segundos
+  setInterval(() => {
+    if (hasUnsavedChanges) {
+      saveToLocalStorage();
+    }
+  }, autoSaveInterval);
+
+
 
      // Adapte sua restoreState (usada para Undo/Redo) para chamar draw() ao final
     function restoreState(state) {
@@ -413,51 +502,406 @@
       draw();
     }
 
-    // Exemplo de evento que roda quando a página terminou de carregar
-    window.addEventListener("DOMContentLoaded", () => {
-      // 1) Ajusta canvas
-      resizeCanvas();
+  // Corrija a sequência de inicialização na função que carrega quando a página inicia
+  window.addEventListener("DOMContentLoaded", () => {
+    // 1) Primeiro, ajusta o canvas
+    resizeCanvas();
 
-      // 2) Carrega do localStorage
-      loadFromLocalStorage();
+    // 2) Carrega do localStorage - está sendo feito corretamente
+    loadFromLocalStorage();
 
-      // 3) Se, depois de carregar, estiver tudo vazio, grava um estado inicial
-      if (entities.length === 0 && attributes.length === 0 &&
-          relationships.length === 0 && specializations.length === 0) {
-        saveState(); // estado inicial vazio
+    // 3) IMPORTANTE: Remova este trecho que pode estar apagando os dados carregados!
+    // REMOVER ou COMENTAR este bloco:
+    /*
+    if (entities.length === 0 && attributes.length === 0 &&
+        relationships.length === 0 && specializations.length === 0) {
+      saveState(); // estado inicial vazio - este saveState() com arrays vazios pode estar sobreescrevendo seu localStorage!
+    }
+    */
+
+    // 4) Finalmente, desenha
+    draw();
+  });
+
+
+
+  // Event Listeners para os novos botões
+document.addEventListener("DOMContentLoaded", function() {
+  // Adiciona listeners para os botões de salvar/abrir
+  document.getElementById("btnSaveFile").addEventListener("click", saveDiagramToFile);
+  document.getElementById("btnOpenFile").addEventListener("click", openFileSelector);
+  
+  // Configura o input de arquivo
+  const fileInput = document.getElementById("fileInput");
+  fileInput.addEventListener("change", function(event) {
+    if (event.target.files.length > 0) {
+      const file = event.target.files[0];
+      loadDiagramFromFile(file);
+      // Limpa o valor para permitir selecionar o mesmo arquivo novamente
+      fileInput.value = "";
+    }
+  });
+  
+  // Adiciona suporte para arrastar e soltar arquivos
+  const canvas = document.getElementById("canvas");
+  
+  canvas.addEventListener("dragover", function(event) {
+    event.preventDefault();
+    canvas.classList.add("border-4", "border-blue-500", "border-dashed");
+  });
+  
+  canvas.addEventListener("dragleave", function() {
+    canvas.classList.remove("border-4", "border-blue-500", "border-dashed");
+  });
+  
+  canvas.addEventListener("drop", function(event) {
+    event.preventDefault();
+    canvas.classList.remove("border-4", "border-blue-500", "border-dashed");
+    
+    if (event.dataTransfer.files.length > 0) {
+      const file = event.dataTransfer.files[0];
+      if (file.name.endsWith('.merdb')) {
+        loadDiagramFromFile(file);
+      } else {
+        showNotification("Formato de arquivo não suportado. Use arquivos .merdb", "error");
       }
+    }
+  });
+});
 
-      // 4) Finalmente, desenha
-      draw();
+
+
+
+  // Versão melhorada de loadFromLocalStorage para garantir o debug
+function loadFromLocalStorage() {
+  console.log("Tentando carregar dados do localStorage...");
+  
+  try {
+    const dataStr = localStorage.getItem("diagramData");
+    
+    // Log para debug - ver se há dados
+    console.log("Dados encontrados no localStorage:", dataStr ? "Sim" : "Não");
+    
+    if (!dataStr) {
+      console.log("Nenhum diagrama encontrado no localStorage");
+      return; // não tem nada salvo ainda
+    }
+
+    const data = JSON.parse(dataStr);
+    console.log("Carregando diagrama do localStorage, conteúdo:", data);
+
+    // Carrega somente se realmente houver dados
+    if (data.entities && Array.isArray(data.entities)) {
+      // Restaura arrays
+      entities = data.entities || [];
+      attributes = data.attributes || [];
+      relationships = data.relationships || [];
+      specializations = data.specializations || [];
+
+      // Restaura contadores - importante garantir que sejam números!
+      entityIdCounter = typeof data.entityIdCounter === 'number' ? data.entityIdCounter : 0;
+      attributeIdCounter = typeof data.attributeIdCounter === 'number' ? data.attributeIdCounter : 0;
+      relationshipIdCounter = typeof data.relationshipIdCounter === 'number' ? data.relationshipIdCounter : 0;
+      specializationIdCounter = typeof data.specializationIdCounter === 'number' ? data.specializationIdCounter : 0;
+      
+      // Restaura configurações visuais
+      if (data.fontSize) fontSize = data.fontSize;
+      if (data.panOffset) panOffset = data.panOffset;
+      
+      console.log("Diagrama carregado com sucesso:", {
+        entidades: entities.length,
+        atributos: attributes.length,
+        relacionamentos: relationships.length,
+        especializacoes: specializations.length
+      });
+
+      return true; // indica que carregou com sucesso
+    } else {
+      console.warn("Dados encontrados no localStorage, mas sem entidades válidas");
+      return false;
+    }
+  } catch (err) {
+    console.error("Falha ao carregar do localStorage:", err);
+    return false;
+  }
+}
+
+// Versão melhorada de saveToLocalStorage para garantir o sucesso
+function saveToLocalStorage() {
+  try {
+    const currentData = {
+      entities,
+      attributes,
+      relationships,
+      specializations,
+      entityIdCounter,
+      attributeIdCounter,
+      relationshipIdCounter,
+      specializationIdCounter,
+      fontSize,
+      panOffset
+    };
+    
+    // Log para debug antes de salvar
+    console.log("Salvando no localStorage, dados:", {
+      entidades: entities.length,
+      atributos: attributes.length,
+      relacionamentos: relationships.length,
+      especializacoes: specializations.length
     });
+    
+    const jsonData = JSON.stringify(currentData);
+    localStorage.setItem("diagramData", jsonData);
+    
+    // Verificação de que foi salvo corretamente
+    const savedData = localStorage.getItem("diagramData");
+    const savedSuccess = savedData === jsonData;
+    
+    // Mostra indicador de autosave
+    const indicator = document.getElementById("autosave-indicator");
+    if (indicator) {
+      indicator.textContent = savedSuccess ? 
+        "Salvo " + new Date().toLocaleTimeString() : 
+        "Erro de verificação ao salvar";
+      
+      indicator.classList.remove("opacity-0");
+      indicator.classList.add("opacity-100");
+      
+      // Esconde o indicador após 2 segundos
+      setTimeout(() => {
+        indicator.classList.remove("opacity-100");
+        indicator.classList.add("opacity-0");
+      }, 2000);
+    }
+    
+    console.log("Diagrama salvo no localStorage:", new Date().toLocaleTimeString(), savedSuccess ? "✓" : "✗");
+    return savedSuccess;
+  } catch (err) {
+    console.error("Erro ao salvar no localStorage:", err);
+    
+    // Mostra erro no indicador
+    const indicator = document.getElementById("autosave-indicator");
+    if (indicator) {
+      indicator.classList.remove("opacity-0");
+      indicator.classList.add("opacity-100");
+      indicator.classList.remove("text-green-400");
+      indicator.classList.add("text-red-500");
+      indicator.textContent = "Erro ao salvar: " + err.message;
+      
+      // Esconde após 3 segundos
+      setTimeout(() => {
+        indicator.classList.remove("opacity-100");
+        indicator.classList.add("opacity-0");
+        indicator.classList.add("text-green-400");
+        indicator.classList.remove("text-red-500");
+      }, 3000);
+    }
+    return false;
+  }
+}
+
+// Importante: Garante que não salvamos um estado vazio se o carregamento falhar
+function saveState() {
+  // Não salva um estado vazio se não houver operações reais
+  if (entities.length === 0 && attributes.length === 0 &&
+      relationships.length === 0 && specializations.length === 0 &&
+      undoStack.length === 0) {
+    console.log("Ignorando salvar estado vazio inicial");
+    return;
+  }
+
+  // Salva no stack de Undo/Redo
+  const state = {
+    entities: JSON.parse(JSON.stringify(entities)),
+    attributes: JSON.parse(JSON.stringify(attributes)),
+    relationships: JSON.parse(JSON.stringify(relationships)),
+    specializations: JSON.parse(JSON.stringify(specializations))
+  };
+  undoStack.push(state);
+  redoStack = [];
+
+  // Marca que há mudanças não salvas
+  hasUnsavedChanges = true;
+  
+  // Salva imediatamente no localStorage
+  saveToLocalStorage();
+}
 
 
-    function undo() {
-      if (undoStack.length > 0) {
-        const currentState = {
-          entities: JSON.parse(JSON.stringify(entities)),
-          attributes: JSON.parse(JSON.stringify(attributes)),
-          relationships: JSON.parse(JSON.stringify(relationships)),
-          specializations: JSON.parse(JSON.stringify(specializations))
-        };
-        redoStack.push(currentState);
-        const prevState = undoStack.pop();
-        restoreState(prevState);
+// Função para salvar o diagrama em um arquivo
+function saveDiagramToFile() {
+  try {
+    // Cria um objeto com todos os dados do diagrama
+    const diagramData = {
+      entities,
+      attributes,
+      relationships,
+      specializations,
+      entityIdCounter,
+      attributeIdCounter,
+      relationshipIdCounter,
+      specializationIdCounter,
+      fontSize,
+      panOffset,
+      version: "1.0" // Útil para compatibilidade futura
+    };
+    
+    // Converte para JSON e cria um Blob
+    const jsonData = JSON.stringify(diagramData, null, 2);
+    const blob = new Blob([jsonData], { type: "application/json" });
+    
+    // Cria um link para download e dispara o clique
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    
+    // Gera um nome de arquivo baseado na data e hora atual
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, "");
+    link.download = `diagrama_er_${dateStr}_${timeStr}.merdb`; // .merdb = Modelagem ER DataBase
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Mostra uma mensagem de sucesso
+    showNotification("Diagrama salvo com sucesso!", "success");
+  } catch (err) {
+    console.error("Erro ao salvar diagrama em arquivo:", err);
+    showNotification("Erro ao salvar o arquivo: " + err.message, "error");
+  }
+}
+
+
+// Função para abrir o seletor de arquivos
+function openFileSelector() {
+  document.getElementById("fileInput").click();
+}
+
+// Função para carregar um diagrama de um arquivo
+function loadDiagramFromFile(file) {
+  const reader = new FileReader();
+  
+  reader.onload = function(event) {
+    try {
+      const jsonData = event.target.result;
+      const diagramData = JSON.parse(jsonData);
+      
+      // Verifica se o arquivo tem o formato esperado
+      if (!diagramData.entities || !Array.isArray(diagramData.entities)) {
+        throw new Error("Formato de arquivo inválido");
       }
+      
+      // Abre o modal de confirmação
+      const modal = document.getElementById("loadModal");
+      modal.classList.remove("hidden");
+      
+      // Configura os botões do modal
+      document.getElementById("loadCancelBtn").onclick = function() {
+        modal.classList.add("hidden");
+      };
+      
+      document.getElementById("loadConfirmBtn").onclick = function() {
+        // Carrega os dados do arquivo
+        entities = diagramData.entities || [];
+        attributes = diagramData.attributes || [];
+        relationships = diagramData.relationships || [];
+        specializations = diagramData.specializations || [];
+        
+        // Carrega os contadores
+        entityIdCounter = diagramData.entityIdCounter || 0;
+        attributeIdCounter = diagramData.attributeIdCounter || 0;
+        relationshipIdCounter = diagramData.relationshipIdCounter || 0;
+        specializationIdCounter = diagramData.specializationIdCounter || 0;
+        
+        // Carrega as configurações visuais
+        if (diagramData.fontSize) fontSize = diagramData.fontSize;
+        if (diagramData.panOffset) panOffset = diagramData.panOffset;
+        
+        // Salva no localStorage também
+        saveToLocalStorage();
+        
+        // Atualiza o desenho
+        draw();
+        
+        // Fecha o modal
+        modal.classList.add("hidden");
+        
+        // Mostra uma mensagem de sucesso
+        showNotification("Diagrama carregado com sucesso!", "success");
+      };
+    } catch (err) {
+      console.error("Erro ao carregar arquivo:", err);
+      showNotification("Erro ao carregar o arquivo: " + err.message, "error");
     }
-    function redo() {
-      if (redoStack.length > 0) {
-        const currentState = {
-          entities: JSON.parse(JSON.stringify(entities)),
-          attributes: JSON.parse(JSON.stringify(attributes)),
-          relationships: JSON.parse(JSON.stringify(relationships)),
-          specializations: JSON.parse(JSON.stringify(specializations))
-        };
-        undoStack.push(currentState);
-        const nextState = redoStack.pop();
-        restoreState(nextState);
-      }
+  };
+  
+  reader.onerror = function() {
+    showNotification("Erro ao ler o arquivo", "error");
+  };
+  
+  reader.readAsText(file);
+}
+
+
+// Função para mostrar notificações
+function showNotification(message, type = "info") {
+  const indicator = document.getElementById("autosave-indicator");
+  if (!indicator) return;
+  
+  // Configura a cor baseada no tipo
+  indicator.classList.remove("text-green-400", "text-red-500", "text-blue-400");
+  
+  if (type === "success") {
+    indicator.classList.add("text-green-400");
+  } else if (type === "error") {
+    indicator.classList.add("text-red-500");
+  } else {
+    indicator.classList.add("text-blue-400");
+  }
+  
+  // Define a mensagem e mostra
+  indicator.textContent = message;
+  indicator.classList.remove("opacity-0");
+  indicator.classList.add("opacity-100");
+  
+  // Esconde após 3 segundos
+  setTimeout(() => {
+    indicator.classList.remove("opacity-100");
+    indicator.classList.add("opacity-0");
+  }, 3000);
+}
+
+
+
+  function undo() {
+    if (undoStack.length > 0) {
+      const currentState = {
+        entities: JSON.parse(JSON.stringify(entities)),
+        attributes: JSON.parse(JSON.stringify(attributes)),
+        relationships: JSON.parse(JSON.stringify(relationships)),
+        specializations: JSON.parse(JSON.stringify(specializations))
+      };
+      redoStack.push(currentState);
+      const prevState = undoStack.pop();
+      restoreState(prevState);
     }
+  }
+
+
+  function redo() {
+    if (redoStack.length > 0) {
+      const currentState = {
+        entities: JSON.parse(JSON.stringify(entities)),
+        attributes: JSON.parse(JSON.stringify(attributes)),
+        relationships: JSON.parse(JSON.stringify(relationships)),
+        specializations: JSON.parse(JSON.stringify(specializations))
+      };
+      undoStack.push(currentState);
+      const nextState = redoStack.pop();
+      restoreState(nextState);
+    }
+  }
 
     function breakLongWord(word, maxWidth, context) {
       let lines = [], current = "";
@@ -602,18 +1046,19 @@
             screenPosY <= screenRectY + screenRectHeight;
     }
 
-    function getMousePos(evt) {
-      const rect = canvas.getBoundingClientRect();
-      let clientX = evt.clientX, clientY = evt.clientY;
-      if (evt.touches && evt.touches.length > 0) {
-        clientX = evt.touches[0].clientX;
-        clientY = evt.touches[0].clientY;
-      }
-      return { 
-        x: (clientX - rect.left) / zoom - panOffset.x, 
-        y: (clientY - rect.top) / zoom - panOffset.y 
-      };
-    }
+// Certifique-se de que getMousePos() está consistente com estas alterações
+function getMousePos(evt) {
+  const rect = canvas.getBoundingClientRect();
+  let clientX = evt.clientX, clientY = evt.clientY;
+  if (evt.touches && evt.touches.length > 0) {
+    clientX = evt.touches[0].clientX;
+    clientY = evt.touches[0].clientY;
+  }
+  return { 
+    x: (clientX - rect.left) / zoom - panOffset.x, 
+    y: (clientY - rect.top) / zoom - panOffset.y 
+  };
+}
 
     function distancePointToSegment(p, a, b) {
       const A = p.x - a.x, B = p.y - a.y;
@@ -1186,64 +1631,193 @@ function drawSpecConnectionLine(context, spec, conn, e) {
 }    
 
 
-    // Desenha o objeto de preview (ao arrastar da toolbar)
-    function drawPreview() {
-      if (!draggingToolbarType || !draggingNewObj) return;
-      ctx.save();
-      ctx.globalAlpha = 0.7;
-      switch(draggingToolbarType) {
-        case "entity":
-          ctx.fillStyle = normalColors.entity.fill;
-          ctx.strokeStyle = normalColors.entity.stroke;
-          ctx.beginPath();
-          ctx.roundRect(draggingNewObj.x - defaultEntityWidth/2, draggingNewObj.y - defaultEntityHeight/2, defaultEntityWidth, defaultEntityHeight, 8);
-          ctx.fill();
-          ctx.stroke();
-          break;
-        case "attribute":
-          ctx.fillStyle = normalColors.attribute.fill;
-          ctx.strokeStyle = normalColors.attribute.stroke;
-          ctx.beginPath();
-          ctx.ellipse(draggingNewObj.x, draggingNewObj.y, defaultAttributeRadiusX, defaultAttributeRadiusY, 0, 0, Math.PI*2);
-          ctx.fill();
-          ctx.stroke();
-          break;
-        case "derivedAttribute":
-          ctx.fillStyle = normalColors.derived.fill;
-          ctx.strokeStyle = normalColors.derived.stroke;
-          ctx.beginPath();
-          ctx.ellipse(draggingNewObj.x, draggingNewObj.y, defaultAttributeRadiusX, defaultAttributeRadiusY, 0, 0, Math.PI*2);
-          ctx.fill();
-          ctx.stroke();
-          break;
-        case "relationship":
-          ctx.fillStyle = normalColors.relationship.fill;
-          ctx.strokeStyle = normalColors.relationship.stroke;
-          let half = relationshipSize/2;
-          ctx.beginPath();
-          ctx.moveTo(draggingNewObj.x, draggingNewObj.y - half);
-          ctx.lineTo(draggingNewObj.x + half, draggingNewObj.y);
-          ctx.lineTo(draggingNewObj.x, draggingNewObj.y + half);
-          ctx.lineTo(draggingNewObj.x - half, draggingNewObj.y);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          break;
-        case "specialization":
-          ctx.fillStyle = normalColors.specialization.fill;
-          ctx.strokeStyle = normalColors.specialization.stroke;
-          let vertices = getSpecializationVertices({ x: draggingNewObj.x, y: draggingNewObj.y, size: defaultSpecializationSize });
-          ctx.beginPath();
-          ctx.moveTo(vertices[0].x, vertices[0].y);
-          ctx.lineTo(vertices[1].x, vertices[1].y);
-          ctx.lineTo(vertices[2].x, vertices[2].y);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          break;
-      }
-      ctx.restore();
+// 4. Função drawPreview corrigida para centralizar TODOS os objetos corretamente
+function drawPreview() {
+  if (!draggingToolbarType || !draggingNewObj) return;
+  
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  
+  // Pegar as coordenadas do centro
+  const centerX = draggingNewObj.x;
+  const centerY = draggingNewObj.y;
+  
+  switch(draggingToolbarType) {
+    case "entity":
+      // Centraliza o retângulo nas coordenadas do mouse
+      ctx.fillStyle = normalColors.entity.fill;
+      ctx.strokeStyle = normalColors.entity.stroke;
+      ctx.beginPath();
+      ctx.roundRect(
+        centerX - defaultEntityWidth/2,   // X ajustado para centralizar 
+        centerY - defaultEntityHeight/2,  // Y ajustado para centralizar
+        defaultEntityWidth, 
+        defaultEntityHeight, 
+        8
+      );
+      ctx.fill();
+      ctx.stroke();
+      break;
+      
+    case "attribute":
+      // Para atributos, o centro da elipse já é centralizado
+      ctx.fillStyle = normalColors.attribute.fill;
+      ctx.strokeStyle = normalColors.attribute.stroke;
+      ctx.beginPath();
+      ctx.ellipse(
+        centerX,   // centro X 
+        centerY,   // centro Y
+        defaultAttributeRadiusX, 
+        defaultAttributeRadiusY, 
+        0, 0, Math.PI*2
+      );
+      ctx.fill();
+      ctx.stroke();
+      break;
+      
+    case "derivedAttribute":
+      // Mesmo para atributos derivados
+      ctx.fillStyle = normalColors.derived.fill;
+      ctx.strokeStyle = normalColors.derived.stroke;
+      ctx.beginPath();
+      ctx.ellipse(
+        centerX, 
+        centerY, 
+        defaultAttributeRadiusX, 
+        defaultAttributeRadiusY, 
+        0, 0, Math.PI*2
+      );
+      ctx.fill();
+      ctx.stroke();
+      break;
+      
+    case "relationship":
+      // Para relacionamentos (losango)
+      ctx.fillStyle = normalColors.relationship.fill;
+      ctx.strokeStyle = normalColors.relationship.stroke;
+      const half = relationshipSize/2;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - half);           // Topo
+      ctx.lineTo(centerX + half, centerY);           // Direita
+      ctx.lineTo(centerX, centerY + half);           // Baixo
+      ctx.lineTo(centerX - half, centerY);           // Esquerda
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      break;
+      
+    case "specialization":
+      // Para especializações (triângulo)
+      ctx.fillStyle = normalColors.specialization.fill;
+      ctx.strokeStyle = normalColors.specialization.stroke;
+      const vertices = getSpecializationVertices({ 
+        x: centerX, 
+        y: centerY, 
+        size: defaultSpecializationSize 
+      });
+      ctx.beginPath();
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      ctx.lineTo(vertices[1].x, vertices[1].y);
+      ctx.lineTo(vertices[2].x, vertices[2].y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      break;
+  }
+  
+  ctx.restore();
+}
+
+
+
+
+// 5. Atualização da função createObjectAt para garantir objetos centralizados
+function createObjectAt(type, cx, cy) {
+  if (type === "attribute" || type === "derivedAttribute") {
+    const drop = getDraggableAt(cx, cy);
+    if (!drop || (drop.type !== "entity" && drop.type !== "relationship" && drop.type !== "attribute" && drop.type !== "derivedAttribute")) {
+      alert("O atributo deve ser arrastado sobre uma entidade, relacionamento ou outro atributo.");
+      cleanupToolbarDrag();
+      draw();
+      return;
     }
+    
+    // Lógica para atributos (sem mudanças, já que seguem regras específicas de posicionamento)
+    let parentObj = drop.element;
+    let posX, posY;
+    if (drop.type === "entity") {
+      posX = parentObj.x + (parentObj.width || defaultEntityWidth) + defaultAttributeRadiusX + 10;
+      posY = parentObj.y + (parentObj.height || defaultEntityHeight)/2;
+    } else if (drop.type === "relationship") {
+      posX = parentObj.x + (parentObj.size || relationshipSize)/2 + defaultAttributeRadiusX + 10;
+      posY = parentObj.y;
+    } else if (drop.type === "attribute" || drop.type === "derivedAttribute") {
+      posX = parentObj.x + (parentObj.radiusX || defaultAttributeRadiusX) + 10;
+      posY = parentObj.y;
+    }
+    
+    const newA = {
+      id: attributeIdCounter++,
+      x: posX,
+      y: posY,
+      name: (type === "derivedAttribute") ? "Deriv." : "Simples",
+      parentType: drop.type === "derivedAttribute" ? "attribute" : drop.type,
+      parentId: parentObj.id,
+      derived: (type === "derivedAttribute"),
+      primary: false,
+      selected: false,
+      radiusX: defaultAttributeRadiusX,
+      radiusY: defaultAttributeRadiusY,
+      objType: (type === "derivedAttribute") ? "derivedAttribute" : "attribute"
+    };
+    attributes.push(newA);
+  } else if (type === "entity") {
+    // Ajuste explícito para entidades
+    const newE = {
+      id: entityIdCounter++,
+      x: cx - defaultEntityWidth/2,   // X ajustado para centralizar
+      y: cy - defaultEntityHeight/2,  // Y ajustado para centralizar 
+      width: defaultEntityWidth,
+      height: defaultEntityHeight,
+      name: "Entidade",
+      selected: false,
+      objType: "entity"
+    };
+    entities.push(newE);
+  } else if (type === "relationship") {
+    // Para relacionamentos, o centro já é a posição do mouse
+    const newR = {
+      id: relationshipIdCounter++,
+      x: cx,  // Posição do centro X
+      y: cy,  // Posição do centro Y
+      size: relationshipSize,
+      name: "Rel.",
+      connections: [],
+      selected: false,
+      objType: "relationship"
+    };
+    relationships.push(newR);
+  } else if (type === "specialization") {
+    // Para especializações, o centro também já é a posição do mouse
+    const newS = {
+      id: specializationIdCounter++,
+      x: cx,  // Posição do centro X
+      y: cy,  // Posição do centro Y
+      size: defaultSpecializationSize,
+      genType: "T,C",
+      connections: [],
+      selected: false,
+      objType: "specialization"
+    };
+    specializations.push(newS);
+  }
+  
+  saveState();
+  cleanupToolbarDrag();
+  draw();
+}
+
+
 
     // Função de desenho principal, agora aplicando a transformação de zoom
     function draw() {
@@ -1455,138 +2029,87 @@ function drawSpecConnectionLine(context, spec, conn, e) {
   return null;
 }
 
-    function startToolbarDrag(type, evt) {
-      evt.preventDefault();
-      toolbarDrag = {
-        type: type,
-        startX: evt.pageX,
-        startY: evt.pageY,
-        isDragging: false
-      };
-      $(document).on("mousemove.toolbarDrag", onToolbarDragMove);
-      $(document).on("mouseup.toolbarDrag", onToolbarDragEnd);
-    }
+function startToolbarDrag(type, evt) {
+  evt.preventDefault();
+  toolbarDrag = {
+    type: type,
+    startX: evt.pageX,
+    startY: evt.pageY,
+    isDragging: false
+  };
+  $(document).on("mousemove.toolbarDrag", onToolbarDragMove);
+  $(document).on("mouseup.toolbarDrag", onToolbarDragEnd);
+}
     
-    function onToolbarDragMove(evt) {
-      if (!toolbarDrag) return;
-      const dx = evt.pageX - toolbarDrag.startX;
-      const dy = evt.pageY - toolbarDrag.startY;
-      const distance = Math.sqrt(dx*dx + dy*dy);
-      if (!toolbarDrag.isDragging && distance > 5) {
-        toolbarDrag.isDragging = true;
-        draggingToolbarType = toolbarDrag.type;
-        const rect = canvas.getBoundingClientRect();
-        draggingNewObj = {
-          type: toolbarDrag.type,
-          x: evt.pageX - rect.left,
-          y: evt.pageY - rect.top
-        };
-      } else if (toolbarDrag.isDragging) {
-        const rect = canvas.getBoundingClientRect();
-        draggingNewObj.x = evt.pageX - rect.left;
-        draggingNewObj.y = evt.pageY - rect.top;
-      }
-      draw();
+function onToolbarDragMove(evt) {
+  if (!toolbarDrag) return;
+  
+  const dx = evt.pageX - toolbarDrag.startX;
+  const dy = evt.pageY - toolbarDrag.startY;
+  const distance = Math.sqrt(dx*dx + dy*dy);
+  const rect = canvas.getBoundingClientRect();
+  
+  // Coordenadas em relação ao canvas, independentemente do zoom ou pan offset
+  const canvasX = (evt.pageX - rect.left) / zoom - panOffset.x;
+  const canvasY = (evt.pageY - rect.top) / zoom - panOffset.y;
+  
+  if (!toolbarDrag.isDragging && distance > 5) {
+    toolbarDrag.isDragging = true;
+    draggingToolbarType = toolbarDrag.type;
+    
+    // Inicializa o objeto de preview centralizado no mouse
+    draggingNewObj = {
+      type: toolbarDrag.type,
+      x: canvasX,  // Coordenada já ajustada para o pan/zoom
+      y: canvasY   // Coordenada já ajustada para o pan/zoom
+    };
+  } else if (toolbarDrag.isDragging) {
+    // Atualiza a posição do objeto enquanto arrasta, mantendo centralizado
+    draggingNewObj.x = canvasX;
+    draggingNewObj.y = canvasY;
+  }
+  
+  draw();
+}
+
+
+function onToolbarDragEnd(evt) {
+  if (!toolbarDrag) return;
+  
+  $(document).off("mousemove.toolbarDrag");
+  $(document).off("mouseup.toolbarDrag");
+  
+  const rect = canvas.getBoundingClientRect();
+  const canvasX = (evt.pageX - rect.left) / zoom - panOffset.x;
+  const canvasY = (evt.pageY - rect.top) / zoom - panOffset.y;
+  
+  // Verifica se está dentro do canvas
+  const viewportX = evt.pageX - rect.left;
+  const viewportY = evt.pageY - rect.top;
+  const isInsideCanvas = viewportX >= 0 && viewportX <= rect.width && 
+                        viewportY >= 0 && viewportY <= rect.height;
+  
+  if (toolbarDrag.isDragging) {
+    if (isInsideCanvas) {
+      createObjectAt(toolbarDrag.type, canvasX, canvasY);
     }
-    function onToolbarDragEnd(evt) {
-      if (!toolbarDrag) return;
-      $(document).off("mousemove.toolbarDrag");
-      $(document).off("mouseup.toolbarDrag");
-      const rect = canvas.getBoundingClientRect();
-      const cx = evt.pageX - rect.left;
-      const cy = evt.pageY - rect.top;
-      if (toolbarDrag.isDragging) {
-        if (cx >= 0 && cx <= rect.width && cy >= 0 && cy <= rect.height) {
-          createObjectAt(toolbarDrag.type, cx, cy);
-        }
-        cleanupToolbarDrag();
-      } else {
-        draggingToolbarType = toolbarDrag.type;
-        clickPlacementMode = true;
-        if (cx >= 0 && cx <= rect.width && cy >= 0 && cy <= rect.height) {
-          draggingNewObj = { type: toolbarDrag.type, x: cx, y: cy };
-        }
-      }
-      toolbarDrag = null;
-      draw();
+    cleanupToolbarDrag();
+  } else {
+    draggingToolbarType = toolbarDrag.type;
+    clickPlacementMode = true;
+    if (isInsideCanvas) {
+      draggingNewObj = { 
+        type: toolbarDrag.type, 
+        x: canvasX, 
+        y: canvasY 
+      };
     }
-    function createObjectAt(type, cx, cy) {
-      if (type === "attribute" || type === "derivedAttribute") {
-        const drop = getDraggableAt(cx, cy);
-        if (!drop || (drop.type !== "entity" && drop.type !== "relationship" && drop.type !== "attribute" && drop.type !== "derivedAttribute")) {
-          alert("O atributo deve ser arrastado sobre uma entidade, relacionamento ou outro atributo.");
-          cleanupToolbarDrag();
-          draw();
-          return;
-        }
-        let parentObj = drop.element;
-        let posX, posY;
-        if (drop.type === "entity") {
-          posX = parentObj.x + (parentObj.width || defaultEntityWidth) + defaultAttributeRadiusX + 10;
-          posY = parentObj.y + (parentObj.height || defaultEntityHeight)/2;
-        } else if (drop.type === "relationship") {
-          posX = parentObj.x + (parentObj.size || relationshipSize)/2 + defaultAttributeRadiusX + 10;
-          posY = parentObj.y;
-        } else if (drop.type === "attribute" || drop.type === "derivedAttribute") {
-          posX = parentObj.x + (parentObj.radiusX || defaultAttributeRadiusX) + 10;
-          posY = parentObj.y;
-        }
-        const newA = {
-          id: attributeIdCounter++,
-          x: posX,
-          y: posY,
-          name: (type === "derivedAttribute") ? "Deriv." : "Simples",
-          parentType: drop.type === "derivedAttribute" ? "attribute" : drop.type,
-          parentId: parentObj.id,
-          derived: (type === "derivedAttribute"),
-          primary: false,
-          selected: false,
-          radiusX: defaultAttributeRadiusX,
-          radiusY: defaultAttributeRadiusY,
-          objType: (type === "derivedAttribute") ? "derivedAttribute" : "attribute"
-        };
-        attributes.push(newA);
-      } else if (type === "entity") {
-        const newE = {
-          id: entityIdCounter++,
-          x: cx - defaultEntityWidth/2,
-          y: cy - defaultEntityHeight/2,
-          width: defaultEntityWidth,
-          height: defaultEntityHeight,
-          name: "Entidade",
-          selected: false,
-          objType: "entity"
-        };
-        entities.push(newE);
-      } else if (type === "relationship") {
-        const newR = {
-          id: relationshipIdCounter++,
-          x: cx,
-          y: cy,
-          size: relationshipSize,
-          name: "Rel.",
-          connections: [],
-          selected: false,
-          objType: "relationship"
-        };
-        relationships.push(newR);
-      } else if (type === "specialization") {
-        const newS = {
-          id: specializationIdCounter++,
-          x: cx,
-          y: cy,
-          size: defaultSpecializationSize,
-          genType: "T,C",
-          connections: [],
-          selected: false,
-          objType: "specialization"
-        };
-        specializations.push(newS);
-      }
-      saveState();
-      cleanupToolbarDrag();
-      draw();
-    }
+  }
+  
+  toolbarDrag = null;
+  draw();
+}
+
     function cleanupToolbarDrag() {
       draggingToolbarType = null;
       draggingNewObj = null;
@@ -2014,9 +2537,11 @@ function drawSpecConnectionLine(context, spec, conn, e) {
         draw();
         return;
       }
+      // Melhoria no arrastamento de grupos
       if (isDraggingGroup) {
         let dx = pos.x - groupMouseStart.x;
         let dy = pos.y - groupMouseStart.y;
+        
         // Atualiza posição de cada objeto
         groupDragData.forEach(item => {
           item.obj.x = item.startX + dx;
@@ -2028,6 +2553,7 @@ function drawSpecConnectionLine(context, spec, conn, e) {
           bpd.breakpoint.x = bpd.startX + dx;
           bpd.breakpoint.y = bpd.startY + dy;
         });
+        
         draw();
         return;
       }
@@ -2037,6 +2563,7 @@ function drawSpecConnectionLine(context, spec, conn, e) {
         draw();
         return;
       }
+      
       if (isDraggingConnection && draggingConnection) {
         draggingConnection.current = pos;
         draw();
@@ -2045,198 +2572,179 @@ function drawSpecConnectionLine(context, spec, conn, e) {
     }
 
 
-    function onCanvasEnd(evt) {
-      evt.preventDefault();
-      let pos = getMousePos(evt);
 
-      // Se estava arrastando um breakpoint, finaliza o arraste
-      if (isDraggingBreakpoint) {
-        isDraggingBreakpoint = false;
-        activeBreakpoint = null;
-        saveState();
-        draw();
-        return;
-      }
 
-      if (pendingConnectionHit) {
-        clearTimeout(breakpointTimeout);
-        if (pendingConnectionHit.type === "specialization-connection") {
-          selectedSpecConnection = {
-            specializationId: pendingConnectionHit.specialization.id,
-            entityId: pendingConnectionHit.connection.entityId,
-            vertex: pendingConnectionHit.connection.vertex,
-            iconRect: null
-          };
-        } else if (pendingConnectionHit.type === "connection") {
-          selectedConnection = {
-            relationshipId: pendingConnectionHit.relationship.id,
-            entityId: pendingConnectionHit.connection.entityId,
-            iconRect: null
-          };
-          justSelectedConnection = true;
-        }
-        pendingConnectionHit = null;
-        draw();
-        return;
-      }
+    // Correção para função onCanvasEnd() - Parte responsável pela seleção de múltiplos objetos
+function onCanvasEnd(evt) {
+  evt.preventDefault();
+  let pos = getMousePos(evt);
+
+  // Se estava arrastando um breakpoint, finaliza o arraste
+  if (isDraggingBreakpoint) {
+    isDraggingBreakpoint = false;
+    activeBreakpoint = null;
+    saveState();
+    draw();
+    return;
+  }
+
+  // Processamento do pendingConnectionHit
+  if (pendingConnectionHit) {
+    clearTimeout(breakpointTimeout);
+    if (pendingConnectionHit.type === "specialization-connection") {
+      selectedSpecConnection = {
+        specializationId: pendingConnectionHit.specialization.id,
+        entityId: pendingConnectionHit.connection.entityId,
+        vertex: pendingConnectionHit.connection.vertex,
+        iconRect: null
+      };
+    } else if (pendingConnectionHit.type === "connection") {
+      selectedConnection = {
+        relationshipId: pendingConnectionHit.relationship.id,
+        entityId: pendingConnectionHit.connection.entityId,
+        iconRect: null
+      };
+      justSelectedConnection = true;
+    }
+    pendingConnectionHit = null;
+    draw();
+    return;
+  }
+
+  if (isPanning) {
+    isPanning = false;
+    return;
+  }
+  
+  if (clickPlacementMode) {
+    createObjectAt(draggingToolbarType, pos.x, pos.y);
+    cleanupToolbarDrag();
+    draw();
+    return;
+  }
+  
+  if (draggingToolbarType) return;
+  
+  if (isResizing) {
+    isResizing = false;
+    resizingObject = null;
+    saveState();
+    draw();
+    return;
+  }
+  
+  if (isSelecting) {
+    // CORREÇÃO: Armazena objetos que serão selecionados
+    const objectsToSelect = [];
     
-    if (pendingConnectionHit) {
-      clearTimeout(breakpointTimeout);
-
-     if (pendingConnectionHit.type === "connection") {
-        selectedConnection = {
-          relationshipId: pendingConnectionHit.relationship.id,
-          entityId: pendingConnectionHit.connection.entityId,
-          iconRect: null
-        };
-        justSelectedConnection = true;
-     } else if (pendingConnectionHit.type === "specialization-connection") {
-       selectedSpecConnection = {
-         specializationId: pendingConnectionHit.specialization.id,
-         entityId: pendingConnectionHit.connection.entityId,
-         vertex: pendingConnectionHit.connection.vertex,
-         iconRect: null
-       };
+    // ENTIDADES: Verifica quais entidades estão dentro da área de seleção
+    entities.forEach(e => {
+      const width = e.width || defaultEntityWidth;
+      const height = e.height || defaultEntityHeight;
+      
+      // Verifica se a entidade intersecta com a área de seleção
+      if (!(e.x + width < selectionRect.x || 
+            e.x > selectionRect.x + selectionRect.width ||
+            e.y + height < selectionRect.y || 
+            e.y > selectionRect.y + selectionRect.height)) {
+        objectsToSelect.push(e);
       }
-
-      pendingConnectionHit = null;
-      draw();
-      return;
+    });
+    
+    // ATRIBUTOS: Verifica quais atributos estão dentro da área de seleção
+    attributes.forEach(a => {
+      const rx = a.radiusX || defaultAttributeRadiusX;
+      const ry = a.radiusY || defaultAttributeRadiusY;
+      
+      // Verifica se o atributo intersecta com a área de seleção
+      // Aproximando a elipse com um retângulo circunscrito para a verificação
+      if (!(a.x + rx < selectionRect.x || 
+            a.x - rx > selectionRect.x + selectionRect.width ||
+            a.y + ry < selectionRect.y || 
+            a.y - ry > selectionRect.y + selectionRect.height)) {
+        objectsToSelect.push(a);
+      }
+    });
+    
+    // RELACIONAMENTOS: Verifica quais relacionamentos estão dentro da área de seleção
+    relationships.forEach(r => {
+      const half = (r.size || relationshipSize) / 2;
+      
+      // Verifica se o relacionamento intersecta com a área de seleção
+      if (!(r.x + half < selectionRect.x || 
+            r.x - half > selectionRect.x + selectionRect.width ||
+            r.y + half < selectionRect.y || 
+            r.y - half > selectionRect.y + selectionRect.height)) {
+        objectsToSelect.push(r);
+      }
+    });
+    
+    // ESPECIALIZAÇÕES: Verifica quais especializações estão dentro da área de seleção
+    specializations.forEach(s => {
+      const half = (s.size || defaultSpecializationSize) / 2;
+      
+      // Verifica se a especialização intersecta com a área de seleção
+      if (!(s.x + half < selectionRect.x || 
+            s.x - half > selectionRect.x + selectionRect.width ||
+            s.y + half < selectionRect.y || 
+            s.y - half > selectionRect.y + selectionRect.height)) {
+        objectsToSelect.push(s);
+      }
+    });
+    
+    // CORREÇÃO: Limpa a seleção atual apenas se não tivermos a tecla Shift pressionada
+    // Nota: Para adicionar suporte a Shift, você pode verificar evt.shiftKey
+    if (!evt.shiftKey) {
+      clearSelection();
     }
-
-      if (isPanning) {
-        isPanning = false;
-        return;
-      }
-      if (clickPlacementMode) {
-        createObjectAt(draggingToolbarType, pos.x, pos.y);
-        cleanupToolbarDrag();
-        draw();
-        return;
-      }
-      if (draggingToolbarType) return;
-      if (isResizing) {
-        isResizing = false;
-        resizingObject = null;
-        saveState();
-        draw();
-        return;
-      }
-      if (isSelecting) {
-        entities.forEach(e => {
-          let w = e.width || defaultEntityWidth, h = e.height || defaultEntityHeight;
-          if (!(e.x + w < selectionRect.x || e.x > selectionRect.x + selectionRect.width ||
-                e.y + h < selectionRect.y || e.y > selectionRect.y + selectionRect.height)) {
-            e.selected = true;
-          }
-        });
-        attributes.forEach(a => {
-          let rx = a.radiusX || defaultAttributeRadiusX;
-          let ry = a.radiusY || defaultAttributeRadiusY;
-          if (!(a.x + rx < selectionRect.x || a.x - rx > selectionRect.x + selectionRect.width ||
-                a.y + ry < selectionRect.y || a.y - ry > selectionRect.y + selectionRect.height)) {
-            a.selected = true;
-          }
-        });
-        relationships.forEach(r => {
-          let half = (r.size || relationshipSize) / 2;
-          if (!(r.x + half < selectionRect.x || r.x - half > selectionRect.x + selectionRect.width ||
-                r.y + half < selectionRect.y || r.y - half > selectionRect.y + selectionRect.height)) {
-            r.selected = true;
-          }
-        });
-        specializations.forEach(s => {
-          let half = (s.size || defaultSpecializationSize) / 2;
-          if (!(s.x + half < selectionRect.x || s.x - half > selectionRect.x + selectionRect.width ||
-                s.y + half < selectionRect.y || s.y - half > selectionRect.y + selectionRect.height)) {
-            s.selected = true;
-          }
-        });
-        isSelecting = false;
-        selectionRect = null;
-        draw();
-        return;
-      }
-      if (isDraggingGroup) {
-        isDraggingGroup = false;
-        groupDragData = [];
-        saveState();
-        draw();
-        return;
-      }
-      if (isDraggingObject) {
-        isDraggingObject = false;
-        dragObject = null;
-        saveState();
-        draw();
-        return;
-      }
-      if (isDraggingConnection) {
-        let drop = getDraggableAt(pos.x, pos.y);
-        if (drop) {
-          // Lógica para criar conexão (ou relacionar entidades, etc.)
-          if (draggingConnection.type === "entity" && drop.type === "entity") {
-            let source = draggingConnection.element;
-            let target = drop.element;
-            // Agora, mesmo que source e target sejam a mesma entidade, o relacionamento será criado.
-            let sourceCenter = { 
-              x: source.x + (source.width || defaultEntityWidth) / 2, 
-              y: source.y + (source.height || defaultEntityHeight) / 2 
-            };
-            let targetCenter = { 
-              x: target.x + (target.width || defaultEntityWidth) / 2, 
-              y: target.y + (target.height || defaultEntityHeight) / 2 
-            };
-            let midX = (sourceCenter.x + targetCenter.x) / 2;
-            let midY = (sourceCenter.y + targetCenter.y) / 2;
-            let newR = {
-              id: relationshipIdCounter++,
-              x: midX,
-              y: midY,
-              size: relationshipSize,
-              name: "Relacionamento",
-              connections: [],
-              selected: false,
-              objType: "relationship"
-            };
-            relationships.push(newR);
-            newR.connections.push({ entityId: source.id, cardinality: "1,1" });
-            newR.connections.push({ entityId: target.id, cardinality: "1,1" });
-          } else if (draggingConnection.type === "relationship" && drop.type === "entity") {
-            
-              draggingConnection.element.connections.push({ entityId: drop.element.id, cardinality: "1,1" });
-           
-          } else if (draggingConnection.type === "entity" && drop.type === "relationship") {
-            if (!drop.element.connections.find(conn => conn.entityId === draggingConnection.element.id)) {
-              drop.element.connections.push({ entityId: draggingConnection.element.id, cardinality: "1,1" });
-            }
-          } else if (draggingConnection.type === "specialization" && drop.type === "entity") {
-            let spec = draggingConnection.element;
-            let vertices = getSpecializationVertices(spec);
-            let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
-            let vertexIndex = distances.indexOf(Math.min(...distances));
-            if (!spec.connections) spec.connections = [];
-            if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === drop.element.id)) {
-              spec.connections.push({ vertex: vertexIndex, entityId: drop.element.id });
-            }
-          } else if (draggingConnection.type === "entity" && drop.type === "specialization") {
-            let spec = drop.element;
-            let vertices = getSpecializationVertices(spec);
-            let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
-            let vertexIndex = distances.indexOf(Math.min(...distances));
-            if (!spec.connections) spec.connections = [];
-            if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === draggingConnection.element.id)) {
-              spec.connections.push({ vertex: vertexIndex, entityId: draggingConnection.element.id });
-            }
-          }
-        }
-        isDraggingConnection = false;
-        draggingConnection = null;
-        saveState();
-        draw();
-        return;
-      }
+    
+    // Seleciona todos os objetos encontrados
+    objectsToSelect.forEach(obj => {
+      obj.selected = true;
+    });
+    
+    // Limpa estado de seleção e redesenha
+    isSelecting = false;
+    selectionRect = null;
+    
+    // Se selecionamos pelo menos um objeto, considere isso uma alteração de estado
+    if (objectsToSelect.length > 0) {
+      // Não salvamos o estado aqui para não adicionar ao histórico de desfazer a cada seleção
+      // saveState(); // Comentado para não adicionar ao histórico de desfazer
     }
+    
+    draw();
+    return;
+  }
+  
+  if (isDraggingGroup) {
+    isDraggingGroup = false;
+    groupDragData = [];
+    saveState();
+    draw();
+    return;
+  }
+  
+  if (isDraggingObject) {
+    isDraggingObject = false;
+    dragObject = null;
+    saveState();
+    draw();
+    return;
+  }
+  
+  if (isDraggingConnection) {
+    let drop = getDraggableAt(pos.x, pos.y);
+    if (drop) {
+      handleConnectionDrop(draggingConnection, drop);
+    }
+    isDraggingConnection = false;
+    draggingConnection = null;
+    saveState();
+    draw();
+    return;
+  }
+}
 
 
     canvas.addEventListener("touchstart", onCanvasStart);
@@ -2548,97 +3056,123 @@ function drawSpecConnectionLine(context, spec, conn, e) {
     }
 
     
+// Modificar a função showSubmenu para implementar arraste de relacionamento
+function showSubmenu(element, x, y) {
+  if (submenu) $(submenu).remove();
+  submenu = document.createElement("div");
+  submenu.className = "submenu";
+  document.body.appendChild(submenu);
 
-    function showSubmenu(element, x, y) {
-      if (submenu) $(submenu).remove();
-      submenu = document.createElement("div");
-      submenu.className = "submenu";
-      document.body.appendChild(submenu);
+  let items = [];
+  if (element.objType === "entity" || element.objType === "relationship" || element.objType === "specialization") {
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+      label: "Deletar",
+      id: "menuDelete",
+      action: () => {
+        if (element.objType === "entity") {
+          entities = entities.filter(e => e.id !== element.id);
+          attributes = attributes.filter(a => !(a.parentType === "entity" && a.parentId === element.id));
+          relationships.forEach(r => r.connections = r.connections.filter(c => c.entityId !== element.id));
+          specializations.forEach(s => s.connections = s.connections.filter(c => c.entityId !== element.id));
+        } else if (element.objType === "relationship") {
+          relationships = relationships.filter(r => r.id !== element.id);
+          attributes = attributes.filter(a => !(a.parentType === "relationship" && a.parentId === element.id));
+        } else if (element.objType === "specialization") {
+          specializations = specializations.filter(s => s.id !== element.id);
+        }
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
+      label: "Relacionar",
+      id: "menuRelate",
+      action: () => {
+        isDraggingConnection = true;
+        draggingConnection = {
+          type: element.objType,
+          element: element,
+          start: { x: element.x + (element.width || element.size || 0)/2, y: element.y + (element.height || element.size || 0)/2 },
+          current: { x: x, y: y }
+        };
+        clearSelection();
+        draw();
+      }
+    });
+  }
+  
+  // Restante do código para atributos
+  if (element.objType === "attribute") {
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+      label: "Deletar",
+      id: "menuDelete",
+      action: () => {
+        attributes = attributes.filter(a => a.id !== element.id);
+        attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16"/></svg>',
+      label: element.primary ? "Remover Chave" : "Definir Chave",
+      id: "menuKey",
+      action: () => {
+        element.primary = !element.primary;
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
+  }
+  
+  if (element.objType === "derivedAttribute") {
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+      label: "Deletar",
+      id: "menuDelete",
+      action: () => {
+        attributes = attributes.filter(a => a.id !== element.id);
+        attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
+  }
 
-      let items = [];
-      if (element.objType === "entity" || element.objType === "relationship" || element.objType === "specialization") {
-        items.push({
-          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
-          label: "Deletar",
-          action: () => {
-            if (element.objType === "entity") {
-              entities = entities.filter(e => e.id !== element.id);
-              attributes = attributes.filter(a => !(a.parentType === "entity" && a.parentId === element.id));
-              relationships.forEach(r => r.connections = r.connections.filter(c => c.entityId !== element.id));
-              specializations.forEach(s => s.connections = s.connections.filter(c => c.entityId !== element.id));
-            } else if (element.objType === "relationship") {
-              relationships = relationships.filter(r => r.id !== element.id);
-              attributes = attributes.filter(a => !(a.parentType === "relationship" && a.parentId === element.id));
-            } else if (element.objType === "specialization") {
-              specializations = specializations.filter(s => s.id !== element.id);
-            }
-            saveState();
-            clearSelection();
-            draw();
-          }
-        });
-        items.push({
-          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
-          label: "Relacionar",
-          action: () => {
-            isDraggingConnection = true;
-            draggingConnection = {
-              type: element.objType,
-              element: element,
-              start: { x: element.x + (element.width || element.size || 0)/2, y: element.y + (element.height || element.size || 0)/2 },
-              current: { x: x, y: y }
-            };
-            clearSelection();
-            draw();
-          }
-        });
-      }
-      if (element.objType === "attribute") {
-        items.push({
-          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
-          label: "Deletar",
-          action: () => {
-            attributes = attributes.filter(a => a.id !== element.id);
-            attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
-            saveState();
-            clearSelection();
-            draw();
-          }
-        });
-        items.push({
-          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16"/></svg>',
-          label: element.primary ? "Remover Chave" : "Definir Chave",
-          action: () => {
-            element.primary = !element.primary;
-            saveState();
-            clearSelection();
-            draw();
-          }
-        });
-      }
-      if (element.objType === "derivedAttribute") {
-        items.push({
-          icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
-          label: "Deletar",
-          action: () => {
-            attributes = attributes.filter(a => a.id !== element.id);
-            attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
-            saveState();
-            clearSelection();
-            draw();
-          }
-        });
-      }
-
-      items.forEach(item => {
-        let div = document.createElement("div");
-        div.className = "submenu-item";
-        div.innerHTML = `${item.icon}<span class="text-white">${item.label}</span>`;
-        div.onclick = item.action;
-        submenu.appendChild(div);
+  items.forEach(item => {
+    let div = document.createElement("div");
+    div.className = "submenu-item";
+    div.id = item.id;
+    div.innerHTML = `${item.icon}<span class="text-white">${item.label}</span>`;
+    div.onclick = item.action;
+    
+    // Adicionando manipuladores para arraste a partir do botão "Relacionar"
+    if (item.id === "menuRelate") {
+      div.addEventListener("mousedown", function(e) {
+        // Armazena informações para iniciar o arraste do relacionamento
+        relationMenuSource = element;
+        
+        // Adiciona eventos para detectar movimento do mouse enquanto o botão estiver pressionado
+        $(document).on("mousemove.relationDrag", onRelationMenuDragMove);
+        $(document).on("mouseup.relationDrag", onRelationMenuDragEnd);
+        
+        // Previne o comportamento padrão (que seria apenas o onclick)
+        e.preventDefault();
+        e.stopPropagation();
       });
+    }
+    
+    submenu.appendChild(div);
+  });
 
-      // Calcule as coordenadas do objeto em tela, considerando panOffset e zoom:
+  // Posicionamento do menu
   let rect = element.objType === "entity" 
       ? { x: element.x, y: element.y, width: element.width, height: element.height }
       : (element.objType === "attribute" || element.objType === "derivedAttribute") 
@@ -2647,28 +3181,266 @@ function drawSpecConnectionLine(context, spec, conn, e) {
               ? { x: element.x - element.size/2, y: element.y - element.size/2, width: element.size, height: element.size }
               : { x: element.x - element.size/2, y: element.y - element.size/2, width: element.size, height: element.size };
 
-      let canvasRect = canvas.getBoundingClientRect();
-      let screenX = canvasRect.left + (rect.x + panOffset.x) * zoom;
-      let screenY = canvasRect.top + (rect.y + panOffset.y) * zoom;
-      let screenWidth = rect.width * zoom;
-      let screenHeight = rect.height * zoom;
-      let submenuX = screenX + (screenWidth / 2) - (submenu.offsetWidth / 2);
-      let submenuY = screenY + screenHeight + 10;
+  let canvasRect = canvas.getBoundingClientRect();
+  let screenX = canvasRect.left + (rect.x + panOffset.x) * zoom;
+  let screenY = canvasRect.top + (rect.y + panOffset.y) * zoom;
+  let screenWidth = rect.width * zoom;
+  let screenHeight = rect.height * zoom;
+  let submenuX = screenX + (screenWidth / 2) - (submenu.offsetWidth / 2);
+  let submenuY = screenY + screenHeight + 10;
 
-      if (submenuX < 0) submenuX = 0;
-      if (submenuX + submenu.offsetWidth > window.innerWidth) submenuX = window.innerWidth - submenu.offsetWidth;
-      if (submenuY + submenu.offsetHeight > window.innerHeight) submenuY = screenY - submenu.offsetHeight - 10;
-      submenu.style.left = `${submenuX}px`;
-      submenu.style.top = `${submenuY}px`;
-      submenuRect = {
-        x: submenuX - canvasRect.left,
-        y: submenuY - canvasRect.top,
-        width: submenu.offsetWidth,
-        height: submenu.offsetHeight
-      };  
+  if (submenuX < 0) submenuX = 0;
+  if (submenuX + submenu.offsetWidth > window.innerWidth) submenuX = window.innerWidth - submenu.offsetWidth;
+  if (submenuY + submenu.offsetHeight > window.innerHeight) submenuY = screenY - submenu.offsetHeight - 10;
+  submenu.style.left = `${submenuX}px`;
+  submenu.style.top = `${submenuY}px`;
+  submenuRect = {
+    x: submenuX - canvasRect.left,
+    y: submenuY - canvasRect.top,
+    width: submenu.offsetWidth,
+    height: submenu.offsetHeight
+  };  
+}
+    
+
+// Função para lidar com o arrastar do relacionamento a partir do menu
+function onRelationMenuDragMove(evt) {
+  // Se tivermos um objeto de origem para o relacionamento
+  if (relationMenuSource) {
+    // Inicia o arraste do relacionamento se ainda não começou
+    if (!isDraggingConnection) {
+      isDraggingConnection = true;
+      
+      // Remove o menu
+      if (submenu) {
+        $(submenu).remove();
+        submenu = null;
+        submenuRect = null;
+      }
+      
+      // Cria o objeto de conexão para desenhar a linha
+      const sourceElement = relationMenuSource;
+      const pos = getMousePos(evt);
+      
+      draggingConnection = {
+        type: sourceElement.objType,
+        element: sourceElement,
+        start: { 
+          x: sourceElement.x + (sourceElement.width || sourceElement.size || 0)/2, 
+          y: sourceElement.y + (sourceElement.height || sourceElement.size || 0)/2 
+        },
+        current: { x: pos.x, y: pos.y }
+      };
+      
+      // Limpa seleção e redesenha
+      clearSelection();
+      draggingRelationFromMenu = true;
     }
+    
+    // Atualiza a posição atual para desenhar a linha
+    if (isDraggingConnection && draggingConnection) {
+      const pos = getMousePos(evt);
+      draggingConnection.current = pos;
+      draw();
+    }
+  }
+}
 
-    function getSubmenuHit(x, y) {
+// Função para finalizar o arraste do relacionamento
+function onRelationMenuDragEnd(evt) {
+  // Remove os handlers de evento
+  $(document).off("mousemove.relationDrag");
+  $(document).off("mouseup.relationDrag");
+  
+  // Se estivermos arrastando uma conexão
+  if (isDraggingConnection && draggingConnection && draggingRelationFromMenu) {
+    const pos = getMousePos(evt);
+    let drop = getDraggableAt(pos.x, pos.y);
+    
+    // Processa o drop da conexão (como no onCanvasEnd)
+    if (drop) {
+      handleConnectionDrop(draggingConnection, drop);
+    }
+    
+    // Limpa os estados
+    isDraggingConnection = false;
+    draggingConnection = null;
+    draggingRelationFromMenu = false;
+    
+    // Salva e redesenha
+    saveState();
+    draw();
+  }
+  
+  // Reseta a variável de origem
+  relationMenuSource = null;
+}
+
+// Função auxiliar para processar a conexão após o arraste
+function handleConnectionDrop(draggingConnection, drop) {
+  if (draggingConnection.type === "entity" && drop.type === "entity") {
+    let source = draggingConnection.element;
+    let target = drop.element;
+    
+    // Cria relacionamento entre duas entidades
+    let sourceCenter = { 
+      x: source.x + (source.width || defaultEntityWidth) / 2, 
+      y: source.y + (source.height || defaultEntityHeight) / 2 
+    };
+    let targetCenter = { 
+      x: target.x + (target.width || defaultEntityWidth) / 2, 
+      y: target.y + (target.height || defaultEntityHeight) / 2 
+    };
+    let midX = (sourceCenter.x + targetCenter.x) / 2;
+    let midY = (sourceCenter.y + targetCenter.y) / 2;
+    
+    let newR = {
+      id: relationshipIdCounter++,
+      x: midX,
+      y: midY,
+      size: relationshipSize,
+      name: "Relacionamento",
+      connections: [],
+      selected: false,
+      objType: "relationship"
+    };
+    
+    relationships.push(newR);
+    newR.connections.push({ entityId: source.id, cardinality: "1,1" });
+    newR.connections.push({ entityId: target.id, cardinality: "1,1" });
+  } 
+  else if (draggingConnection.type === "relationship" && drop.type === "entity") {
+    // Adiciona entidade ao relacionamento
+    draggingConnection.element.connections.push({ 
+      entityId: drop.element.id, 
+      cardinality: "1,1" 
+    });
+  } 
+  else if (draggingConnection.type === "entity" && drop.type === "relationship") {
+    // Adiciona entidade ao relacionamento
+    if (!drop.element.connections.find(conn => conn.entityId === draggingConnection.element.id)) {
+      drop.element.connections.push({ 
+        entityId: draggingConnection.element.id, 
+        cardinality: "1,1" 
+      });
+    }
+  } 
+  else if (draggingConnection.type === "specialization" && drop.type === "entity") {
+    // Conecta especialização à entidade
+    let spec = draggingConnection.element;
+    let vertices = getSpecializationVertices(spec);
+    let pos = getMousePos(event);
+    let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
+    let vertexIndex = distances.indexOf(Math.min(...distances));
+    
+    if (!spec.connections) spec.connections = [];
+    if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === drop.element.id)) {
+      spec.connections.push({ 
+        vertex: vertexIndex, 
+        entityId: drop.element.id 
+      });
+    }
+  } 
+  else if (draggingConnection.type === "entity" && drop.type === "specialization") {
+    // Conecta entidade à especialização
+    let spec = drop.element;
+    let vertices = getSpecializationVertices(spec);
+    let pos = getMousePos(event);
+    let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
+    let vertexIndex = distances.indexOf(Math.min(...distances));
+    
+    if (!spec.connections) spec.connections = [];
+    if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === draggingConnection.element.id)) {
+      spec.connections.push({ 
+        vertex: vertexIndex, 
+        entityId: draggingConnection.element.id 
+      });
+    }
+  }
+}// Função auxiliar para processar a conexão após o arraste
+function handleConnectionDrop(draggingConnection, drop) {
+  if (draggingConnection.type === "entity" && drop.type === "entity") {
+    let source = draggingConnection.element;
+    let target = drop.element;
+    
+    // Cria relacionamento entre duas entidades
+    let sourceCenter = { 
+      x: source.x + (source.width || defaultEntityWidth) / 2, 
+      y: source.y + (source.height || defaultEntityHeight) / 2 
+    };
+    let targetCenter = { 
+      x: target.x + (target.width || defaultEntityWidth) / 2, 
+      y: target.y + (target.height || defaultEntityHeight) / 2 
+    };
+    let midX = (sourceCenter.x + targetCenter.x) / 2;
+    let midY = (sourceCenter.y + targetCenter.y) / 2;
+    
+    let newR = {
+      id: relationshipIdCounter++,
+      x: midX,
+      y: midY,
+      size: relationshipSize,
+      name: "Relacionamento",
+      connections: [],
+      selected: false,
+      objType: "relationship"
+    };
+    
+    relationships.push(newR);
+    newR.connections.push({ entityId: source.id, cardinality: "1,1" });
+    newR.connections.push({ entityId: target.id, cardinality: "1,1" });
+  } 
+  else if (draggingConnection.type === "relationship" && drop.type === "entity") {
+    // Adiciona entidade ao relacionamento
+    draggingConnection.element.connections.push({ 
+      entityId: drop.element.id, 
+      cardinality: "1,1" 
+    });
+  } 
+  else if (draggingConnection.type === "entity" && drop.type === "relationship") {
+    // Adiciona entidade ao relacionamento
+    if (!drop.element.connections.find(conn => conn.entityId === draggingConnection.element.id)) {
+      drop.element.connections.push({ 
+        entityId: draggingConnection.element.id, 
+        cardinality: "1,1" 
+      });
+    }
+  } 
+  else if (draggingConnection.type === "specialization" && drop.type === "entity") {
+    // Conecta especialização à entidade
+    let spec = draggingConnection.element;
+    let vertices = getSpecializationVertices(spec);
+    let pos = getMousePos(event);
+    let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
+    let vertexIndex = distances.indexOf(Math.min(...distances));
+    
+    if (!spec.connections) spec.connections = [];
+    if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === drop.element.id)) {
+      spec.connections.push({ 
+        vertex: vertexIndex, 
+        entityId: drop.element.id 
+      });
+    }
+  } 
+  else if (draggingConnection.type === "entity" && drop.type === "specialization") {
+    // Conecta entidade à especialização
+    let spec = drop.element;
+    let vertices = getSpecializationVertices(spec);
+    let pos = getMousePos(event);
+    let distances = vertices.map(v => Math.hypot(v.x - pos.x, v.y - pos.y));
+    let vertexIndex = distances.indexOf(Math.min(...distances));
+    
+    if (!spec.connections) spec.connections = [];
+    if (!spec.connections.find(conn => conn.vertex === vertexIndex && conn.entityId === draggingConnection.element.id)) {
+      spec.connections.push({ 
+        vertex: vertexIndex, 
+        entityId: draggingConnection.element.id 
+      });
+    }
+  }
+}
+
+function getSubmenuHit(x, y) {
       if (!submenu || !isInsideRect({x,y}, submenuRect)) return null;
       let items = submenu.children;
       for (let i = 0; i < items.length; i++) {
