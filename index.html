@@ -437,6 +437,28 @@
     font-weight: 500;
     color: #9ca3af;
   }
+
+
+  /* Cores para os novos tipos de elementos */
+  .multivalued-btn {
+    background: linear-gradient(to bottom right, #06b6d4, #0e7490);
+  }
+  
+  .aggregation-btn {
+    background: linear-gradient(to bottom right, #8b5cf6, #6d28d9);
+  }
+  
+  
+  
+  .tool-multivalued {
+    background: linear-gradient(to bottom right, #06b6d4, #0e7490);
+  }
+  
+  .tool-aggregation {
+    background: linear-gradient(to bottom right, #8b5cf6, #6d28d9);
+  }
+  
+  
   
   </style>
 </head>
@@ -483,6 +505,17 @@
         <span>Atr. Derivado</span>
         <span class="tooltip-text">Adicionar um atributo derivado</span>
       </div>
+
+
+      <!-- Atributo Multivalorado -->
+      <div id="btnMultivaluedAttribute" class="main-menu-item tooltip multivalued-btn">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="12" rx="8" ry="4" stroke-width="2.5" />
+          <ellipse cx="12" cy="12" rx="6" ry="3" stroke-width="2.5" />
+        </svg>
+        <span>Atr. Multivalorado</span>
+        <span class="tooltip-text">Adicionar um atributo multivalorado</span>
+      </div>
       
       <!-- Relacionamento -->
       <div id="btnRelationship" class="main-menu-item tooltip relationship-btn">
@@ -501,6 +534,18 @@
         <span>Gen./Esp.</span>
         <span class="tooltip-text">Adicionar especialização/generalização</span>
       </div>
+
+      <!-- Relacionamento de Agregação -->
+      <div id="btnAggregation" class="main-menu-item tooltip aggregation-btn">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="6" y="6" width="12" height="12" rx="1" stroke-width="2.5" />
+          <polygon points="12 8 16 12 12 16 8 12" stroke-width="2.5" />
+        </svg>
+        <span>Agregação</span>
+        <span class="tooltip-text">Adicionar uma agregação</span>
+      </div>
+
+      
       
       <!-- Categorias em submenus -->
       
@@ -610,7 +655,7 @@
             <ellipse cx="12" cy="12" rx="8" ry="4" />
           </svg>
         </div>
-        <span>Atributo</span>
+        <span>Atr. Simples</span>
       </div>
       
       <div id="btnDerivedAttribute-mobile" class="mobile-menu-button">
@@ -619,7 +664,17 @@
             <ellipse cx="12" cy="12" rx="8" ry="4" />
           </svg>
         </div>
-        <span>Atributo Derivado</span>
+        <span>Atr. Derivado</span>
+      </div>
+
+      <div id="btnMultivaluedAttribute-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-multivalued">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <ellipse cx="12" cy="12" rx="8" ry="4" />
+            <ellipse cx="12" cy="12" rx="6" ry="3" />
+          </svg>
+        </div>
+        <span>Atr. Multivalorado</span>
       </div>
       
       <div id="btnRelationship-mobile" class="mobile-menu-button">
@@ -639,6 +694,18 @@
         </div>
         <span>Especialização/Generalização</span>
       </div>
+
+      <div id="btnAggregation-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-aggregation">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <rect x="6" y="6" width="12" height="12" rx="1" />
+            <polygon points="12 8 16 12 12 16 8 12" />
+          </svg>
+        </div>
+        <span>Agregação</span>
+      </div>
+
+      
     </div>
     
     <!-- Seção: Texto -->
@@ -787,6 +854,7 @@
     let panStart = { x: 0, y: 0 };
     let panOffsetStart = { x: 0, y: 0 };
     let isSpacePressed = false;
+    let relationClickMode = false;
 
     
 
@@ -866,16 +934,26 @@
     // Array global para armazenar info de breakpoints durante o arraste em grupo
     let groupBreakpointsData = [];
 
+    let currentSubmenuCloseHandler = null;
+
     // Variáveis para controlar o arraste de relacionamento a partir do menu
     let draggingRelationFromMenu = false;
     let relationMenuSource = null;
+
+    // Novos contadores para os novos tipos
+    let aggregationIdCounter = 0;
+    
+    // Armazenamento para agregações
+    let aggregations = [];
 
     const normalColors = {
       entity: { fill: "#3b82f6", stroke: "#1e40af" },
       attribute: { fill: "#10b981", stroke: "#065f46" },
       derived: { fill: "#fcd34d", stroke: "#d97706" },
       relationship: { fill: "#ec4899", stroke: "#7e22ce" },
-      specialization: { fill: "#facc15", stroke: "#ca8a04" }
+      specialization: { fill: "#facc15", stroke: "#ca8a04" },
+      multivalued : { fill: "#06b6d4", stroke: "#0e7490" },
+      aggregation : { fill: "#8b5cf6", stroke: "#6d28d9" }
     };
 
     
@@ -912,12 +990,20 @@
 
 
 
-  // Adapte sua restoreState (usada para Undo/Redo) para chamar draw() ao final
+  // Função restoreState
   function restoreState(state) {
     entities = JSON.parse(JSON.stringify(state.entities));
     attributes = JSON.parse(JSON.stringify(state.attributes));
     relationships = JSON.parse(JSON.stringify(state.relationships));
     specializations = JSON.parse(JSON.stringify(state.specializations));
+    
+    // Se a propriedade 'aggregations' existir no estado, restaura
+    if (state.aggregations) {
+      aggregations = JSON.parse(JSON.stringify(state.aggregations));
+    } else {
+      aggregations = []; // Caso seja um estado antigo sem agregações
+    }
+    
     draw();
   }
 
@@ -1002,6 +1088,54 @@
   });
 
 
+  // Adicionar novos eventos de drag para os botões
+  document.getElementById("btnMultivaluedAttribute").addEventListener("mousedown", (e) => startToolbarDrag("multivaluedAttribute", e));
+  document.getElementById("btnAggregation").addEventListener("mousedown", (e) => startToolbarDrag("aggregation", e));
+  
+  
+  // Adicionando event listeners para os botões mobile
+  function addMobileListeners() {
+    const mobileButtonIds = [
+      "MultivaluedAttribute", "Aggregation"
+    ];
+    
+    mobileButtonIds.forEach(id => {
+      const mobileBtn = document.getElementById(`btn${id}-mobile`);
+      const desktopBtn = document.getElementById(`btn${id}`);
+      
+      if (mobileBtn && desktopBtn) {
+        mobileBtn.addEventListener("mousedown", function(e) {
+          const newEvent = new MouseEvent("mousedown", {
+            clientX: e.clientX,
+            clientY: e.clientY,
+            bubbles: true
+          });
+          desktopBtn.dispatchEvent(newEvent);
+          
+          document.getElementById("mobile-sidebar").classList.remove("open");
+        });
+        
+        mobileBtn.addEventListener("touchstart", function(e) {
+          const touch = e.touches[0];
+          const newEvent = new MouseEvent("mousedown", {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            bubbles: true
+          });
+          desktopBtn.dispatchEvent(newEvent);
+          
+          document.getElementById("mobile-sidebar").classList.remove("open");
+        });
+      }
+    });
+  }
+  
+  // Chamar a função para adicionar os listeners
+  document.addEventListener("DOMContentLoaded", function() {
+    addMobileListeners();
+  });
+
+
 
   // Configuração dos botões mobile
   function setupMobileButtons() {
@@ -1054,6 +1188,8 @@
         }
       });
     }
+
+
 
 
      // Configuração dos botões desktop
@@ -1203,12 +1339,14 @@ function loadFromLocalStorage() {
       attributes = data.attributes || [];
       relationships = data.relationships || [];
       specializations = data.specializations || [];
+      aggregations = data.aggregations || [];
 
       // Restaura contadores - importante garantir que sejam números!
       entityIdCounter = typeof data.entityIdCounter === 'number' ? data.entityIdCounter : 0;
       attributeIdCounter = typeof data.attributeIdCounter === 'number' ? data.attributeIdCounter : 0;
       relationshipIdCounter = typeof data.relationshipIdCounter === 'number' ? data.relationshipIdCounter : 0;
       specializationIdCounter = typeof data.specializationIdCounter === 'number' ? data.specializationIdCounter : 0;
+      aggregationIdCounter = typeof data.aggregationIdCounter === 'number' ? data.aggregationIdCounter : 0;
       
       // Restaura configurações visuais
       if (data.fontSize) fontSize = data.fontSize;
@@ -1240,10 +1378,12 @@ function saveToLocalStorage() {
       attributes,
       relationships,
       specializations,
+      aggregations,
       entityIdCounter,
       attributeIdCounter,
       relationshipIdCounter,
       specializationIdCounter,
+      aggregationIdCounter, // Adicionar este contador
       fontSize,
       panOffset
     };
@@ -1315,7 +1455,8 @@ function saveState() {
     entities: JSON.parse(JSON.stringify(entities)),
     attributes: JSON.parse(JSON.stringify(attributes)),
     relationships: JSON.parse(JSON.stringify(relationships)),
-    specializations: JSON.parse(JSON.stringify(specializations))
+    specializations: JSON.parse(JSON.stringify(specializations)),
+    aggregations: JSON.parse(JSON.stringify(aggregations))
   };
   undoStack.push(state);
   redoStack = [];
@@ -1762,6 +1903,7 @@ function getMousePos(evt) {
         context.stroke();
         context.fillStyle = "#ffffff";
         drawWrappedText(context, e.name, e.x + e.width/2, e.y + e.height/2, e.width - margin, false);
+
         if (e.selected) {
           e.resizeHandles = [
             { x: e.x - handleSize/2, y: e.y - handleSize/2, width: handleSize, height: handleSize },
@@ -1778,6 +1920,8 @@ function getMousePos(evt) {
         } else {
           e.resizeHandles = [];
         }
+
+        
         context.restore();
       });
 
@@ -1785,29 +1929,54 @@ function getMousePos(evt) {
         context.save();
         context.shadowColor = "rgba(0,0,0,0.5)";
         context.shadowBlur = 10;
-        context.fillStyle = a.derived ? normalColors.derived.fill : normalColors.attribute.fill;
-        context.strokeStyle = a.selected ? "#60a5fa" : (a.derived ? normalColors.derived.stroke : normalColors.attribute.stroke);
+        
+        // Determina o estilo baseado no tipo de atributo
+        if (a.derived) {
+          context.fillStyle = normalColors.derived.fill;
+          context.strokeStyle = a.selected ? "#60a5fa" : normalColors.derived.stroke;
+          context.setLineDash([4, 2]);
+        } else if (a.multivalued) {
+          context.fillStyle = normalColors.multivalued.fill;
+          context.strokeStyle = a.selected ? "#60a5fa" : normalColors.multivalued.stroke;
+        } else {
+          context.fillStyle = normalColors.attribute.fill;
+          context.strokeStyle = a.selected ? "#60a5fa" : normalColors.attribute.stroke;
+        }
+        
         context.lineWidth = a.selected ? 3 : 2;
-        if (a.derived) context.setLineDash([4, 2]);
+        
         const margin = 12;
         let rx = a.radiusX || defaultAttributeRadiusX;
         let ry = a.radiusY || defaultAttributeRadiusY;
         const lines = wrapText(context, a.name, rx*2 - margin);
+        
         let maxLineWidth = 0;
         lines.forEach(line => {
           let tw = context.measureText(line).width;
           if (tw > maxLineWidth) maxLineWidth = tw;
         });
+        
         let neededWidth = maxLineWidth + margin;
         let neededHeight = lines.length*(fontSize*1.2) + margin;
         rx = Math.max(rx, neededWidth / 2);
         ry = Math.max(ry, neededHeight / 2);
         a.radiusX = rx;
         a.radiusY = ry;
+        
+        // Desenha a elipse principal
         context.beginPath();
         context.ellipse(a.x, a.y, rx, ry, 0, 0, 2*Math.PI);
         context.fill();
         context.stroke();
+        
+        // Desenha a segunda elipse para atributos multivalorados
+        if (a.multivalued) {
+          // Desenha a elipse interna um pouco menor
+          context.beginPath();
+          context.ellipse(a.x, a.y, rx*0.75, ry*0.75, 0, 0, 2*Math.PI);
+          context.stroke();
+        }
+        
         context.setLineDash([]);
         context.fillStyle = "#ffffff";
         drawWrappedText(context, a.name, a.x, a.y, rx*2 - margin, a.primary);
@@ -1902,6 +2071,107 @@ function getMousePos(evt) {
           spec.resizeHandles = [];
         }
         context.restore();
+      });
+
+      // Desenhar agregações
+      aggregations.forEach(agg => {
+        context.save();
+        context.shadowColor = "rgba(0,0,0,0.5)";
+        context.shadowBlur = 10;
+        context.fillStyle = normalColors.aggregation.fill;
+        context.strokeStyle = agg.selected ? "#60a5fa" : normalColors.aggregation.stroke;
+        context.lineWidth = agg.selected ? 3 : 2;
+        
+        const half = (agg.size || relationshipSize)/2;
+        const rectSize = half * 1.2;  // Retângulo um pouco maior que o losango
+        
+        // Desenha o retângulo externo
+        context.beginPath();
+        context.rect(agg.x - rectSize, agg.y - rectSize, rectSize*2, rectSize*2);
+        context.stroke();
+        
+        // Desenha o losango interno
+        context.beginPath();
+        context.moveTo(agg.x, agg.y - half);
+        context.lineTo(agg.x + half, agg.y);
+        context.lineTo(agg.x, agg.y + half);
+        context.lineTo(agg.x - half, agg.y);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        
+        // Desenha o texto da agregação
+        context.fillStyle = "#ffffff";
+        drawWrappedText(context, agg.name, agg.x, agg.y, agg.size - 20, false);
+        
+        // Handles para quando está selecionado
+        if (agg.selected) {
+          agg.resizeHandles = [
+            { x: agg.x - rectSize - handleSize/2, y: agg.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: agg.x + rectSize - handleSize/2, y: agg.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: agg.x - handleSize/2, y: agg.y - rectSize - handleSize/2, width: handleSize, height: handleSize },
+            { x: agg.x - handleSize/2, y: agg.y + rectSize - handleSize/2, width: handleSize, height: handleSize }
+          ];
+          agg.resizeHandles.forEach(handle => {
+            context.fillStyle = "#ffffff";
+            context.strokeStyle = "#000000";
+            context.fillRect(handle.x, handle.y, handle.width, handle.height);
+            context.strokeRect(handle.x, handle.y, handle.width, handle.height);
+          });
+        } else {
+          agg.resizeHandles = [];
+        }
+        
+        context.restore();
+      });
+      
+      // Desenhar conexões de agregação
+      aggregations.forEach(agg => {
+        agg.connections.forEach(conn => {
+          const target = conn.entityId ? 
+            entities.find(e => e.id === conn.entityId) :
+            relationships.find(r => r.id === conn.relationshipId);
+          
+          if (target) {
+            const aggCenter = { x: agg.x, y: agg.y };
+            const targetCenter = target.objType === "entity" ? 
+              { x: target.x + target.width/2, y: target.y + target.height/2 } :
+              { x: target.x, y: target.y };
+            
+            let points = [aggCenter];
+            if (conn.breakpoints) {
+              points.push(...conn.breakpoints);
+            }
+            points.push(targetCenter);
+            
+            // Desenho da linha de conexão
+            context.beginPath();
+            context.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+              context.lineTo(points[i].x, points[i].y);
+            }
+            context.lineWidth = 2;
+            context.strokeStyle = "#000000";
+            context.stroke();
+            
+            // Desenho dos breakpoints
+            if (conn.breakpoints) {
+              for (let bp of conn.breakpoints) {
+                context.beginPath();
+                context.arc(bp.x, bp.y, 5, 0, 2*Math.PI);
+                context.fillStyle = "#000000";
+                context.fill();
+              }
+            }
+            
+            // Desenha a cardinalidade se existir
+            if (conn.cardinality) {
+              let labelPos = getPolylineMidpoint(points);
+              context.fillStyle = "#000000";
+              context.fillText(conn.cardinality, labelPos.x, labelPos.y - 5);
+            }
+          }
+        });
       });
 
       if (isSelecting && selectionRect) {
@@ -2324,6 +2594,33 @@ function drawPreview() {
       ctx.fill();
       ctx.stroke();
       break;
+    
+      case "multivaluedAttribute":
+      // Preview for multivalued attribute
+      ctx.fillStyle = normalColors.multivalued.fill;
+      ctx.strokeStyle = normalColors.multivalued.stroke;
+      ctx.beginPath();
+      ctx.ellipse(
+        centerX, 
+        centerY, 
+        defaultAttributeRadiusX, 
+        defaultAttributeRadiusY, 
+        0, 0, Math.PI*2
+      );
+      ctx.fill();
+      ctx.stroke();
+      
+      // Draw the inner ellipse for multivalued
+      ctx.beginPath();
+      ctx.ellipse(
+        centerX, 
+        centerY, 
+        defaultAttributeRadiusX * 0.75, 
+        defaultAttributeRadiusY * 0.75, 
+        0, 0, Math.PI*2
+      );
+      ctx.stroke();
+      break;
   }
   
   ctx.restore();
@@ -2334,7 +2631,7 @@ function drawPreview() {
 
 // 5. Atualização da função createObjectAt para garantir objetos centralizados
 function createObjectAt(type, cx, cy) {
-  if (type === "attribute" || type === "derivedAttribute") {
+  if (type === "attribute" || type === "derivedAttribute" || type === "multivaluedAttribute") {
     const drop = getDraggableAt(cx, cy);
     if (!drop || (drop.type !== "entity" && drop.type !== "relationship" && drop.type !== "attribute" && drop.type !== "derivedAttribute")) {
       alert("O atributo deve ser arrastado sobre uma entidade, relacionamento ou outro atributo.");
@@ -2343,7 +2640,7 @@ function createObjectAt(type, cx, cy) {
       return;
     }
     
-    // Lógica para atributos (sem mudanças, já que seguem regras específicas de posicionamento)
+    // Lógica para atributos
     let parentObj = drop.element;
     let posX, posY;
     if (drop.type === "entity") {
@@ -2361,15 +2658,18 @@ function createObjectAt(type, cx, cy) {
       id: attributeIdCounter++,
       x: posX,
       y: posY,
-      name: (type === "derivedAttribute") ? "Deriv." : "Simples",
-      parentType: drop.type === "derivedAttribute" ? "attribute" : drop.type,
+      name: type === "derivedAttribute" ? "Deriv." : 
+            (type === "multivaluedAttribute" ? "Multival." : "Simples"),
+      parentType: drop.type === "derivedAttribute" || drop.type === "multivaluedAttribute" ? 
+                  "attribute" : drop.type,
       parentId: parentObj.id,
       derived: (type === "derivedAttribute"),
+      multivalued: (type === "multivaluedAttribute"),
       primary: false,
       selected: false,
       radiusX: defaultAttributeRadiusX,
       radiusY: defaultAttributeRadiusY,
-      objType: (type === "derivedAttribute") ? "derivedAttribute" : "attribute"
+      objType: type 
     };
     attributes.push(newA);
   } else if (type === "entity") {
@@ -2411,6 +2711,18 @@ function createObjectAt(type, cx, cy) {
       objType: "specialization"
     };
     specializations.push(newS);
+  } else if (type === "aggregation") {
+    const newAgg = {
+      id: aggregationIdCounter++,
+      x: cx,  // Posição do centro X
+      y: cy,  // Posição do centro Y
+      size: relationshipSize,
+      name: "Agregação",
+      connections: [],
+      selected: false,
+      objType: "aggregation"
+    };
+    aggregations.push(newAgg);
   }
   
   saveState();
@@ -2470,21 +2782,18 @@ function createObjectAt(type, cx, cy) {
       ctx.restore();
     }
 
+    // Função clearSelection
     function clearSelection() {
       entities.forEach(e => e.selected = false);
       attributes.forEach(a => a.selected = false);
       relationships.forEach(r => r.selected = false);
       specializations.forEach(s => s.selected = false);
+      aggregations.forEach(a => a.selected = false); // Adicionar esta linha
+      
       selectedConnection = null;
       selectedSpecConnection = null;
-      if (submenu) {
-        $(submenu).remove();
-        submenu = null;
-      }
-      if (submenuTimeout) {
-        clearTimeout(submenuTimeout);
-        submenuTimeout = null;
-      }
+      
+      // [resto da função permanece igual]
     }
 
     function checkResizeHandles(x, y) {
@@ -2524,7 +2833,14 @@ function createObjectAt(type, cx, cy) {
           let rx = a.radiusX || defaultAttributeRadiusX;
           let ry = a.radiusY || defaultAttributeRadiusY;
           if (Math.pow((x - a.x) / rx, 2) + Math.pow((y - a.y) / ry, 2) <= 1) {
-            return { type: a.derived ? "derivedAttribute" : "attribute", element: a };
+            // Retorna o tipo correto baseado nas propriedades do atributo
+            if (a.derived) {
+              return { type: "derivedAttribute", element: a };
+            } else if (a.multivalued) {
+              return { type: "multivaluedAttribute", element: a };
+            } else {
+              return { type: "attribute", element: a };
+            }
           }
         }
 
@@ -2631,6 +2947,19 @@ function createObjectAt(type, cx, cy) {
           }
         }
 
+        // Verifica agregações
+        for (let i = aggregations.length - 1; i >= 0; i--) {
+          const agg = aggregations[i];
+          const half = (agg.size || relationshipSize) / 2;
+          const rectSize = half * 1.2;
+          
+          // Checa se está dentro do retângulo externo primeiro
+          if (x >= agg.x - rectSize && x <= agg.x + rectSize &&
+              y >= agg.y - rectSize && y <= agg.y + rectSize) {
+            return { type: "aggregation", element: agg };
+          }
+        }
+
         return null;
     }
 
@@ -2733,6 +3062,19 @@ function onToolbarDragEnd(evt) {
 
     
 function onCanvasStart(evt) {
+  // Fechar o submenu se estiver aberto
+  if (submenu) {
+    $(submenu).remove();
+    submenu = null;
+    submenuRect = null;
+    
+    // Remove o manipulador de eventos
+    if (currentSubmenuCloseHandler) {
+      document.removeEventListener('click', currentSubmenuCloseHandler);
+      currentSubmenuCloseHandler = null;
+    }
+  }
+
   evt.preventDefault();
   let pos = getMousePos(evt);
 
@@ -2754,7 +3096,9 @@ function onCanvasStart(evt) {
         width: resizingObject.width,
         height: resizingObject.height
       };
-    } else if (resizingObject.objType === "attribute" || resizingObject.objType === "derivedAttribute") {
+    } else if (resizingObject.objType === "attribute" || 
+              resizingObject.objType === "derivedAttribute" || 
+              resizingObject.objType === "multivaluedAttribute") {
       resizingInitial = {
         x: resizingObject.x,
         y: resizingObject.y,
@@ -2878,6 +3222,7 @@ function onCanvasStart(evt) {
       case "entity":
       case "attribute":
       case "derivedAttribute":
+      case "multivaluedAttribute":
       case "relationship":
       case "specialization":
         if (!hit.element.selected) {
@@ -3110,7 +3455,9 @@ function onCanvasStart(evt) {
             resizingObject.width = newWidth;
             resizingObject.height = newHeight;
           }
-        } else if (resizingObject.objType === "attribute" || resizingObject.objType === "derivedAttribute") {
+        } else if (resizingObject.objType === "attribute" || 
+             resizingObject.objType === "derivedAttribute" || 
+             resizingObject.objType === "multivaluedAttribute") {
           if (resizeHandleIndex === 0 || resizeHandleIndex === 1) {
             let newRadiusX = Math.abs(pos.x - resizingObject.x);
             let newRadiusY = newRadiusX * resizingInitial.ratio;
@@ -3179,8 +3526,18 @@ function onCanvasStart(evt) {
       }
       
       if (isDraggingConnection && draggingConnection) {
-        draggingConnection.current = pos;
-        draw();
+        // Se estamos no modo de clique, atualiza apenas o cursor sem desenhar a linha
+        if (!relationClickMode) {
+          draggingConnection.current = pos;
+          draw();
+        } else {
+          // No modo de clique, apenas atualiza a posição do cursor sem redesenhar
+          // constantemente, para evitar flickering
+          draggingConnection.current = pos;
+          
+          // Opcional: você pode atualizar o cursor para indicar modo de conexão
+          canvas.style.cursor = "crosshair";
+        }
         return;
       }
     }
@@ -3348,16 +3705,22 @@ function onCanvasEnd(evt) {
   }
   
   if (isDraggingConnection) {
-    let drop = getDraggableAt(pos.x, pos.y);
-    if (drop) {
-      handleConnectionDrop(draggingConnection, drop);
+    // Se não estamos no modo de clique, processe o drop normalmente
+    if (!relationClickMode) {
+      let drop = getDraggableAt(pos.x, pos.y);
+      if (drop) {
+        handleConnectionDrop(draggingConnection, drop);
+      }
+      isDraggingConnection = false;
+      draggingConnection = null;
+      saveState();
+      draw();
     }
-    isDraggingConnection = false;
-    draggingConnection = null;
-    saveState();
-    draw();
+    // Se estamos no modo de clique, não faça nada aqui - o handler de clique cuidará disso
     return;
   }
+
+  canvas.style.cursor = "default";
 }
 
 
@@ -3374,60 +3737,78 @@ function onCanvasEnd(evt) {
     let inlineInput = null, inlineSelect = null, inlineSpecSelect = null;
 
     canvas.addEventListener("click", function(evt) {
-      let pos = getMousePos(evt);
+  let pos = getMousePos(evt);
 
-      // Se a conexão foi apenas selecionada, ignora esse clique para exclusão
-      if (justSelectedConnection) {
-        justSelectedConnection = false;
-        return;
+  // Se estamos no modo de criação de relacionamento, tente completar a relação
+  if (isDraggingConnection && draggingConnection) {
+    let drop = getDraggableAt(pos.x, pos.y);
+    if (drop) {
+      handleConnectionDrop(draggingConnection, drop);
+      saveState();
+      showNotification("Relacionamento criado", "success");
+    } else {
+      showNotification("Clique em um objeto válido", "error");
+    }
+    
+    // Independentemente do resultado, limpe o estado
+    isDraggingConnection = false;
+    draggingConnection = null;
+    canvas.style.cursor = "default";
+    draw();
+    return;
+  }
+
+  // Se a conexão foi apenas selecionada, ignora esse clique para exclusão
+  if (justSelectedConnection) {
+    justSelectedConnection = false;
+    return;
+  }
+
+  // 1) Se clicou no ícone de exclusão de uma conexão (linha)
+  if (selectedConnection && selectedConnection.iconRect) {
+    if (isInsideRect(pos, selectedConnection.iconRect)) {
+      // A lógica de remover a conexão é a mesma do "deleteSelectedObjects" 
+      // (item 7 no seu deleteSelectedObjects).
+      let r = relationships.find(rr => rr.id === selectedConnection.relationshipId);
+      if (r) {
+        r.connections = r.connections.filter(
+          conn => conn.entityId !== selectedConnection.entityId
+        );
       }
+      selectedConnection = null;
+      saveState();
+      clearSelection();
+      draw();
+      return; // sai imediatamente para não continuar no loop
+    }
+  }
 
-      // 1) Se clicou no ícone de exclusão de uma conexão (linha)
-      if (selectedConnection && selectedConnection.iconRect) {
-        if (isInsideRect(pos, selectedConnection.iconRect)) {
-          // A lógica de remover a conexão é a mesma do "deleteSelectedObjects" 
-          // (item 7 no seu deleteSelectedObjects).
-          let r = relationships.find(rr => rr.id === selectedConnection.relationshipId);
-          if (r) {
-            r.connections = r.connections.filter(
-              conn => conn.entityId !== selectedConnection.entityId
-            );
-          }
-          selectedConnection = null;
-          saveState();
-          clearSelection();
-          draw();
-          return; // sai imediatamente para não continuar no loop
-        }
+  // 2) Se clicou no ícone de exclusão de uma especialização, faça algo similar ao dos relacionamentos
+  if (selectedSpecConnection && selectedSpecConnection.iconRect) {
+    if (isInsideRect(pos, selectedSpecConnection.iconRect)) {
+      let s = specializations.find(sp => sp.id === selectedSpecConnection.specializationId);
+      if (s && s.connections) {
+        s.connections = s.connections.filter(conn =>
+          !(conn.entityId === selectedSpecConnection.entityId && conn.vertex === selectedSpecConnection.vertex)
+        );
       }
+      selectedSpecConnection = null;
+      saveState();
+      clearSelection();
+      draw();
+      return;
+    }
+  }
 
-      // 2) Se clicou no ícone de exclusão de uma especialização, faça algo similar ao dos relacionamentos
-      if (selectedSpecConnection && selectedSpecConnection.iconRect) {
-        if (isInsideRect(pos, selectedSpecConnection.iconRect)) {
-          let s = specializations.find(sp => sp.id === selectedSpecConnection.specializationId);
-          if (s && s.connections) {
-            s.connections = s.connections.filter(conn =>
-              !(conn.entityId === selectedSpecConnection.entityId && conn.vertex === selectedSpecConnection.vertex)
-            );
-          }
-          selectedSpecConnection = null;
-          saveState();
-          clearSelection();
-          draw();
-          return;
-        }
-      }
-
-      // 3) Caso não tenha clicado em nenhum ícone de exclusão,
-      //    prossiga com o que você já faz para breakpoints e labelRect etc.
-      for (let r of relationships) {
-        for (let conn of r.connections) {
-          // ...
-          // (o seu loop de breakpoints e labelRect)
-        }
-      }
-    });
-
+  // 3) Caso não tenha clicado em nenhum ícone de exclusão,
+  //    prossiga com o que você já faz para breakpoints e labelRect etc.
+  for (let r of relationships) {
+    for (let conn of r.connections) {
+      // ...
+      // (o seu loop de breakpoints e labelRect)
+    }
+  }
+});
 
     function onCanvasContextMenu(evt) {
       evt.preventDefault();
@@ -3538,11 +3919,12 @@ function onCanvasEnd(evt) {
 
 
       if (hit) {
-        if (hit.type === "entity" || hit.type === "attribute" || hit.type === "relationship" || hit.type === "derivedAttribute") {
+        if (hit.type === "entity" || hit.type === "attribute" || hit.type === "relationship" || 
+            hit.type === "derivedAttribute" || hit.type === "multivaluedAttribute") {  // Adicionar este caso
           let compX = hit.type === "entity" ? hit.element.x + (hit.element.width || defaultEntityWidth)/2 : hit.element.x;
           let compY = hit.type === "entity" ? hit.element.y + (hit.element.height || defaultEntityHeight)/2 : hit.element.y;
           showInlineEditor(hit.element, compX, compY);
-        } else if (hit.type === "specialization") {
+        }  else if (hit.type === "specialization") {
           showSpecTypeEditor(hit.element, hit.element.x, hit.element.y);
         } else if (hit.type === "connection") {
           const e = entities.find(en => en.id === hit.connection.entityId);
@@ -3669,238 +4051,92 @@ function onCanvasEnd(evt) {
       });
     }
 
-    
-
-function showSubmenu(element, x, y) {
-  if (submenu) $(submenu).remove();
-  submenu = document.createElement("div");
-  submenu.className = "submenu";
-  document.body.appendChild(submenu);
-
-  let items = [];
-  if (element.objType === "entity" || element.objType === "relationship" || element.objType === "specialization") {
-    items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
-      label: "Relacionar",
-      id: "menuRelate",
-      action: () => {
-        isDraggingConnection = true;
-        draggingConnection = {
-          type: element.objType,
-          element: element,
-          start: { x: element.x + (element.width || element.size || 0)/2, y: element.y + (element.height || element.size || 0)/2 },
-          current: { x: x, y: y }
-        };
-        clearSelection();
-        draw();
-      }
-    });
-    items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
-      label: "Deletar",
-      id: "menuDelete",
-      action: () => {
-        if (element.objType === "entity") {
-          entities = entities.filter(e => e.id !== element.id);
-          attributes = attributes.filter(a => !(a.parentType === "entity" && a.parentId === element.id));
-          relationships.forEach(r => r.connections = r.connections.filter(c => c.entityId !== element.id));
-          specializations.forEach(s => s.connections = s.connections.filter(c => c.entityId !== element.id));
-        } else if (element.objType === "relationship") {
-          relationships = relationships.filter(r => r.id !== element.id);
-          attributes = attributes.filter(a => !(a.parentType === "relationship" && a.parentId === element.id));
-        } else if (element.objType === "specialization") {
-          specializations = specializations.filter(s => s.id !== element.id);
-        }
-        saveState();
-        clearSelection();
-        draw();
-      }
-    });
-    
-    
-  }
   
-  if (element.objType === "attribute") {
-    items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>',
-      label: element.primary ? "Remover Chave" : "Definir Chave",
-      id: "menuKey",
-      action: () => {
-        element.primary = !element.primary;
-        saveState();
-        clearSelection();
-        draw();
-      }
-    });
-    items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
-      label: "Deletar",
-      id: "menuDelete",
-      action: () => {
-        attributes = attributes.filter(a => a.id !== element.id);
-        attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
-        saveState();
-        clearSelection();
-        draw();
-      }
-    });
-  }
-  
-  if (element.objType === "derivedAttribute") {
-    items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
-      label: "Deletar",
-      id: "menuDelete",
-      action: () => {
-        attributes = attributes.filter(a => a.id !== element.id);
-        attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
-        saveState();
-        clearSelection();
-        draw();
-      }
-    });
-  }
 
-  // Adiciona os itens ao submenu
-  items.forEach(item => {
-    let div = document.createElement("div");
-    div.className = "submenu-item";
-    div.id = item.id;
-    div.innerHTML = `${item.icon}<span class="text-white ml-2">${item.label}</span>`;
-    div.onclick = item.action;
-    
-    // Adicionando manipuladores para arraste a partir do botão "Relacionar"
-    if (item.id === "menuRelate") {
-      div.addEventListener("mousedown", function(e) {
-        // Armazena informações para iniciar o arraste do relacionamento
-        relationMenuSource = element;
-        
-        // Adiciona eventos para detectar movimento do mouse enquanto o botão estiver pressionado
-        $(document).on("mousemove.relationDrag", onRelationMenuDragMove);
-        $(document).on("mouseup.relationDrag", onRelationMenuDragEnd);
-        
-        // Previne o comportamento padrão (que seria apenas o onclick)
-        e.preventDefault();
-        e.stopPropagation();
-      });
+    function showSubmenu(element, x, y) {
+  // Função para fechar o submenu visualmente, mantendo estado
+  const closeSubmenuVisual = () => {
+    if (submenu) {
+      $(submenu).remove();
+      submenu = null;
+      submenuRect = null;
     }
     
-    submenu.appendChild(div);
-  });
-
-  // CORREÇÃO IMPORTANTE: Posicionamento do submenu relativo ao canvas
-  let rect = element.objType === "entity" 
-      ? { x: element.x, y: element.y, width: element.width || defaultEntityWidth, height: element.height || defaultEntityHeight }
-      : (element.objType === "attribute" || element.objType === "derivedAttribute") 
-          ? { x: element.x - (element.radiusX || defaultAttributeRadiusX), 
-              y: element.y - (element.radiusY || defaultAttributeRadiusY), 
-              width: (element.radiusX || defaultAttributeRadiusX) * 2, 
-              height: (element.radiusY || defaultAttributeRadiusY) * 2 }
-          : element.objType === "relationship" 
-              ? { x: element.x - (element.size || relationshipSize)/2, 
-                  y: element.y - (element.size || relationshipSize)/2, 
-                  width: element.size || relationshipSize, 
-                  height: element.size || relationshipSize }
-              : { x: element.x - (element.size || defaultSpecializationSize)/2, 
-                  y: element.y - (element.size || defaultSpecializationSize)/2, 
-                  width: element.size || defaultSpecializationSize, 
-                  height: element.size || defaultSpecializationSize };
-
-  // Obtém a posição do canvas na página
-  let canvasRect = canvas.getBoundingClientRect();
-  
-  // Converte coordenadas do mundo para coordenadas da tela corretamente
-  let screenX = canvasRect.left + (rect.x + panOffset.x) * zoom;
-  let screenY = canvasRect.top + (rect.y + panOffset.y) * zoom;
-  let screenWidth = rect.width * zoom;
-  let screenHeight = rect.height * zoom;
-  
-  // Calcula a posição para o submenu
-  let submenuX = screenX + (screenWidth / 2);
-  let submenuY = screenY + screenHeight + 5;
-  
-  // Centraliza o submenu horizontalmente
-  submenuX -= submenu.offsetWidth / 2;
-  
-  // Ajusta se o submenu sair da tela
-  if (submenuX < 5) submenuX = 5;
-  if (submenuX + submenu.offsetWidth > window.innerWidth - 5) 
-      submenuX = window.innerWidth - submenu.offsetWidth - 5;
-  
-  // Se for ficar abaixo da tela, coloca acima do objeto
-  if (submenuY + submenu.offsetHeight > window.innerHeight - 5) 
-      submenuY = screenY - submenu.offsetHeight - 5;
-  
-  // Posiciona o submenu na tela
-  submenu.style.position = "fixed";
-  submenu.style.left = `${submenuX}px`;
-  submenu.style.top = `${submenuY}px`;
-  submenu.style.zIndex = "1050";
-  
-  // Adiciona estilo diretamente para melhorar a aparência
-  submenu.style.backgroundColor = "#1f2937";
-  submenu.style.borderRadius = "8px";
-  submenu.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
-  submenu.style.padding = "8px";
-  submenu.style.display = "flex";
-  submenu.style.flexDirection = "column";
-  submenu.style.gap = "4px";
-  
-  // Ajusta os itens do submenu
-  for (let i = 0; i < submenu.children.length; i++) {
-    submenu.children[i].style.padding = "8px 12px";
-    submenu.children[i].style.borderRadius = "6px";
-    submenu.children[i].style.cursor = "pointer";
-    submenu.children[i].style.display = "flex";
-    submenu.children[i].style.alignItems = "center";
-    submenu.children[i].style.whiteSpace = "nowrap";
-    submenu.children[i].style.transition = "background 0.2s";
-    
-    // Adiciona evento hover manualmente
-    submenu.children[i].addEventListener("mouseover", function() {
-      this.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-    });
-    submenu.children[i].addEventListener("mouseout", function() {
-      this.style.backgroundColor = "transparent";
-    });
-  }
-  
-  // Salva a posição para detecção de cliques
-  submenuRect = {
-    x: submenuX - canvasRect.left,
-    y: submenuY - canvasRect.top,
-    width: submenu.offsetWidth,
-    height: submenu.offsetHeight
+    // Também remove o manipulador de eventos atual quando o submenu é fechado
+    if (currentSubmenuCloseHandler) {
+      document.removeEventListener('click', currentSubmenuCloseHandler);
+      currentSubmenuCloseHandler = null;
+    }
   };
-}function showSubmenu(element, x, y) {
-  if (submenu) $(submenu).remove();
+
+  // Fechar qualquer submenu existente
+  closeSubmenuVisual();
+  
+  // Criar o novo submenu
   submenu = document.createElement("div");
   submenu.className = "submenu";
   document.body.appendChild(submenu);
 
   let items = [];
+  
+  // Opções comuns para elementos que podem criar relacionamentos
   if (element.objType === "entity" || element.objType === "relationship" || element.objType === "specialization") {
     items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
       label: "Relacionar",
       id: "menuRelate",
-      action: () => {
+      action: function(e) {
+        // Previne o comportamento padrão e propagação
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Remove apenas o visual do submenu, mantém o estado
+        closeSubmenuVisual();
+        
+        // Inicia o modo de relacionamento
         isDraggingConnection = true;
+        
+        // Configura o objeto de conexão com origem e destino
+        let sourceX = element.x, sourceY = element.y;
+        
+        // Ajusta para o centro dependendo do tipo
+        if (element.objType === "entity") {
+          sourceX += (element.width || defaultEntityWidth) / 2;
+          sourceY += (element.height || defaultEntityHeight) / 2;
+        } else if (element.objType === "relationship") {
+          // Relationship já é centrada
+        } else if (element.objType === "specialization") {
+          // Specialization já é centrada
+        }
+        
+        // Cria o objeto de conexão
         draggingConnection = {
           type: element.objType,
           element: element,
-          start: { x: element.x + (element.width || element.size || 0)/2, y: element.y + (element.height || element.size || 0)/2 },
+          start: { x: sourceX, y: sourceY },
           current: { x: x, y: y }
         };
+        
+        // Altera cursor para indicar modo de relacionamento
+        canvas.style.cursor = 'crosshair';
+        
+        // Mostra ao usuário o que está acontecendo
+        showNotification("Clique em outro objeto para relacionar", "info");
+        
+        // Limpa seleção e desenha para atualizar
         clearSelection();
         draw();
       }
     });
+    
     items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
       label: "Deletar",
       id: "menuDelete",
-      action: () => {
+      action: function(e) {
+        e.preventDefault();
+        closeSubmenuVisual();
+        
         if (element.objType === "entity") {
           entities = entities.filter(e => e.id !== element.id);
           attributes = attributes.filter(a => !(a.parentType === "entity" && a.parentId === element.id));
@@ -3917,43 +4153,37 @@ function showSubmenu(element, x, y) {
         draw();
       }
     });
-    
-    
   }
   
-  if (element.objType === "attribute") {
-    items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>',
-      label: element.primary ? "Remover Chave" : "Definir Chave",
-      id: "menuKey",
-      action: () => {
-        element.primary = !element.primary;
-        saveState();
-        clearSelection();
-        draw();
-      }
-    });
+  // Opções para atributos - verificação para todos os tipos de atributos
+  if (element.objType === "attribute" || element.objType === "derivedAttribute" || element.objType === "multivaluedAttribute") {
+    
+    // A opção "Definir Chave" só deve aparecer para atributos simples (não derivados, não multivalorados)
+    // Utilizamos explicitamente o objType (mais confiável do que verificar as flags)
+    if (!element.derived && !element.multivalued) {
+      items.push({
+        icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>',
+        label: element.primary ? "Remover Chave" : "Definir Chave",
+        id: "menuKey",
+        action: function(e) {
+          e.preventDefault();
+          closeSubmenuVisual();
+          element.primary = !element.primary;
+          saveState();
+          clearSelection();
+          draw();
+        }
+      });
+    }
+
+    // Opção de exclusão para todos os tipos de atributos
     items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
       label: "Deletar",
       id: "menuDelete",
-      action: () => {
-        attributes = attributes.filter(a => a.id !== element.id);
-        attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
-        saveState();
-        clearSelection();
-        draw();
-      }
-    });
-    
-  }
-  
-  if (element.objType === "derivedAttribute") {
-    items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
-      label: "Deletar",
-      id: "menuDelete",
-      action: () => {
+      action: function(e) {
+        e.preventDefault();
+        closeSubmenuVisual();
         attributes = attributes.filter(a => a.id !== element.id);
         attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
         saveState();
@@ -3969,19 +4199,16 @@ function showSubmenu(element, x, y) {
     div.className = "submenu-item";
     div.id = item.id;
     div.innerHTML = `${item.icon}<span class="text-white ml-2">${item.label}</span>`;
-    div.onclick = item.action;
     
-    // Adicionando manipuladores para arraste a partir do botão "Relacionar"
+    // Aqui é a mudança crítica: não usamos onclick diretamente, mas sim addEventListener
+    div.addEventListener("click", item.action);
+    
+    // Caso especial para o botão relacionar (também funciona com drag)
     if (item.id === "menuRelate") {
       div.addEventListener("mousedown", function(e) {
-        // Armazena informações para iniciar o arraste do relacionamento
         relationMenuSource = element;
-        
-        // Adiciona eventos para detectar movimento do mouse enquanto o botão estiver pressionado
         $(document).on("mousemove.relationDrag", onRelationMenuDragMove);
         $(document).on("mouseup.relationDrag", onRelationMenuDragEnd);
-        
-        // Previne o comportamento padrão (que seria apenas o onclick)
         e.preventDefault();
         e.stopPropagation();
       });
@@ -3990,10 +4217,10 @@ function showSubmenu(element, x, y) {
     submenu.appendChild(div);
   });
 
-  // CORREÇÃO IMPORTANTE: Posicionamento do submenu relativo ao canvas
+  // Define o retângulo de representação do elemento para posicionar o menu
   let rect = element.objType === "entity" 
       ? { x: element.x, y: element.y, width: element.width || defaultEntityWidth, height: element.height || defaultEntityHeight }
-      : (element.objType === "attribute" || element.objType === "derivedAttribute") 
+      : (element.objType === "attribute" || element.objType === "derivedAttribute" || element.objType === "multivaluedAttribute") 
           ? { x: element.x - (element.radiusX || defaultAttributeRadiusX), 
               y: element.y - (element.radiusY || defaultAttributeRadiusY), 
               width: (element.radiusX || defaultAttributeRadiusX) * 2, 
@@ -4039,7 +4266,7 @@ function showSubmenu(element, x, y) {
   submenu.style.top = `${submenuY}px`;
   submenu.style.zIndex = "1050";
   
-  // Adiciona estilo diretamente para melhorar a aparência
+  // Estiliza o submenu
   submenu.style.backgroundColor = "#1f2937";
   submenu.style.borderRadius = "8px";
   submenu.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
@@ -4048,7 +4275,7 @@ function showSubmenu(element, x, y) {
   submenu.style.flexDirection = "column";
   submenu.style.gap = "4px";
   
-  // Ajusta os itens do submenu
+  // Estiliza os itens do submenu
   for (let i = 0; i < submenu.children.length; i++) {
     submenu.children[i].style.padding = "8px 12px";
     submenu.children[i].style.borderRadius = "6px";
@@ -4058,7 +4285,7 @@ function showSubmenu(element, x, y) {
     submenu.children[i].style.whiteSpace = "nowrap";
     submenu.children[i].style.transition = "background 0.2s";
     
-    // Adiciona evento hover manualmente
+    // Adiciona evento hover
     submenu.children[i].addEventListener("mouseover", function() {
       this.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
     });
@@ -4074,9 +4301,141 @@ function showSubmenu(element, x, y) {
     width: submenu.offsetWidth,
     height: submenu.offsetHeight
   };
+
+
+  // Cria um novo manipulador de eventos para este submenu específico
+  currentSubmenuCloseHandler = function(e) {
+    // Verifica se o clique foi fora do submenu
+    if (submenu) {
+      const submenuElement = submenu;
+      const clickedInsideSubmenu = e.target === submenuElement || submenuElement.contains(e.target);
+      
+      if (!clickedInsideSubmenu) {
+        closeSubmenuVisual();
+      }
+    }
+  };
+
+  // Adiciona o listener com um pequeno atraso para não capturar o clique atual
+  setTimeout(() => {
+    document.addEventListener('click', currentSubmenuCloseHandler);
+  }, 100);
 }
 
 
+// 2. Adicione esta nova função para iniciar o modo de relacionamento por clique
+function startClickRelationMode(element) {
+  // Limpa qualquer estado de relacionamento ativo
+  if (isDraggingConnection && draggingConnection) {
+    isDraggingConnection = false;
+    draggingConnection = null;
+    canvas.style.cursor = "default";
+    $(canvas).off("click.relationClick");
+  }
+  
+  // Configura o novo estado de relacionamento por clique
+  isDraggingConnection = true;
+  relationClickMode = true;
+  
+  // Informações sobre o elemento de origem
+  const centerX = element.objType === "entity" ? 
+    element.x + (element.width || defaultEntityWidth)/2 : 
+    element.x;
+  const centerY = element.objType === "entity" ? 
+    element.y + (element.height || defaultEntityHeight)/2 : 
+    element.y;
+  
+  // Configura o objeto draggingConnection
+  draggingConnection = {
+    type: element.objType,
+    element: element,
+    start: { x: centerX, y: centerY },
+    current: { x: centerX, y: centerY }  // Inicialmente igual ao ponto de início
+  };
+  
+  // Muda o cursor para indicar que estamos em modo de relacionamento
+  canvas.style.cursor = "crosshair";
+  
+  // Desenha a tela para mostrar o elemento selecionado
+  clearSelection();
+  draw();
+  
+  // Adiciona um handler para o próximo clique que completará o relacionamento
+  $(canvas).off("click.relationClick").on("click.relationClick", function(clickEvt) {
+    // Importante: verifica se ainda estamos no modo de relacionamento
+    if (!isDraggingConnection || !relationClickMode) return;
+    
+    const clickPos = getMousePos(clickEvt);
+    const targetDrop = getDraggableAt(clickPos.x, clickPos.y);
+    
+    // Se clicou em um objeto válido, cria a relação
+    if (targetDrop) {
+      // Tenta criar a relação
+      handleConnectionDrop(draggingConnection, targetDrop);
+      
+      // Salva o estado
+      saveState();
+      
+      // Mostra notificação de sucesso (opcional)
+      showNotification("Relacionamento criado com sucesso!", "success");
+    } else {
+      // Opcional: notifica que nenhum objeto válido foi selecionado
+      showNotification("Clique em um objeto válido para relacionar", "info");
+    }
+    
+    // Limpa o estado de conexão independentemente do resultado
+    exitClickRelationMode();
+  });
+  
+  // Adicionamos também um handler de movimento para atualizar o preview
+  $(canvas).on("mousemove.relationPreview", function(moveEvt) {
+    if (isDraggingConnection && relationClickMode && draggingConnection) {
+      const movePos = getMousePos(moveEvt);
+      draggingConnection.current = movePos;
+      draw();
+    }
+  });
+  
+  // Exibe uma mensagem para o usuário
+  showNotification("Clique em outro objeto para criar o relacionamento", "info");
+}
+
+
+// 3. Adicione esta função para limpar o modo de relacionamento por clique
+function exitClickRelationMode() {
+  isDraggingConnection = false;
+  relationClickMode = false;
+  draggingConnection = null;
+  canvas.style.cursor = "default";
+  
+  // Remove os handlers temporários
+  $(canvas).off("click.relationClick");
+  $(canvas).off("mousemove.relationPreview");
+  
+  // Redesenha o canvas
+  draw();
+}
+
+// Adiciona um listener para fechar o submenu ao clicar fora dele
+const closeSubmenuHandler = function(e) {
+  // Verifica se o clique foi fora do submenu
+  if (submenu) {
+    const submenuElement = submenu;
+    const clickedInsideSubmenu = e.target === submenuElement || submenuElement.contains(e.target);
+    
+    if (!clickedInsideSubmenu) {
+      $(submenu).remove();
+      submenu = null;
+      submenuRect = null;
+      document.removeEventListener('click', closeSubmenuHandler);
+    }
+  }
+};
+
+// Adiciona o listener com um pequeno atraso para não capturar o clique atual
+setTimeout(() => {
+  document.addEventListener('click', closeSubmenuHandler);
+}, 100);
 
 // Função para lidar com o arrastar do relacionamento a partir do menu
 function onRelationMenuDragMove(evt) {
@@ -4231,8 +4590,72 @@ function handleConnectionDrop(draggingConnection, drop) {
         entityId: draggingConnection.element.id 
       });
     }
+  } else if (draggingConnection.type === "aggregation" && (drop.type === "entity" || drop.type === "relationship")) {
+    // Adiciona entidade ou relacionamento à agregação
+    let targetId, targetType;
+    
+    if (drop.type === "entity") {
+      targetId = drop.element.id;
+      targetType = "entity";
+    } else if (drop.type === "relationship") {
+      targetId = drop.element.id;
+      targetType = "relationship";
+    }
+    
+    if (targetId) {
+      // Verifica se essa conexão já existe
+      const exists = draggingConnection.element.connections.some(conn => 
+        (conn.entityId === targetId && targetType === "entity") || 
+        (conn.relationshipId === targetId && targetType === "relationship")
+      );
+      
+      if (!exists) {
+        // Cria a conexão apropriada
+        const connection = {};
+        if (targetType === "entity") {
+          connection.entityId = targetId;
+        } else {
+          connection.relationshipId = targetId;
+        }
+        connection.cardinality = "1,1";  // Cardinalidade padrão
+        draggingConnection.element.connections.push(connection);
+      }
+    }
+  } else if ((draggingConnection.type === "entity" || draggingConnection.type === "relationship") && drop.type === "aggregation") {
+    // Inverso: adiciona à agregação quando arrastamos uma entidade/relacionamento para uma agregação
+    let sourceId, sourceType;
+    
+    if (draggingConnection.type === "entity") {
+      sourceId = draggingConnection.element.id;
+      sourceType = "entity";
+    } else {
+      sourceId = draggingConnection.element.id;
+      sourceType = "relationship";
+    }
+    
+    if (sourceId) {
+      // Verifica se essa conexão já existe
+      const exists = drop.element.connections.some(conn => 
+        (conn.entityId === sourceId && sourceType === "entity") || 
+        (conn.relationshipId === sourceId && sourceType === "relationship")
+      );
+      
+      if (!exists) {
+        // Cria a conexão apropriada
+        const connection = {};
+        if (sourceType === "entity") {
+          connection.entityId = sourceId;
+        } else {
+          connection.relationshipId = sourceId;
+        }
+        connection.cardinality = "1,1";  // Cardinalidade padrão
+        drop.element.connections.push(connection);
+      }
+    }
   }
-}// Função auxiliar para processar a conexão após o arraste
+}
+
+// Função auxiliar para processar a conexão após o arraste
 function handleConnectionDrop(draggingConnection, drop) {
   if (draggingConnection.type === "entity" && drop.type === "entity") {
     let source = draggingConnection.element;
@@ -4336,20 +4759,21 @@ function getSubmenuHit(x, y) {
 
     // Listener para ESC e Delete (exclusão dos objetos selecionados)
     document.addEventListener("keydown", function(e) {
-      if (e.key === "Escape") {
-        if (isDraggingConnection) {
-          isDraggingConnection = false;
-          draggingConnection = null;
-          draw();
-        }
-        if (draggingToolbarType) {
-          cleanupToolbarDrag();
-          draw();
-        }
-      } else if (e.key === "Delete") {
-        deleteSelectedObjects();
+    if (e.key === "Escape") {
+      // Se estiver em modo de relacionamento, cancela
+      if (isDraggingConnection) {
+        exitClickRelationMode();
       }
-    });
+      
+      // Se estiver arrastando algo do toolbar, limpa
+      if (draggingToolbarType) {
+        cleanupToolbarDrag();
+        draw();
+      }
+    } else if (e.key === "Delete") {
+      deleteSelectedObjects();
+    }
+  });
 
 
     function deleteSelectedObjects() {
@@ -4403,6 +4827,10 @@ function getSubmenuHit(x, y) {
         }
         selectedSpecConnection = null;
       }
+
+      // Exclui agregações selecionadas
+      const deletedAggregationIds = aggregations.filter(a => a.selected).map(a => a.id);
+      aggregations = aggregations.filter(a => !a.selected);
 
       // 9) Salva estado, limpa seleção e redesenha
       saveState();
