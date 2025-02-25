@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Modelagem Conceitual – Nova Era</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="./fonts.css" rel="stylesheet">
+  <script src="./tailwind-3.4.16.js"></script>
+  <script src="./jquery-3.6.0.min.js"></script>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -734,9 +734,11 @@
     <canvas id="canvas"></canvas>
     
     <!-- Indicador de autosave -->
-    <div id="autosave-indicator" class="fixed bottom-4 right-4 bg-gray-800 text-green-400 px-4 py-2 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300">
+    <div id="autosave-indicator" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-green-400 px-4 py-2 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300">
       Salvando...
     </div>
+
+
 
     <!-- Botões de Zoom -->
     <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
@@ -1259,7 +1261,7 @@ function saveToLocalStorage() {
     const indicator = document.getElementById("autosave-indicator");
     if (indicator) {
       indicator.textContent = savedSuccess ? 
-        "Salvo " + new Date().toLocaleTimeString() : 
+        "Salvo às " + new Date().toLocaleTimeString() : 
         "Erro de verificação ao salvar";
       
       indicator.classList.remove("opacity-0");
