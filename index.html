@@ -13,175 +13,199 @@
       margin: 0;
       padding: 0;
       background: linear-gradient(to bottom right, #1f2937, #374151, #1e3a8a);
-      overflow: hidden;
       color: #ffffff;
     }
-    #sidebar {
+    
+    /* Navbar superior */
+    .navbar {
       position: fixed;
-      left: 0;
       top: 0;
-      width: 100px;
-      height: 100vh;         /* Garante que o sidebar tenha a altura total da viewport */
-      background: #111827;
-      padding: 20px 10px;
-      transition: width 0.3s;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: #111827;
       z-index: 100;
-      overflow-y: auto;      /* Permite scroll se o conteúdo ultrapassar a altura */
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
     }
-    #sidebar.expanded {
-      width: 200px;
+    
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.25rem;
+      margin-right: 24px;
     }
-    #hamburger {
-      display: none;
+    
+    .menu-category {
+      position: relative;
+      margin-right: 12px;
+    }
+
+    .menu-category::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      height: 10px;
+    }
+
+    /* Alteração crítica: Em vez de :hover, usamos uma classe para controlar a visibilidade */
+    .menu-category.open .menu-dropdown {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .menu-category-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       cursor: pointer;
+      transition: background 0.2s;
     }
+    
+    .menu-category-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .menu-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: max-content;
+      background: #1f2937;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      padding: 8px;
+      margin-top: 8px;
+      display: none;
+      z-index: 101;
+      /* Adicionamos um pequeno atraso para evitar fechamento acidental */
+      transition: opacity 0.2s;
+    }
+    
+    .menu-category:hover .menu-dropdown {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .menu-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Canvas */
+    canvas {
+      display: block;
+      border-radius: 10px;
+      margin-top: 60px; /* Espaço para o navbar */
+      background: #ffffff;
+    }
+    
+    /* Mobile sidebar */
+    #mobile-sidebar {
+      position: fixed;
+      left: -280px;
+      top: 60px;
+      width: 280px;
+      height: calc(100vh - 60px);
+      background: #111827;
+      z-index: 100;
+      overflow-y: auto;
+      transition: left 0.3s ease;
+      padding: 16px;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    #mobile-sidebar.open {
+      left: 0;
+    }
+    
+    .mobile-menu-section {
+      margin-bottom: 16px;
+    }
+    
+    .mobile-menu-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      padding-left: 8px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+    
+    .mobile-menu-button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 4px;
+    }
+    
+    .mobile-menu-button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Notification indicator */
+    #autosave-indicator {
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    
+    /* Modal */
+    #loadModal {
+      transition: opacity 0.3s ease;
+    }
+    
+    #loadModal.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    #loadModal:not(.hidden) {
+      opacity: 1;
+    }
+    
+    /* Button & hover effects */
     .toolbar-button {
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 80px;
-      height: 80px;
-      margin: 10px 0;
+      width: 48px;
+      height: 48px;
       border-radius: 8px; 
       transition: transform 0.2s, box-shadow 0.2s;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
-    .toolbar-button:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-    }
-    .toolbar-button span {
-      margin-top: 5px;
-      font-size: 12px;           /* ou ajuste se quiser menor */
-      color: #ffffff;
-      text-align: center;
-      white-space: normal;       /* permite quebra de linha */
-      word-wrap: break-word;     /* quebra a palavra se necessário */
-      overflow-wrap: break-word; /* fallback para navegadores diferentes */
-      display: block;
-      max-width: 80%;            /* limita a largura do texto dentro do botão */
-      margin-left: auto;
-      margin-right: auto;
-    }
-    canvas {
-      display: block;
-      margin-left: 100px;
-      background: #ffffff;
-      border-radius: 10px;
-    }
-    .submenu {
-      position: absolute;
-      background: linear-gradient(to right, #374151, #1f2937);
-      border: 1px solid #4b5563;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      padding: 8px;
-      z-index: 1000;
-      display: flex;
-      gap: 10px;
-    }
-    .submenu-item {
-      display: flex;
-      align-items: center;
-      padding: 6px 12px;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: background 0.2s;
-    }
-    .submenu-item:active::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 4px;
-      transform: scale(0);
-      animation: ripple 0.6s linear;
-    }
-    .submenu-item:hover {
-      background: #4b5563;
-    }
-
-    /* Cursor especial para indicar arrastar */
-    #menuRelate {
-      cursor: grab;
-    }
-
-    #menuRelate:active {
-      cursor: grabbing;
-    }
-
-    /* Efeito de feedback visual quando o mouse está sobre um alvo válido */
-    .hover-target {
-      box-shadow: 0 0 0 2px #60a5fa, 0 0 10px 4px rgba(96, 165, 250, 0.5);
-      transition: box-shadow 0.2s ease;
-    }
-
-    /* Estilo para a linha de conexão durante o arraste */
-    .dragging-connection-line {
-      stroke: #3b82f6;
-      stroke-width: 2.5;
-      stroke-dasharray: 5,3;
-      animation: dash 1s linear infinite;
-    }
-
-    @keyframes dash {
-      to {
-        stroke-dashoffset: -8;
-      }
-    }
-
-
-    @keyframes ripple {
-      to {
-        transform: scale(4);
-        opacity: 0;
-      }
-    }
     
-    @media (max-width: 768px) {
-      #sidebar {
-        width: 0;
-        padding: 0;
-      }
-      #sidebar.expanded {
-        width: 100px;
-      }
-      #hamburger {
-        display: block;
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        z-index: 101;
-      }
-      canvas {
-        margin-left: 0;
-      }
-    }
-
-    /* Estilo para quando arrastar um arquivo sobre o canvas */
-    #canvas.border-dashed {
-      transition: all 0.3s;
-    }
-
-    /* Melhoria para o indicador de autosave */
-    #autosave-indicator {
-      transition: opacity 0.3s ease;
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-    }
-
-    /* Animação de pulsação para os botões da barra de ferramentas no hover */
     .toolbar-button:hover {
       transform: scale(1.1);
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
       animation: pulse 1.5s infinite;
     }
-
+    
     @keyframes pulse {
       0% {
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
@@ -193,164 +217,558 @@
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       }
     }
-
-    /* Transição suave para o modal */
-    #loadModal {
-      transition: opacity 0.3s ease;
+    
+    /* Botões das categorias */
+    .category-btn-entities {
+      background: linear-gradient(to bottom right, #3b82f6, #1e40af);
     }
-
-    #loadModal.hidden {
-      opacity: 0;
-      pointer-events: none;
+    
+    .category-btn-attributes {
+      background: linear-gradient(to bottom right, #10b981, #065f46);
     }
-
-    #loadModal:not(.hidden) {
+    
+    .category-btn-relationships {
+      background: linear-gradient(to bottom right, #ec4899, #7e22ce);
+    }
+    
+    .category-btn-text {
+      background: linear-gradient(to bottom right, #6b7280, #374151);
+    }
+    
+    .category-btn-files {
+      background: linear-gradient(to bottom right, #f59e0b, #b45309);
+    }
+    
+    .category-btn-undo {
+      background: linear-gradient(to bottom right, #6366f1, #4338ca);
+    }
+    
+    /* Botões de ferramentas específicas */
+    .tool-entity {
+      background: linear-gradient(to bottom right, #3b82f6, #1e40af);
+    }
+    
+    .tool-attribute {
+      background: linear-gradient(to bottom right, #10b981, #065f46);
+    }
+    
+    .tool-derived {
+      background: linear-gradient(to bottom right, #fcd34d, #d97706);
+    }
+    
+    .tool-relationship {
+      background: linear-gradient(to bottom right, #ec4899, #7e22ce);
+    }
+    
+    .tool-specialization {
+      background: linear-gradient(to bottom right, #facc15, #ca8a04);
+    }
+    
+    .tool-increase {
+      background: linear-gradient(to bottom right, #6b7280, #374151);
+    }
+    
+    .tool-decrease {
+      background: linear-gradient(to bottom right, #6b7280, #374151);
+    }
+    
+    .tool-clear {
+      background: linear-gradient(to bottom right, #ef4444, #b91c1c);
+    }
+    
+    .tool-export {
+      background: linear-gradient(to bottom right, #3b82f6, #1e40af);
+    }
+    
+    .tool-undo {
+      background: linear-gradient(to bottom right, #6366f1, #4338ca);
+    }
+    
+    .tool-redo {
+      background: linear-gradient(to bottom right, #6366f1, #4338ca);
+    }
+    
+    .tool-save {
+      background: linear-gradient(to bottom right, #10b981, #065f46);
+    }
+    
+    .tool-open {
+      background: linear-gradient(to bottom right, #f59e0b, #b45309);
+    }
+    
+    /* Tooltips */
+    .tooltip {
+      position: relative;
+    }
+    
+    /* Tooltips melhorados */
+  .tooltip .tooltip-text {
+    visibility: hidden;
+    width: auto;
+    min-width: 120px;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 1060;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: normal;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
       opacity: 1;
     }
-
-    /* Melhorias nos botões do modal */
-    #loadCancelBtn, #loadConfirmBtn {
-      transition: background-color 0.2s, transform 0.2s;
-    }
-
-    #loadCancelBtn:hover, #loadConfirmBtn:hover {
-      transform: translateY(-2px);
-    }
-
-    #loadCancelBtn:active, #loadConfirmBtn:active {
-      transform: translateY(1px);
-    }
-
     
+    /* Responsive */
+    @media (max-width: 768px) {
+      .navbar .desktop-menu {
+        display: none;
+      }
+      
+      canvas {
+        margin-top: 60px;
+      }
+    }
+    
+    @media (min-width: 769px) {
+      .navbar .mobile-toggle {
+        display: none;
+      }
+      
+      #mobile-sidebar {
+        display: none;
+      }
+    }
+
+    .submenu {
+  position: fixed;
+  background: linear-gradient(to right, #374151, #1f2937);
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.submenu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.submenu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.submenu-item svg {
+  margin-right: 8px;
+}
+
+.menu-item svg, .menu-category-btn svg, .main-menu-item svg {
+    stroke-width: 2.5; /* Aumenta a espessura das linhas */
+    width: 24px;       /* Aumenta o tamanho dos ícones */
+    height: 24px;
+  }
+
+/* Estilo para os itens do menu principal (objetos) */
+.main-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.1);
+  margin-right: 8px;
+}
+  
+  .main-menu-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Cores para os diferentes tipos de elementos */
+  .entity-btn {
+    background: linear-gradient(to bottom right, #3b82f6, #1e40af);
+  }
+  
+  .attribute-btn {
+    background: linear-gradient(to bottom right, #10b981, #065f46);
+  }
+  
+  .derived-btn {
+    background: linear-gradient(to bottom right, #fcd34d, #d97706); 
+  }
+  
+  .relationship-btn {
+    background: linear-gradient(to bottom right, #ec4899, #7e22ce);
+  }
+  
+  .specialization-btn {
+    background: linear-gradient(to bottom right, #facc15, #ca8a04);
+  }
+  
+  /* Grupo de atributos e relacionamentos */
+  .item-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .item-group-label {
+    margin-right: 8px;
+    font-weight: 500;
+    color: #9ca3af;
+  }
+  
   </style>
 </head>
-<body class="flex h-screen">
-
-  <!-- Barra Lateral -->
-  <aside id="sidebar" class="flex flex-col items-center">
-    <div id="hamburger" class="p-2">
+<body class="flex flex-col h-screen">
+  <!-- Navbar - Desktop & Mobile -->
+  <nav class="navbar">
+    <!-- Menu hamburguer (mobile) - sem alterações -->
+    <button id="mobile-menu-toggle" class="mobile-toggle p-2 mr-2">
       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16m-7 6h7" />
       </svg>
-    </div>
-    <div id="toolbar" class="flex flex-col items-center">
-      <!-- Botão Entidade -->
-      <button id="btnEntity" class="toolbar-button bg-gradient-to-br from-blue-500 to-blue-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <rect x="4" y="6" width="16" height="12" rx="2" />
+    </button>
+    
+    <!-- Logo - sem alterações -->
+    <div class="navbar-brand">ModelaDB</div>
+    
+    <!-- Menu redesenhado (desktop) -->
+    <div class="desktop-menu flex flex-1 items-center">
+      <!-- Objetos diretos no menu principal -->
+      
+      <!-- Entidade -->
+      <div id="btnEntity" class="main-menu-item tooltip entity-btn">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="4" y="6" width="16" height="12" rx="2" stroke-width="2.5" />
         </svg>
         <span>Entidade</span>
-      </button>
-      <!-- Botão Atributo -->
-      <button id="btnAttribute" class="toolbar-button bg-gradient-to-br from-green-500 to-green-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <ellipse cx="12" cy="12" rx="8" ry="4" />
+        <span class="tooltip-text">Adicionar uma nova entidade ao diagrama</span>
+      </div>
+      
+      <!-- Atributo -->
+      <div id="btnAttribute" class="main-menu-item tooltip attribute-btn">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="12" rx="8" ry="4" stroke-width="2.5" />
         </svg>
-        <span>Atributo</span>
-      </button>
-      <!-- Botão Atributo Derivado -->
-      <button id="btnDerivedAttribute" class="toolbar-button bg-gradient-to-br from-yellow-500 to-yellow-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-dasharray="4" stroke-width="3" viewBox="0 0 24 24">
-          <ellipse cx="12" cy="12" rx="8" ry="4" />
+        <span>Atr. Simples</span>
+        <span class="tooltip-text">Adicionar um atributo simples</span>
+      </div>
+      
+      <!-- Atributo Derivado -->
+      <div id="btnDerivedAttribute" class="main-menu-item tooltip derived-btn">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-dasharray="4" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="12" rx="8" ry="4" stroke-width="2.5" />
         </svg>
-        <span>Derivado</span>
-      </button>
-      <!-- Botão Relacionamento -->
-      <button id="btnRelationship" class="toolbar-button bg-gradient-to-br from-pink-500 to-purple-600">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <polygon points="12 4 20 12 12 20 4 12" />
+        <span>Atr. Derivado</span>
+        <span class="tooltip-text">Adicionar um atributo derivado</span>
+      </div>
+      
+      <!-- Relacionamento -->
+      <div id="btnRelationship" class="main-menu-item tooltip relationship-btn">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <polygon points="12 4 20 12 12 20 4 12" stroke-width="2.5" />
         </svg>
         <span>Relacionamento</span>
-      </button>
-      <!-- Botão Especialização -->
-      <button id="btnSpecialization" class="toolbar-button bg-gradient-to-br from-yellow-400 to-yellow-600">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <polygon points="12 4 4 20 20 20" />
+        <span class="tooltip-text">Adicionar um relacionamento entre entidades</span>
+      </div>
+      
+      <!-- Especialização/Generalização -->
+      <div id="btnSpecialization" class="main-menu-item tooltip specialization-btn">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <polygon points="12 4 4 20 20 20" stroke-width="2.5" />
         </svg>
-        <span>Esp./Gen.</span>
-      </button>
-      <!-- Botão Aumentar Fonte -->
-      <button id="btnIncreaseFont" class="toolbar-button bg-gradient-to-br from-gray-500 to-gray-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path d="M12 4v16m-8-8h16" />
-        </svg>
-        <span>Aumentar</span>
-      </button>
-      <!-- Botão Diminuir Fonte -->
-      <button id="btnDecreaseFont" class="toolbar-button bg-gradient-to-br from-gray-500 to-gray-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path d="M4 12h16" />
-        </svg>
-        <span>Diminuir</span>
-      </button>
-      <!-- Botão Limpar -->
-      <button id="btnClear" class="toolbar-button bg-gradient-to-br from-red-500 to-red-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path d="M6 18L18 6M6 6l12 12" />
-        </svg>
-        <span>Limpar</span>
-      </button>
-      <!-- Botão Exportar -->
-      <button id="btnExport" class="toolbar-button bg-gradient-to-br from-blue-500 to-blue-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path d="M4 16l8-8 8 8m-8-8v12" />
-        </svg>
-        <span>Exportar</span>
-      </button>
-      <!-- Botão Desfazer -->
-      <button id="btnUndo" class="toolbar-button bg-gradient-to-br from-yellow-500 to-yellow-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path d="M15 4l-8 8 8 8" />
-        </svg>
-        <span>Desfazer</span>
-      </button>
-      <!-- Botão Refazer -->
-      <button id="btnRedo" class="toolbar-button bg-gradient-to-br from-yellow-500 to-yellow-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path d="M9 4l8 8-8 8" />
-        </svg>
-        <span>Refazer</span>
-      </button>
-      <!-- Botão Salvar Arquivo -->
-      <button id="btnSaveFile" class="toolbar-button bg-gradient-to-br from-green-500 to-green-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path d="M8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-        </svg>
-        <span>Salvar Arquivo</span>
-      </button>
-      <!-- Botão Abrir Arquivo -->
-      <button id="btnOpenFile" class="toolbar-button bg-gradient-to-br from-blue-500 to-blue-700">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h4a2 2 0 0 1 2 2v1M5 19h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2z" />
-        </svg>
-        <span>Abrir Arquivo</span>
-      </button>
-      <!-- Input de arquivo oculto para o botão de abrir arquivo -->
-      <input type="file" id="fileInput" accept=".merdb" style="display: none;" />
-
-      <!-- Modal de confirmação para carregar arquivo -->
-      <div id="loadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
-          <h3 class="text-xl font-bold text-white mb-4">Carregar diagrama</h3>
-          <p class="text-white mb-6">Tem certeza que deseja carregar um novo diagrama? O diagrama atual será substituído.</p>
-          <div class="flex justify-end gap-3">
-            <button id="loadCancelBtn" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition">Cancelar</button>
-            <button id="loadConfirmBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition">Carregar</button>
+        <span>Gen./Esp.</span>
+        <span class="tooltip-text">Adicionar especialização/generalização</span>
+      </div>
+      
+      <!-- Categorias em submenus -->
+      
+      <!-- Categoria: Texto -->
+      <div class="menu-category">
+        <div class="menu-category-btn text-btn">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path d="M4 7h16M4 12h16M4 17h10" />
+          </svg>
+          <span>Texto</span>
+        </div>
+        <div class="menu-dropdown">
+          <div id="btnIncreaseFont" class="menu-item tooltip">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path d="M12 4v16m-8-8h16" />
+            </svg>
+            <span>Aumentar</span>
+            <span class="tooltip-text">Aumentar o tamanho do texto</span>
+          </div>
+          <div id="btnDecreaseFont" class="menu-item tooltip">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path d="M4 12h16" />
+            </svg>
+            <span>Diminuir</span>
+            <span class="tooltip-text">Diminuir o tamanho do texto</span>
           </div>
         </div>
       </div>
+      
+      <!-- Categoria: Arquivos -->
+      <div class="menu-category">
+        <div class="menu-category-btn files-btn">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Arquivos</span>
+        </div>
+        <div class="menu-dropdown">
+          <div id="btnSaveFile" class="menu-item tooltip">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path d="M8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+            <span>Salvar</span>
+            <span class="tooltip-text">Salvar diagrama em arquivo</span>
+          </div>
+          <div id="btnOpenFile" class="menu-item tooltip">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h4a2 2 0 0 1 2 2v1M5 19h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2z" />
+            </svg>
+            <span>Abrir</span>
+            <span class="tooltip-text">Abrir arquivo de diagrama</span>
+          </div>
+          <div id="btnExport" class="menu-item tooltip">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path d="M4 16l8-8 8 8m-8-8v12" />
+            </svg>
+            <span>Exportar</span>
+            <span class="tooltip-text">Exportar diagrama como imagem</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Ações diretas (à direita) -->
+      <div class="flex ml-auto">
+        <!-- Desfazer/Refazer -->
+        <div id="btnUndo" class="menu-item tooltip">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path d="M15 4l-8 8 8 8" />
+          </svg>
+          <span class="tooltip-text">Desfazer</span>
+        </div>
+        <div id="btnRedo" class="menu-item tooltip">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path d="M9 4l8 8-8 8" />
+          </svg>
+          <span class="tooltip-text">Refazer</span>
+        </div>
+        <!-- Limpar tudo -->
+        <div id="btnClear" class="menu-item tooltip ml-2">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span class="tooltip-text">Limpar tudo</span>
+        </div>
+      </div>
     </div>
-  </aside>
-
-  <!-- Canvas -->
-  <main class="flex-grow" style="position: relative;">
+  </nav>
+  
+  <!-- Sidebar Mobile -->
+  <div id="mobile-sidebar">
+    <!-- Seção: Componentes Básicos -->
+    <div class="mobile-menu-section">
+      <div class="mobile-menu-title">Componentes</div>
+      
+      <div id="btnEntity-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-entity">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <rect x="4" y="6" width="16" height="12" rx="2" />
+          </svg>
+        </div>
+        <span>Entidade</span>
+      </div>
+      
+      <div id="btnAttribute-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-attribute">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <ellipse cx="12" cy="12" rx="8" ry="4" />
+          </svg>
+        </div>
+        <span>Atributo</span>
+      </div>
+      
+      <div id="btnDerivedAttribute-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-derived">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-dasharray="4" viewBox="0 0 24 24">
+            <ellipse cx="12" cy="12" rx="8" ry="4" />
+          </svg>
+        </div>
+        <span>Atributo Derivado</span>
+      </div>
+      
+      <div id="btnRelationship-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-relationship">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <polygon points="12 4 20 12 12 20 4 12" />
+          </svg>
+        </div>
+        <span>Relacionamento</span>
+      </div>
+      
+      <div id="btnSpecialization-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-specialization">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <polygon points="12 4 4 20 20 20" />
+          </svg>
+        </div>
+        <span>Especialização/Generalização</span>
+      </div>
+    </div>
+    
+    <!-- Seção: Texto -->
+    <div class="mobile-menu-section">
+      <div class="mobile-menu-title">Texto</div>
+      
+      <div id="btnIncreaseFont-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-increase">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M12 4v16m-8-8h16" />
+          </svg>
+        </div>
+        <span>Aumentar Texto</span>
+      </div>
+      
+      <div id="btnDecreaseFont-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-decrease">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M4 12h16" />
+          </svg>
+        </div>
+        <span>Diminuir Texto</span>
+      </div>
+    </div>
+    
+    <!-- Seção: Histórico -->
+    <div class="mobile-menu-section">
+      <div class="mobile-menu-title">Histórico</div>
+      
+      <div id="btnUndo-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-undo">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M15 4l-8 8 8 8" />
+          </svg>
+        </div>
+        <span>Desfazer</span>
+      </div>
+      
+      <div id="btnRedo-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-redo">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M9 4l8 8-8 8" />
+          </svg>
+        </div>
+        <span>Refazer</span>
+      </div>
+      
+      <div id="btnClear-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-clear">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <span>Limpar Tudo</span>
+      </div>
+    </div>
+    
+    <!-- Seção: Arquivos -->
+    <div class="mobile-menu-section">
+      <div class="mobile-menu-title">Arquivos</div>
+      
+      <div id="btnSaveFile-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-save">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+        </div>
+        <span>Salvar Arquivo</span>
+      </div>
+      
+      <div id="btnOpenFile-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-open">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h4a2 2 0 0 1 2 2v1M5 19h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2z" />
+          </svg>
+        </div>
+        <span>Abrir Arquivo</span>
+      </div>
+      
+      <div id="btnExport-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-export">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M4 16l8-8 8 8m-8-8v12" />
+          </svg>
+        </div>
+        <span>Exportar Imagem</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Canvas (área principal) -->
+  <main class="flex-grow">
     <canvas id="canvas"></canvas>
     
-    <!-- Adicione este elemento ao final da tag <main> (antes de </main>) -->
+    <!-- Indicador de autosave -->
     <div id="autosave-indicator" class="fixed bottom-4 right-4 bg-gray-800 text-green-400 px-4 py-2 rounded-lg shadow-lg z-50 opacity-0 transition-opacity duration-300">
       Salvando...
     </div>
+
+    <!-- Botões de Zoom -->
+    <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
+      <button id="btnZoomIn" class="toolbar-button tool-increase flex items-center justify-center tooltip">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+          <path d="M12 4v16m-8-8h16" />
+        </svg>
+        <span class="tooltip-text">Aumentar Zoom</span>
+      </button>
+      <button id="btnZoomOut" class="toolbar-button tool-decrease flex items-center justify-center tooltip">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+          <path d="M4 12h16" />
+        </svg>
+        <span class="tooltip-text">Diminuir Zoom</span>
+      </button>
+    </div>
   </main>
+  
+  <!-- Input oculto para upload de arquivo -->
+  <input type="file" id="fileInput" accept=".merdb" style="display: none;" />
+  
+  <!-- Modal de confirmação para carregamento de arquivo -->
+  <div id="loadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+      <h3 class="text-xl font-bold text-white mb-4">Carregar diagrama</h3>
+      <p class="text-white mb-6">Tem certeza que deseja carregar um novo diagrama? O diagrama atual será substituído.</p>
+      <div class="flex justify-end gap-3">
+        <button id="loadCancelBtn" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition">Cancelar</button>
+        <button id="loadConfirmBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition">Carregar</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const canvas = document.getElementById("canvas");
@@ -412,8 +830,10 @@
 
     let mainWidth, mainHeight;
     function resizeCanvas() {
-      canvas.width = window.innerWidth - (sidebar.offsetWidth || 0);
-      canvas.height = window.innerHeight;
+      // O canvas agora começa abaixo da navbar (60px)
+      const navbarHeight = 60;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - navbarHeight;
       mainWidth = canvas.width;
       mainHeight = canvas.height;
       draw();
@@ -422,11 +842,8 @@
     let handleSize = window.innerWidth < 768 ? 16 : 8;
     let globalIconSize = window.innerWidth < 768 ? 32 : 24;
 
-    window.addEventListener("resize", () => {
-      handleSize = window.innerWidth < 768 ? 16 : 8;
-      globalIconSize = window.innerWidth < 768 ? 32 : 24;
-      resizeCanvas();
-    });
+    // Eventos de redimensionamento
+    window.addEventListener("resize", resizeCanvas);
 
     let entities = [], attributes = [], relationships = [], specializations = [];
     let entityIdCounter = 0, attributeIdCounter = 0, relationshipIdCounter = 0, specializationIdCounter = 0;
@@ -493,35 +910,223 @@
 
 
 
-     // Adapte sua restoreState (usada para Undo/Redo) para chamar draw() ao final
-    function restoreState(state) {
-      entities = JSON.parse(JSON.stringify(state.entities));
-      attributes = JSON.parse(JSON.stringify(state.attributes));
-      relationships = JSON.parse(JSON.stringify(state.relationships));
-      specializations = JSON.parse(JSON.stringify(state.specializations));
-      draw();
-    }
-
-  // Corrija a sequência de inicialização na função que carrega quando a página inicia
-  window.addEventListener("DOMContentLoaded", () => {
-    // 1) Primeiro, ajusta o canvas
-    resizeCanvas();
-
-    // 2) Carrega do localStorage - está sendo feito corretamente
-    loadFromLocalStorage();
-
-    // 3) IMPORTANTE: Remova este trecho que pode estar apagando os dados carregados!
-    // REMOVER ou COMENTAR este bloco:
-    /*
-    if (entities.length === 0 && attributes.length === 0 &&
-        relationships.length === 0 && specializations.length === 0) {
-      saveState(); // estado inicial vazio - este saveState() com arrays vazios pode estar sobreescrevendo seu localStorage!
-    }
-    */
-
-    // 4) Finalmente, desenha
+  // Adapte sua restoreState (usada para Undo/Redo) para chamar draw() ao final
+  function restoreState(state) {
+    entities = JSON.parse(JSON.stringify(state.entities));
+    attributes = JSON.parse(JSON.stringify(state.attributes));
+    relationships = JSON.parse(JSON.stringify(state.relationships));
+    specializations = JSON.parse(JSON.stringify(state.specializations));
     draw();
+  }
+
+  // Inicialização
+  document.addEventListener("DOMContentLoaded", function() {
+    // Setup do menu mobile
+    const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
+    const mobileSidebar = document.getElementById("mobile-sidebar");
+    
+    mobileMenuToggle.addEventListener("click", function() {
+      mobileSidebar.classList.toggle("open");
+    });
+    
+    // Fechar o menu mobile ao clicar no canvas
+    canvas.addEventListener("click", function() {
+      mobileSidebar.classList.remove("open");
+    });
+    
+    // Setup dos botões mobile
+    setupMobileButtons();
+    
+    // Inicializa o canvas
+    resizeCanvas();
+    
+    // Carrega dados salvos
+    loadFromLocalStorage();
+    
+    // Desenha o canvas
+    draw();
+    
+    // Adiciona eventos para os botões principais
+    setupDesktopButtons();
+    
+    // Adiciona eventos para o canvas
+    setupCanvasEvents();
+    
+    // Adiciona eventos para teclas
+    setupKeyboardEvents();
   });
+
+
+  // Código para implementar os menus que não fecham
+  document.addEventListener("DOMContentLoaded", function() {
+    // Seleciona todas as categorias do menu
+    const menuCategories = document.querySelectorAll('.menu-category');
+    
+    // Adiciona eventos para cada botão de categoria
+    menuCategories.forEach(category => {
+      // Referência ao botão da categoria
+      const button = category.querySelector('.menu-category-btn');
+      
+      // Ao clicar, alterna o estado do dropdown
+      button.addEventListener('click', function(e) {
+        e.stopPropagation(); // Impede que o clique chegue ao document
+        
+        // Fecha todos os outros menus primeiro
+        menuCategories.forEach(otherCategory => {
+          if (otherCategory !== category) {
+            otherCategory.classList.remove('open');
+          }
+        });
+        
+        // Alterna o estado deste menu
+        category.classList.toggle('open');
+      });
+      
+      // Evita que o menu feche quando clicar dentro dele
+      const dropdown = category.querySelector('.menu-dropdown');
+      if (dropdown) {
+        dropdown.addEventListener('click', function(e) {
+          e.stopPropagation(); // Impede propagação para não fechar o menu
+        });
+      }
+    });
+    
+    // Fecha todos os menus ao clicar fora deles
+    document.addEventListener('click', function() {
+      menuCategories.forEach(category => {
+        category.classList.remove('open');
+      });
+    });
+  });
+
+
+
+  // Configuração dos botões mobile
+  function setupMobileButtons() {
+      const buttonIds = [
+        "Entity", "Attribute", "DerivedAttribute", "Relationship", "Specialization",
+        "IncreaseFont", "DecreaseFont", "Clear", "Export", "Undo", "Redo", "SaveFile", "OpenFile"
+      ];
+      
+      buttonIds.forEach(id => {
+        const mobileBtn = document.getElementById(`btn${id}-mobile`);
+        const desktopBtn = document.getElementById(`btn${id}`);
+        
+        if (mobileBtn && desktopBtn) {
+          // Para botões que usam eventos mousedown (drag start)
+          if (["Entity", "Attribute", "DerivedAttribute", "Relationship", "Specialization"].includes(id)) {
+            mobileBtn.addEventListener("mousedown", function(e) {
+              // Simula o evento no botão desktop
+              const newEvent = new MouseEvent("mousedown", {
+                clientX: e.clientX,
+                clientY: e.clientY,
+                bubbles: true
+              });
+              desktopBtn.dispatchEvent(newEvent);
+              
+              // Fecha o menu
+              document.getElementById("mobile-sidebar").classList.remove("open");
+            });
+            
+            // Suporte a toque
+            mobileBtn.addEventListener("touchstart", function(e) {
+              const touch = e.touches[0];
+              const newEvent = new MouseEvent("mousedown", {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                bubbles: true
+              });
+              desktopBtn.dispatchEvent(newEvent);
+              
+              // Fecha o menu
+              document.getElementById("mobile-sidebar").classList.remove("open");
+            });
+          } 
+          // Para botões que usam click
+          else {
+            mobileBtn.addEventListener("click", function() {
+              desktopBtn.click();
+              document.getElementById("mobile-sidebar").classList.remove("open");
+            });
+          }
+        }
+      });
+    }
+
+
+     // Configuração dos botões desktop
+     function setupDesktopButtons() {
+      document.getElementById("btnEntity").addEventListener("mousedown", (e) => startToolbarDrag("entity", e));
+      document.getElementById("btnAttribute").addEventListener("mousedown", (e) => startToolbarDrag("attribute", e));
+      document.getElementById("btnDerivedAttribute").addEventListener("mousedown", (e) => startToolbarDrag("derivedAttribute", e));
+      document.getElementById("btnRelationship").addEventListener("mousedown", (e) => startToolbarDrag("relationship", e));
+      document.getElementById("btnSpecialization").addEventListener("mousedown", (e) => startToolbarDrag("specialization", e));
+      document.getElementById("btnIncreaseFont").addEventListener("click", () => { fontSize += 2; draw(); });
+      document.getElementById("btnDecreaseFont").addEventListener("click", () => { fontSize = Math.max(8, fontSize - 2); draw(); });
+      document.getElementById("btnClear").addEventListener("click", () => {
+        saveState();
+        entities = [];
+        attributes = [];
+        relationships = [];
+        specializations = [];
+        clearSelection();
+        draw();
+      });
+      document.getElementById("btnExport").addEventListener("click", exportDiagram);
+      document.getElementById("btnUndo").addEventListener("click", undo);
+      document.getElementById("btnRedo").addEventListener("click", redo);
+      document.getElementById("btnSaveFile").addEventListener("click", saveDiagramToFile);
+      document.getElementById("btnOpenFile").addEventListener("click", openFileSelector);
+    }
+
+    // Configuração dos eventos do canvas
+    function setupCanvasEvents() {
+      canvas.addEventListener("touchstart", onCanvasStart);
+      canvas.addEventListener("touchmove", onCanvasMove);
+      canvas.addEventListener("touchend", onCanvasEnd);
+      canvas.addEventListener("touchcancel", onCanvasEnd);
+      canvas.addEventListener("mousedown", onCanvasStart);
+      canvas.addEventListener("mousemove", onCanvasMove);
+      canvas.addEventListener("mouseup", onCanvasEnd);
+      canvas.addEventListener("dblclick", onCanvasDblClick);
+      canvas.addEventListener("contextmenu", onCanvasContextMenu);
+    }
+
+
+    // Configuração dos eventos do teclado
+    function setupKeyboardEvents() {
+      document.addEventListener("keydown", (e) => {
+        // Não intercepta teclas se estiver editando texto
+        if (document.activeElement && 
+            (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) {
+          return;
+        }
+        
+        if (e.code === 'Space') {
+          isSpacePressed = true;
+          e.preventDefault();
+        } else if (e.key === "Escape") {
+          if (isDraggingConnection) {
+            isDraggingConnection = false;
+            draggingConnection = null;
+            draw();
+          }
+          if (draggingToolbarType) {
+            cleanupToolbarDrag();
+            draw();
+          }
+        } else if (e.key === "Delete") {
+          deleteSelectedObjects();
+        }
+      });
+      
+      document.addEventListener("keyup", (e) => {
+        if (e.code === 'Space') {
+          isSpacePressed = false;
+          isPanning = false;
+        }
+      });
+    }
 
 
 
@@ -574,13 +1179,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Versão melhorada de loadFromLocalStorage para garantir o debug
 function loadFromLocalStorage() {
-  console.log("Tentando carregar dados do localStorage...");
+  
   
   try {
     const dataStr = localStorage.getItem("diagramData");
     
-    // Log para debug - ver se há dados
-    console.log("Dados encontrados no localStorage:", dataStr ? "Sim" : "Não");
+    
     
     if (!dataStr) {
       console.log("Nenhum diagrama encontrado no localStorage");
@@ -642,13 +1246,7 @@ function saveToLocalStorage() {
       panOffset
     };
     
-    // Log para debug antes de salvar
-    console.log("Salvando no localStorage, dados:", {
-      entidades: entities.length,
-      atributos: attributes.length,
-      relacionamentos: relationships.length,
-      especializacoes: specializations.length
-    });
+    
     
     const jsonData = JSON.stringify(currentData);
     localStorage.setItem("diagramData", jsonData);
@@ -706,7 +1304,7 @@ function saveState() {
   if (entities.length === 0 && attributes.length === 0 &&
       relationships.length === 0 && specializations.length === 0 &&
       undoStack.length === 0) {
-    console.log("Ignorando salvar estado vazio inicial");
+    
     return;
   }
 
@@ -1040,10 +1638,10 @@ function showNotification(message, type = "info") {
       let screenPosX = (pos.x + panOffset.x) * zoom;
       let screenPosY = (pos.y + panOffset.y) * zoom;
 
-      return screenPosX >= screenRectX && 
-            screenPosX <= screenRectX + screenRectWidth && 
-            screenPosY >= screenRectY && 
-            screenPosY <= screenRectY + screenRectHeight;
+      return pos.x >= rect.x && 
+         pos.x <= rect.x + rect.width && 
+         pos.y >= rect.y && 
+         pos.y <= rect.y + rect.height;
     }
 
 // Certifique-se de que getMousePos() está consistente com estas alterações
@@ -1054,6 +1652,7 @@ function getMousePos(evt) {
     clientX = evt.touches[0].clientX;
     clientY = evt.touches[0].clientY;
   }
+  // Ajuste correto para o zoom e pan
   return { 
     x: (clientX - rect.left) / zoom - panOffset.x, 
     y: (clientY - rect.top) / zoom - panOffset.y 
@@ -1823,8 +2422,11 @@ function createObjectAt(type, cx, cy) {
     function draw() {
       ctx.save();
       ctx.clearRect(0, 0, mainWidth, mainHeight);
-      ctx.translate(panOffset.x, panOffset.y); // <-- ADICIONE esta linha
+
+      // Aplica as transformações na ordem correta
+      ctx.translate(panOffset.x * zoom, panOffset.y * zoom);
       ctx.scale(zoom, zoom);
+
       drawAll(ctx);
       if (draggingToolbarType && draggingNewObj) {
         drawPreview();
@@ -1898,136 +2500,146 @@ function createObjectAt(type, cx, cy) {
     }
 
     
-    function getDraggableAt(x, y) {
-  if (submenu && isInsideRect({ x, y }, submenuRect)) return { type: "submenu" };
+    function getDraggableAt(x, y)
+    {
+        if (submenu && isInsideRect({ x, y }, submenuRect)) return { type: "submenu" };
 
-  let resizeHit = checkResizeHandles(x, y);
-  if (resizeHit) return resizeHit;
+        let resizeHit = checkResizeHandles(x, y);
+        if (resizeHit) return resizeHit;
 
-  // Verifica entidades
-  for (let i = entities.length - 1; i >= 0; i--) {
-    const e = entities[i];
-    let w = e.width || defaultEntityWidth, h = e.height || defaultEntityHeight;
-    if (x >= e.x && x <= e.x + w && y >= e.y && y <= e.y + h) {
-      return { type: "entity", element: e };
-    }
-  }
-
-  // Verifica atributos
-  for (let i = attributes.length - 1; i >= 0; i--) {
-    const a = attributes[i];
-    let rx = a.radiusX || defaultAttributeRadiusX;
-    let ry = a.radiusY || defaultAttributeRadiusY;
-    if (Math.pow((x - a.x) / rx, 2) + Math.pow((y - a.y) / ry, 2) <= 1) {
-      return { type: a.derived ? "derivedAttribute" : "attribute", element: a };
-    }
-  }
-
-  // Verifica relacionamentos
-  for (let i = relationships.length - 1; i >= 0; i--) {
-    const rel = relationships[i];
-    let half = (rel.size || relationshipSize) / 2;
-    if (x >= rel.x - half && x <= rel.x + half && y >= rel.y - half && y <= rel.y + half) {
-      return { type: "relationship", element: rel };
-    }
-  }
-
-  // Verifica especializações
-  for (let i = specializations.length - 1; i >= 0; i--) {
-    const spec = specializations[i];
-    let half = (spec.size || defaultSpecializationSize) / 2;
-    if (x >= spec.x - half && x <= spec.x + half && y >= spec.y - half && y <= spec.y + half) {
-      return { type: "specialization", element: spec };
-    }
-  }
-
-  // Verifica conexões de especialização
-  for (let s of specializations) {
-    if (s.connections) {
-      for (let conn of s.connections) {
-        let e = entities.find(en => en.id === conn.entityId);
-        if (!e) continue;
-        let vertex = getSpecializationVertices(s)[conn.vertex];
-        let eCenter = { x: e.x + e.width / 2, y: e.y + e.height / 2 };
-        let points = [vertex];
-        if (conn.breakpoints && conn.breakpoints.length > 0) {
-          points.push(...conn.breakpoints);
-        }
-        let lastPoint = points[points.length - 1];
-        let eBoundary = getRectBorderPoint(
-          eCenter.x, eCenter.y, 
-          lastPoint.x - eCenter.x, 
-          lastPoint.y - eCenter.y, 
-          e.width / 2, e.height / 2
-        );
-        points.push(eBoundary);
-        for (let i = 0; i < points.length - 1; i++) {
-          if (distancePointToSegment({ x, y }, points[i], points[i + 1]) < 15) {
-            return { type: "specialization-connection", specialization: s, connection: conn };
+        // Verifica entidades
+        for (let i = entities.length - 1; i >= 0; i--) {
+          const e = entities[i];
+          let w = e.width || defaultEntityWidth, h = e.height || defaultEntityHeight;
+          if (x >= e.x && x <= e.x + w && y >= e.y && y <= e.y + h) {
+            return { type: "entity", element: e };
           }
         }
-      }
-    }
-  }
 
-  // Verifica conexões entre relacionamentos e entidades
-  for (let r of relationships) {
-    for (let conn of r.connections) {
-      let e = entities.find(en => en.id === conn.entityId);
-      if (!e) continue;
-      let rCenter = { x: r.x, y: r.y };
-      let eCenter = { x: e.x + e.width / 2, y: e.y + e.height / 2 };
-      let points = [rCenter];
-      if (conn.breakpoints && conn.breakpoints.length > 0) {
-        points.push(...conn.breakpoints);
-      }
-      let eBoundary = getRectBorderPoint(
-        eCenter.x, eCenter.y, 
-        points[points.length - 1].x - eCenter.x, 
-        points[points.length - 1].y - eCenter.y, 
-        e.width / 2, e.height / 2
-      );
-      points.push(eBoundary);
-      for (let i = 0; i < points.length - 1; i++) {
-        if (distancePointToSegment({ x, y }, points[i], points[i + 1]) < 15) {
-          return { type: "connection", relationship: r, connection: conn };
+        // Verifica atributos
+        for (let i = attributes.length - 1; i >= 0; i--) {
+          const a = attributes[i];
+          let rx = a.radiusX || defaultAttributeRadiusX;
+          let ry = a.radiusY || defaultAttributeRadiusY;
+          if (Math.pow((x - a.x) / rx, 2) + Math.pow((y - a.y) / ry, 2) <= 1) {
+            return { type: a.derived ? "derivedAttribute" : "attribute", element: a };
+          }
         }
-      }
-    }
-  }
 
-  // Verifica breakpoints nas conexões de especialização
-  for (let s of specializations) {
-    if (s.connections) {
-      for (let conn of s.connections) {
-        if (conn.breakpoints && conn.breakpoints.length > 0) {
-          for (let i = 0; i < conn.breakpoints.length; i++) {
-            let bp = conn.breakpoints[i];
-            if (Math.hypot(x - bp.x, y - bp.y) < 8) {
-              return { type: "breakpoint", connection: conn, index: i, specialization: s };
+        // Verifica relacionamentos
+        for (let i = relationships.length - 1; i >= 0; i--) {
+          const rel = relationships[i];
+          let half = (rel.size || relationshipSize) / 2;
+          if (x >= rel.x - half && x <= rel.x + half && y >= rel.y - half && y <= rel.y + half) {
+            return { type: "relationship", element: rel };
+          }
+        }
+
+        // Verifica especializações
+        for (let i = specializations.length - 1; i >= 0; i--) {
+          const spec = specializations[i];
+          let half = (spec.size || defaultSpecializationSize) / 2;
+          if (x >= spec.x - half && x <= spec.x + half && y >= spec.y - half && y <= spec.y + half) {
+            return { type: "specialization", element: spec };
+          }
+        }
+
+        // Verifica conexões de especialização
+        for (let s of specializations) {
+          if (s.connections) {
+            for (let conn of s.connections) {
+              let e = entities.find(en => en.id === conn.entityId);
+              if (!e) continue;
+              let vertex = getSpecializationVertices(s)[conn.vertex];
+              let eCenter = { x: e.x + e.width / 2, y: e.y + e.height / 2 };
+              let points = [vertex];
+              if (conn.breakpoints && conn.breakpoints.length > 0) {
+                points.push(...conn.breakpoints);
+              }
+              let lastPoint = points[points.length - 1];
+              let eBoundary = getRectBorderPoint(
+                eCenter.x, eCenter.y, 
+                lastPoint.x - eCenter.x, 
+                lastPoint.y - eCenter.y, 
+                e.width / 2, e.height / 2
+              );
+              points.push(eBoundary);
+              for (let i = 0; i < points.length - 1; i++) {
+                if (distancePointToSegment({ x, y }, points[i], points[i + 1]) < 15) {
+                  return { type: "specialization-connection", specialization: s, connection: conn };
+                }
+              }
             }
           }
         }
-      }
-    }
-  }
 
-  // Verifica breakpoints nas conexões de relacionamento
-  for (let r of relationships) {
-    for (let conn of r.connections) {
-      if (conn.breakpoints && conn.breakpoints.length > 0) {
-        for (let i = 0; i < conn.breakpoints.length; i++) {
-          let bp = conn.breakpoints[i];
-          if (Math.hypot(x - bp.x, y - bp.y) < 8) {
-            return { type: "breakpoint", connection: conn, index: i, relationship: r };
+        // Verifica conexões entre relacionamentos e entidades
+        for (let r of relationships) {
+          for (let conn of r.connections) {
+            let e = entities.find(en => en.id === conn.entityId);
+            if (!e) continue;
+            let rCenter = { x: r.x, y: r.y };
+            let eCenter = { x: e.x + e.width / 2, y: e.y + e.height / 2 };
+            let points = [rCenter];
+            if (conn.breakpoints && conn.breakpoints.length > 0) {
+              points.push(...conn.breakpoints);
+            }
+            let eBoundary = getRectBorderPoint(
+              eCenter.x, eCenter.y, 
+              points[points.length - 1].x - eCenter.x, 
+              points[points.length - 1].y - eCenter.y, 
+              e.width / 2, e.height / 2
+            );
+            points.push(eBoundary);
+            for (let i = 0; i < points.length - 1; i++) {
+              if (distancePointToSegment({ x, y }, points[i], points[i + 1]) < 15) {
+                return { type: "connection", relationship: r, connection: conn };
+              }
+            }
           }
         }
-      }
-    }
-  }
 
-  return null;
-}
+        // Verifica breakpoints nas conexões de especialização
+        for (let s of specializations) {
+          if (s.connections) {
+            for (let conn of s.connections) {
+              if (conn.breakpoints && conn.breakpoints.length > 0) {
+                for (let i = 0; i < conn.breakpoints.length; i++) {
+                  let bp = conn.breakpoints[i];
+                  if (Math.hypot(x - bp.x, y - bp.y) < 8) {
+                    return { type: "breakpoint", connection: conn, index: i, specialization: s };
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Verifica breakpoints nas conexões de relacionamento
+        for (let r of relationships) {
+          for (let conn of r.connections) {
+            if (conn.breakpoints && conn.breakpoints.length > 0) {
+              for (let i = 0; i < conn.breakpoints.length; i++) {
+                let bp = conn.breakpoints[i];
+                if (Math.hypot(x - bp.x, y - bp.y) < 8) {
+                  return { type: "breakpoint", connection: conn, index: i, relationship: r };
+                }
+              }
+            }
+          }
+        }
+
+        return null;
+    }
+
+
+
+
+
+
+
+
+
 
 function startToolbarDrag(type, evt) {
   evt.preventDefault();
@@ -2118,7 +2730,7 @@ function onToolbarDragEnd(evt) {
     }
 
     
-    function onCanvasStart(evt) {
+function onCanvasStart(evt) {
   evt.preventDefault();
   let pos = getMousePos(evt);
 
@@ -2815,7 +3427,7 @@ function onCanvasEnd(evt) {
     });
 
 
-    canvas.addEventListener("contextmenu", function(evt) {
+    function onCanvasContextMenu(evt) {
       evt.preventDefault();
       let pos = getMousePos(evt);
       
@@ -2832,9 +3444,9 @@ function onCanvasEnd(evt) {
         draw();
         return;
       }
-    });
+    }
 
-    canvas.addEventListener("dblclick", function(evt) {
+    function onCanvasDblClick(evt){
       let pos = getMousePos(evt);
 
 
@@ -2943,7 +3555,7 @@ function onCanvasEnd(evt) {
           }
         }
       }
-    });
+    }
 
     function showInlineEditor(item, compX, compY) {
       if (inlineInput) $(inlineInput).remove();
@@ -3056,7 +3668,7 @@ function onCanvasEnd(evt) {
     }
 
     
-// Modificar a função showSubmenu para implementar arraste de relacionamento
+
 function showSubmenu(element, x, y) {
   if (submenu) $(submenu).remove();
   submenu = document.createElement("div");
@@ -3065,6 +3677,22 @@ function showSubmenu(element, x, y) {
 
   let items = [];
   if (element.objType === "entity" || element.objType === "relationship" || element.objType === "specialization") {
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
+      label: "Relacionar",
+      id: "menuRelate",
+      action: () => {
+        isDraggingConnection = true;
+        draggingConnection = {
+          type: element.objType,
+          element: element,
+          start: { x: element.x + (element.width || element.size || 0)/2, y: element.y + (element.height || element.size || 0)/2 },
+          current: { x: x, y: y }
+        };
+        clearSelection();
+        draw();
+      }
+    });
     items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
       label: "Deletar",
@@ -3086,26 +3714,22 @@ function showSubmenu(element, x, y) {
         draw();
       }
     });
+    
+    
+  }
+  
+  if (element.objType === "attribute") {
     items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
-      label: "Relacionar",
-      id: "menuRelate",
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>',
+      label: element.primary ? "Remover Chave" : "Definir Chave",
+      id: "menuKey",
       action: () => {
-        isDraggingConnection = true;
-        draggingConnection = {
-          type: element.objType,
-          element: element,
-          start: { x: element.x + (element.width || element.size || 0)/2, y: element.y + (element.height || element.size || 0)/2 },
-          current: { x: x, y: y }
-        };
+        element.primary = !element.primary;
+        saveState();
         clearSelection();
         draw();
       }
     });
-  }
-  
-  // Restante do código para atributos
-  if (element.objType === "attribute") {
     items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
       label: "Deletar",
@@ -3113,17 +3737,6 @@ function showSubmenu(element, x, y) {
       action: () => {
         attributes = attributes.filter(a => a.id !== element.id);
         attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
-        saveState();
-        clearSelection();
-        draw();
-      }
-    });
-    items.push({
-      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16"/></svg>',
-      label: element.primary ? "Remover Chave" : "Definir Chave",
-      id: "menuKey",
-      action: () => {
-        element.primary = !element.primary;
         saveState();
         clearSelection();
         draw();
@@ -3146,11 +3759,12 @@ function showSubmenu(element, x, y) {
     });
   }
 
+  // Adiciona os itens ao submenu
   items.forEach(item => {
     let div = document.createElement("div");
     div.className = "submenu-item";
     div.id = item.id;
-    div.innerHTML = `${item.icon}<span class="text-white">${item.label}</span>`;
+    div.innerHTML = `${item.icon}<span class="text-white ml-2">${item.label}</span>`;
     div.onclick = item.action;
     
     // Adicionando manipuladores para arraste a partir do botão "Relacionar"
@@ -3172,36 +3786,295 @@ function showSubmenu(element, x, y) {
     submenu.appendChild(div);
   });
 
-  // Posicionamento do menu
+  // CORREÇÃO IMPORTANTE: Posicionamento do submenu relativo ao canvas
   let rect = element.objType === "entity" 
-      ? { x: element.x, y: element.y, width: element.width, height: element.height }
+      ? { x: element.x, y: element.y, width: element.width || defaultEntityWidth, height: element.height || defaultEntityHeight }
       : (element.objType === "attribute" || element.objType === "derivedAttribute") 
-          ? { x: element.x - element.radiusX, y: element.y - element.radiusY, width: element.radiusX * 2, height: element.radiusY * 2 }
+          ? { x: element.x - (element.radiusX || defaultAttributeRadiusX), 
+              y: element.y - (element.radiusY || defaultAttributeRadiusY), 
+              width: (element.radiusX || defaultAttributeRadiusX) * 2, 
+              height: (element.radiusY || defaultAttributeRadiusY) * 2 }
           : element.objType === "relationship" 
-              ? { x: element.x - element.size/2, y: element.y - element.size/2, width: element.size, height: element.size }
-              : { x: element.x - element.size/2, y: element.y - element.size/2, width: element.size, height: element.size };
+              ? { x: element.x - (element.size || relationshipSize)/2, 
+                  y: element.y - (element.size || relationshipSize)/2, 
+                  width: element.size || relationshipSize, 
+                  height: element.size || relationshipSize }
+              : { x: element.x - (element.size || defaultSpecializationSize)/2, 
+                  y: element.y - (element.size || defaultSpecializationSize)/2, 
+                  width: element.size || defaultSpecializationSize, 
+                  height: element.size || defaultSpecializationSize };
 
+  // Obtém a posição do canvas na página
   let canvasRect = canvas.getBoundingClientRect();
+  
+  // Converte coordenadas do mundo para coordenadas da tela corretamente
   let screenX = canvasRect.left + (rect.x + panOffset.x) * zoom;
   let screenY = canvasRect.top + (rect.y + panOffset.y) * zoom;
   let screenWidth = rect.width * zoom;
   let screenHeight = rect.height * zoom;
-  let submenuX = screenX + (screenWidth / 2) - (submenu.offsetWidth / 2);
-  let submenuY = screenY + screenHeight + 10;
-
-  if (submenuX < 0) submenuX = 0;
-  if (submenuX + submenu.offsetWidth > window.innerWidth) submenuX = window.innerWidth - submenu.offsetWidth;
-  if (submenuY + submenu.offsetHeight > window.innerHeight) submenuY = screenY - submenu.offsetHeight - 10;
+  
+  // Calcula a posição para o submenu
+  let submenuX = screenX + (screenWidth / 2);
+  let submenuY = screenY + screenHeight + 5;
+  
+  // Centraliza o submenu horizontalmente
+  submenuX -= submenu.offsetWidth / 2;
+  
+  // Ajusta se o submenu sair da tela
+  if (submenuX < 5) submenuX = 5;
+  if (submenuX + submenu.offsetWidth > window.innerWidth - 5) 
+      submenuX = window.innerWidth - submenu.offsetWidth - 5;
+  
+  // Se for ficar abaixo da tela, coloca acima do objeto
+  if (submenuY + submenu.offsetHeight > window.innerHeight - 5) 
+      submenuY = screenY - submenu.offsetHeight - 5;
+  
+  // Posiciona o submenu na tela
+  submenu.style.position = "fixed";
   submenu.style.left = `${submenuX}px`;
   submenu.style.top = `${submenuY}px`;
+  submenu.style.zIndex = "1050";
+  
+  // Adiciona estilo diretamente para melhorar a aparência
+  submenu.style.backgroundColor = "#1f2937";
+  submenu.style.borderRadius = "8px";
+  submenu.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
+  submenu.style.padding = "8px";
+  submenu.style.display = "flex";
+  submenu.style.flexDirection = "column";
+  submenu.style.gap = "4px";
+  
+  // Ajusta os itens do submenu
+  for (let i = 0; i < submenu.children.length; i++) {
+    submenu.children[i].style.padding = "8px 12px";
+    submenu.children[i].style.borderRadius = "6px";
+    submenu.children[i].style.cursor = "pointer";
+    submenu.children[i].style.display = "flex";
+    submenu.children[i].style.alignItems = "center";
+    submenu.children[i].style.whiteSpace = "nowrap";
+    submenu.children[i].style.transition = "background 0.2s";
+    
+    // Adiciona evento hover manualmente
+    submenu.children[i].addEventListener("mouseover", function() {
+      this.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+    });
+    submenu.children[i].addEventListener("mouseout", function() {
+      this.style.backgroundColor = "transparent";
+    });
+  }
+  
+  // Salva a posição para detecção de cliques
   submenuRect = {
     x: submenuX - canvasRect.left,
     y: submenuY - canvasRect.top,
     width: submenu.offsetWidth,
     height: submenu.offsetHeight
-  };  
-}
+  };
+}function showSubmenu(element, x, y) {
+  if (submenu) $(submenu).remove();
+  submenu = document.createElement("div");
+  submenu.className = "submenu";
+  document.body.appendChild(submenu);
+
+  let items = [];
+  if (element.objType === "entity" || element.objType === "relationship" || element.objType === "specialization") {
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
+      label: "Relacionar",
+      id: "menuRelate",
+      action: () => {
+        isDraggingConnection = true;
+        draggingConnection = {
+          type: element.objType,
+          element: element,
+          start: { x: element.x + (element.width || element.size || 0)/2, y: element.y + (element.height || element.size || 0)/2 },
+          current: { x: x, y: y }
+        };
+        clearSelection();
+        draw();
+      }
+    });
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+      label: "Deletar",
+      id: "menuDelete",
+      action: () => {
+        if (element.objType === "entity") {
+          entities = entities.filter(e => e.id !== element.id);
+          attributes = attributes.filter(a => !(a.parentType === "entity" && a.parentId === element.id));
+          relationships.forEach(r => r.connections = r.connections.filter(c => c.entityId !== element.id));
+          specializations.forEach(s => s.connections = s.connections.filter(c => c.entityId !== element.id));
+        } else if (element.objType === "relationship") {
+          relationships = relationships.filter(r => r.id !== element.id);
+          attributes = attributes.filter(a => !(a.parentType === "relationship" && a.parentId === element.id));
+        } else if (element.objType === "specialization") {
+          specializations = specializations.filter(s => s.id !== element.id);
+        }
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
     
+    
+  }
+  
+  if (element.objType === "attribute") {
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>',
+      label: element.primary ? "Remover Chave" : "Definir Chave",
+      id: "menuKey",
+      action: () => {
+        element.primary = !element.primary;
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+      label: "Deletar",
+      id: "menuDelete",
+      action: () => {
+        attributes = attributes.filter(a => a.id !== element.id);
+        attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
+    
+  }
+  
+  if (element.objType === "derivedAttribute") {
+    items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+      label: "Deletar",
+      id: "menuDelete",
+      action: () => {
+        attributes = attributes.filter(a => a.id !== element.id);
+        attributes.forEach(a => { if (a.parentType === "attribute" && a.parentId === element.id) a.parentId = null; });
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
+  }
+
+  // Adiciona os itens ao submenu
+  items.forEach(item => {
+    let div = document.createElement("div");
+    div.className = "submenu-item";
+    div.id = item.id;
+    div.innerHTML = `${item.icon}<span class="text-white ml-2">${item.label}</span>`;
+    div.onclick = item.action;
+    
+    // Adicionando manipuladores para arraste a partir do botão "Relacionar"
+    if (item.id === "menuRelate") {
+      div.addEventListener("mousedown", function(e) {
+        // Armazena informações para iniciar o arraste do relacionamento
+        relationMenuSource = element;
+        
+        // Adiciona eventos para detectar movimento do mouse enquanto o botão estiver pressionado
+        $(document).on("mousemove.relationDrag", onRelationMenuDragMove);
+        $(document).on("mouseup.relationDrag", onRelationMenuDragEnd);
+        
+        // Previne o comportamento padrão (que seria apenas o onclick)
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    }
+    
+    submenu.appendChild(div);
+  });
+
+  // CORREÇÃO IMPORTANTE: Posicionamento do submenu relativo ao canvas
+  let rect = element.objType === "entity" 
+      ? { x: element.x, y: element.y, width: element.width || defaultEntityWidth, height: element.height || defaultEntityHeight }
+      : (element.objType === "attribute" || element.objType === "derivedAttribute") 
+          ? { x: element.x - (element.radiusX || defaultAttributeRadiusX), 
+              y: element.y - (element.radiusY || defaultAttributeRadiusY), 
+              width: (element.radiusX || defaultAttributeRadiusX) * 2, 
+              height: (element.radiusY || defaultAttributeRadiusY) * 2 }
+          : element.objType === "relationship" 
+              ? { x: element.x - (element.size || relationshipSize)/2, 
+                  y: element.y - (element.size || relationshipSize)/2, 
+                  width: element.size || relationshipSize, 
+                  height: element.size || relationshipSize }
+              : { x: element.x - (element.size || defaultSpecializationSize)/2, 
+                  y: element.y - (element.size || defaultSpecializationSize)/2, 
+                  width: element.size || defaultSpecializationSize, 
+                  height: element.size || defaultSpecializationSize };
+
+  // Obtém a posição do canvas na página
+  let canvasRect = canvas.getBoundingClientRect();
+  
+  // Converte coordenadas do mundo para coordenadas da tela
+  let screenX = canvasRect.left + (rect.x + panOffset.x) * zoom;
+  let screenY = canvasRect.top + (rect.y + panOffset.y) * zoom;
+  let screenWidth = rect.width * zoom;
+  let screenHeight = rect.height * zoom;
+  
+  // Calcula a posição para o submenu
+  let submenuX = screenX + (screenWidth / 2);
+  let submenuY = screenY + screenHeight + 5;
+  
+  // Centraliza o submenu horizontalmente
+  submenuX -= submenu.offsetWidth / 2;
+  
+  // Ajusta se o submenu sair da tela
+  if (submenuX < 5) submenuX = 5;
+  if (submenuX + submenu.offsetWidth > window.innerWidth - 5) 
+      submenuX = window.innerWidth - submenu.offsetWidth - 5;
+  
+  // Se for ficar abaixo da tela, coloca acima do objeto
+  if (submenuY + submenu.offsetHeight > window.innerHeight - 5) 
+      submenuY = screenY - submenu.offsetHeight - 5;
+  
+  // Posiciona o submenu na tela
+  submenu.style.position = "fixed";
+  submenu.style.left = `${submenuX}px`;
+  submenu.style.top = `${submenuY}px`;
+  submenu.style.zIndex = "1050";
+  
+  // Adiciona estilo diretamente para melhorar a aparência
+  submenu.style.backgroundColor = "#1f2937";
+  submenu.style.borderRadius = "8px";
+  submenu.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
+  submenu.style.padding = "8px";
+  submenu.style.display = "flex";
+  submenu.style.flexDirection = "column";
+  submenu.style.gap = "4px";
+  
+  // Ajusta os itens do submenu
+  for (let i = 0; i < submenu.children.length; i++) {
+    submenu.children[i].style.padding = "8px 12px";
+    submenu.children[i].style.borderRadius = "6px";
+    submenu.children[i].style.cursor = "pointer";
+    submenu.children[i].style.display = "flex";
+    submenu.children[i].style.alignItems = "center";
+    submenu.children[i].style.whiteSpace = "nowrap";
+    submenu.children[i].style.transition = "background 0.2s";
+    
+    // Adiciona evento hover manualmente
+    submenu.children[i].addEventListener("mouseover", function() {
+      this.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+    });
+    submenu.children[i].addEventListener("mouseout", function() {
+      this.style.backgroundColor = "transparent";
+    });
+  }
+  
+  // Salva a posição para detecção de cliques
+  submenuRect = {
+    x: submenuX - canvasRect.left,
+    y: submenuY - canvasRect.top,
+    width: submenu.offsetWidth,
+    height: submenu.offsetHeight
+  };
+}
+
+
 
 // Função para lidar com o arrastar do relacionamento a partir do menu
 function onRelationMenuDragMove(evt) {
@@ -3553,32 +4426,130 @@ function getSubmenuHit(x, y) {
       draw();
     });
     
-    document.getElementById("btnExport").addEventListener("click", () => {
-      const exportScale = 3; // Fator de escala para maior qualidade (ajuste se necessário)
-      const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = canvas.width * exportScale;
-      exportCanvas.height = canvas.height * exportScale;
-      const exportCtx = exportCanvas.getContext("2d");
-      exportCtx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
-      // Aplique as mesmas transformações de pan e zoom (multiplicadas pelo exportScale)
-      exportCtx.translate(panOffset.x * exportScale, panOffset.y * exportScale);
-      exportCtx.scale(zoom * exportScale, zoom * exportScale);
-      // Desenha o conteúdo (use drawAll para renderizar somente o modelo)
-      drawAll(exportCtx);
-      const dataUrl = exportCanvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = "modelagem_conceitual.png";
-      link.click();
-    });
+    function exportDiagram() {
+        // 1. Calcular os limites reais do diagrama (encontrar min/max de todos os objetos)
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        // Processar entidades
+        entities.forEach(e => {
+            minX = Math.min(minX, e.x);
+            minY = Math.min(minY, e.y);
+            maxX = Math.max(maxX, e.x + (e.width || defaultEntityWidth));
+            maxY = Math.max(maxY, e.y + (e.height || defaultEntityHeight));
+        });
+        
+        // Processar atributos
+        attributes.forEach(a => {
+            const rx = a.radiusX || defaultAttributeRadiusX;
+            const ry = a.radiusY || defaultAttributeRadiusY;
+            minX = Math.min(minX, a.x - rx);
+            minY = Math.min(minY, a.y - ry);
+            maxX = Math.max(maxX, a.x + rx);
+            maxY = Math.max(maxY, a.y + ry);
+        });
+        
+        // Processar relacionamentos
+        relationships.forEach(r => {
+            const half = (r.size || relationshipSize) / 2;
+            minX = Math.min(minX, r.x - half);
+            minY = Math.min(minY, r.y - half);
+            maxX = Math.max(maxX, r.x + half);
+            maxY = Math.max(maxY, r.y + half);
+            
+            // Verificar também os breakpoints das conexões
+            r.connections.forEach(conn => {
+                if (conn.breakpoints) {
+                    conn.breakpoints.forEach(bp => {
+                        minX = Math.min(minX, bp.x);
+                        minY = Math.min(minY, bp.y);
+                        maxX = Math.max(maxX, bp.x);
+                        maxY = Math.max(maxY, bp.y);
+                    });
+                }
+            });
+        });
+        
+        // Processar especializações
+        specializations.forEach(s => {
+            const vertices = getSpecializationVertices(s);
+            vertices.forEach(v => {
+                minX = Math.min(minX, v.x);
+                minY = Math.min(minY, v.y);
+                maxX = Math.max(maxX, v.x);
+                maxY = Math.max(maxY, v.y);
+            });
+            
+            // Verificar também os breakpoints das conexões
+            if (s.connections) {
+                s.connections.forEach(conn => {
+                    if (conn.breakpoints) {
+                        conn.breakpoints.forEach(bp => {
+                            minX = Math.min(minX, bp.x);
+                            minY = Math.min(minY, bp.y);
+                            maxX = Math.max(maxX, bp.x);
+                            maxY = Math.max(maxY, bp.y);
+                        });
+                    }
+                });
+            }
+        });
+        
+        // Adicionar uma margem
+        const margin = 50;
+        minX -= margin;
+        minY -= margin;
+        maxX += margin;
+        maxY += margin;
+        
+        // Calcular dimensões
+        const diagramWidth = maxX - minX;
+        const diagramHeight = maxY - minY;
+        
+        // 2. Criar um canvas de exportação com o tamanho correto
+        const exportScale = 2; // Fator de escala para maior qualidade
+        const exportCanvas = document.createElement("canvas");
+        exportCanvas.width = diagramWidth * exportScale;
+        exportCanvas.height = diagramHeight * exportScale;
+        
+        const exportCtx = exportCanvas.getContext("2d");
+        exportCtx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+        
+        // 3. Ajustar a transformação para incluir toda a área do diagrama
+        exportCtx.scale(exportScale, exportScale);
+        exportCtx.translate(-minX, -minY);
+        
+        // 4. Desenhar o conteúdo
+        drawAll(exportCtx);
+        
+        // 5. Converter para URL de dados e criar o link de download
+        const dataUrl = exportCanvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        
+        // Nome do arquivo com data e hora atual
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+        const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, "");
+        link.download = `diagrama_er_${dateStr}_${timeStr}.png`;
+        
+        link.click();
+    }
     document.getElementById("btnUndo").addEventListener("click", undo);
     document.getElementById("btnRedo").addEventListener("click", redo);
 
-    document.getElementById("hamburger").addEventListener("click", () => {
-      sidebar.classList.toggle("expanded");
-      resizeCanvas();
+    
+    // Configuração dos botões de zoom
+    document.getElementById("btnZoomIn").addEventListener("click", () => {
+      // Incrementa o zoom (por exemplo, 10% cada vez)
+      zoom = Math.min(zoom * 1.1, 3.0);  // Limita o zoom máximo a 3x
+      draw();
     });
 
+    document.getElementById("btnZoomOut").addEventListener("click", () => {
+      // Decrementa o zoom (por exemplo, 10% cada vez)
+      zoom = Math.max(zoom / 1.1, 0.3);  // Limita o zoom mínimo a 0.3x
+      draw();
+    });
     
 
     resizeCanvas();
