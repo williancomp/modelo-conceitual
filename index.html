@@ -846,7 +846,10 @@
     const ctx = canvas.getContext("2d");
     const sidebar = document.getElementById("sidebar");
 
-    
+    // Novas constantes para dimensionamento dos atributos
+    const ATTR_CIRCLE_RADIUS = 12; // Raio do círculo do atributo
+    const ATTR_TEXT_PADDING = 16; // Espaçamento entre o círculo e o texto
+    const ATTR_TEXT_OFFSET_Y = 2; // Pequeno ajuste vertical para melhor alinhamento do texto
 
     // Fator de zoom global (inicial = 1)
     let zoom = 1;
@@ -1727,29 +1730,32 @@ function showNotification(message, type = "info") {
       };
     }
 
-    function getDiamondBorderPoint(cx, cy, dx, dy, half) {
-      // Se não houver direção, retorna o centro
-      if (dx === 0 && dy === 0) return { x: cx, y: cy };
-      
-      // Calcula o ponto de interseção com o losango
-      // Determina qual borda do losango intersecta primeiro
-      const abs_dx = Math.abs(dx);
-      const abs_dy = Math.abs(dy);
-      
-      let t;
-      if (abs_dx * half >= abs_dy * half) {
-        // Intersecta na borda horizontal (esquerda ou direita)
-        t = half / abs_dx;
-      } else {
-        // Intersecta na borda vertical (superior ou inferior)
-        t = half / abs_dy;
-      }
-      
-      return {
-        x: cx + dx * t,
-        y: cy + dy * t
-      };
-    }
+// Também podemos melhorar a função que calcula os pontos de conexão para relacionamentos em geral
+function getDiamondBorderPoint(cx, cy, dx, dy, half) {
+  // Se não houver direção, retorna o centro
+  if (dx === 0 && dy === 0) return { x: cx, y: cy };
+  
+  // Calcula o ponto de interseção com o losango
+  // Determina qual borda do losango intersecta primeiro
+  const abs_dx = Math.abs(dx);
+  const abs_dy = Math.abs(dy);
+  
+  let t;
+  if (abs_dx * half >= abs_dy * half) {
+    // Intersecta na borda horizontal (esquerda ou direita)
+    t = half / abs_dx;
+  } else {
+    // Intersecta na borda vertical (superior ou inferior)
+    t = half / abs_dy;
+  }
+  
+  return {
+    x: cx + dx * t,
+    y: cy + dy * t
+  };
+}
+
+
 
     function getSpecializationVertices(spec) {
       let side = spec.size || defaultSpecializationSize;
@@ -1833,6 +1839,122 @@ function getMousePos(evt) {
   };
 }
 
+
+
+
+function getDiamondBorderPointCorrect(cx, cy, targetX, targetY, size) {
+  // Se o alvo for o próprio centro, retorna o centro
+  if (targetX === cx && targetY === cy) return { x: cx, y: cy };
+  
+  // Metade do tamanho do losango
+  const half = size / 2;
+  
+  // Definir os quatro vértices do losango (em ordem horária)
+  const vertices = [
+    { x: cx, y: cy - half },        // Topo
+    { x: cx + half, y: cy },        // Direita
+    { x: cx, y: cy + half },        // Baixo
+    { x: cx - half, y: cy }         // Esquerda
+  ];
+  
+  // Linha do centro até o alvo
+  const line = {
+    p1: { x: cx, y: cy },
+    p2: { x: targetX, y: targetY }
+  };
+  
+  // Encontrar interseção com cada aresta do losango
+  let closestIntersection = null;
+  let minDistance = Infinity;
+  
+  for (let i = 0; i < 4; i++) {
+    const edgeLine = {
+      p1: vertices[i],
+      p2: vertices[(i + 1) % 4]
+    };
+    
+    // Calcular interseção entre a linha centro-alvo e a aresta atual
+    const intersection = lineSegmentIntersection(line, edgeLine);
+    
+    if (intersection) {
+      // Verificar se a interseção está na direção correta (do centro para o alvo)
+      const dirVector = {
+        x: targetX - cx,
+        y: targetY - cy
+      };
+      
+      const intersectVector = {
+        x: intersection.x - cx,
+        y: intersection.y - cy
+      };
+      
+      // Produto escalar positivo significa mesma direção
+      const dotProduct = dirVector.x * intersectVector.x + dirVector.y * intersectVector.y;
+      
+      if (dotProduct > 0) {
+        const distance = Math.sqrt(
+          Math.pow(intersection.x - cx, 2) + 
+          Math.pow(intersection.y - cy, 2)
+        );
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIntersection = intersection;
+        }
+      }
+    }
+  }
+  
+  // Se encontramos uma interseção válida, retornamos ela
+  if (closestIntersection) {
+    return closestIntersection;
+  }
+  
+  // Caso de fallback (não deveria ocorrer com geometria correta)
+  return {
+    x: cx + (targetX - cx) * half / Math.sqrt(Math.pow(targetX - cx, 2) + Math.pow(targetY - cy, 2)),
+    y: cy + (targetY - cy) * half / Math.sqrt(Math.pow(targetX - cx, 2) + Math.pow(targetY - cy, 2))
+  };
+}
+
+// Função auxiliar para calcular interseção entre dois segmentos de linha
+function lineSegmentIntersection(line1, line2) {
+  const x1 = line1.p1.x;
+  const y1 = line1.p1.y;
+  const x2 = line1.p2.x;
+  const y2 = line1.p2.y;
+  
+  const x3 = line2.p1.x;
+  const y3 = line2.p1.y;
+  const x4 = line2.p2.x;
+  const y4 = line2.p2.y;
+  
+  // Cálculo do determinante
+  const den = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+  
+  // Linhas paralelas ou coincidentes
+  if (den === 0) {
+    return null;
+  }
+  
+  const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / den;
+  const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / den;
+  
+  // Verifica se a interseção está dentro dos segmentos de linha
+  if (ub >= 0 && ub <= 1 && ua >= 0) {
+    return {
+      x: x1 + ua * (x2 - x1),
+      y: y1 + ua * (y2 - y1)
+    };
+  }
+  
+  return null;
+}
+
+
+
+
+
     function distancePointToSegment(p, a, b) {
       const A = p.x - a.x, B = p.y - a.y;
       const C = b.x - a.x, D = b.y - a.y;
@@ -1848,7 +1970,8 @@ function getMousePos(evt) {
     }
 
 
-    function drawAggregationConnectionLine(context, agg, conn, target) {
+// Da mesma forma, atualizamos a conexão para agregações
+function drawAggregationConnectionLine(context, agg, conn, target) {
   // Ponto central da agregação
   const aggCenter = { x: agg.x, y: agg.y };
   
@@ -1857,47 +1980,71 @@ function getMousePos(evt) {
     { x: target.x + target.width/2, y: target.y + target.height/2 } : 
     { x: target.x, y: target.y };
   
-  // Lista de pontos para desenhar - começa com os centros, não com as bordas
-  let points = [aggCenter];
+  // Cálculo do ponto na borda da agregação (método simplificado)
+  const dx = targetCenter.x - agg.x;
+  const dy = targetCenter.y - agg.y;
   
-  // Adiciona breakpoints se existirem
-  if (conn.breakpoints) {
-    points.push(...conn.breakpoints);
-  }
+  const len = Math.sqrt(dx*dx + dy*dy);
+  if (len === 0) return;
   
-  // Adiciona o centro do alvo
-  points.push(targetCenter);
-
-  // Calcula os pontos na borda dos objetos
-  // Os centros são substituídos pelos pontos de borda
+  const ndx = dx / len;
+  const ndy = dy / len;
   
-  // Direção do primeiro segmento
-  const dx = points[1].x - points[0].x;
-  const dy = points[1].y - points[0].y;
+  const half = (agg.size || relationshipSize) / 2;
   
-  // Ponto na borda da agregação - usando getDiamondBorderPoint como nos relacionamentos
-  const half = (agg.size || relationshipSize)/2;
-  points[0] = getDiamondBorderPoint(aggCenter.x, aggCenter.y, dx, dy, half);
+  // Ponto na borda do losango interno da agregação
+  const t = Math.min(
+    Math.abs(half / ndx),
+    Math.abs(half / ndy)
+  );
   
-  // Direção do último segmento
-  const lastIdx = points.length - 1;
-  const lastDx = points[lastIdx-1].x - points[lastIdx].x;
-  const lastDy = points[lastIdx-1].y - points[lastIdx].y;
+  const aggBorder = {
+    x: agg.x + ndx * t,
+    y: agg.y + ndy * t
+  };
   
   // Ponto na borda do objeto alvo
+  let targetBorder;
   if (target.objType === "entity") {
-    points[lastIdx] = getRectBorderPoint(
-      targetCenter.x, targetCenter.y, 
-      lastDx, lastDy, 
+    targetBorder = getRectBorderPoint(
+      targetCenter.x, targetCenter.y,
+      agg.x - targetCenter.x, agg.y - targetCenter.y,
       target.width/2, target.height/2
     );
   } else {
-    points[lastIdx] = getDiamondBorderPoint(
-      targetCenter.x, targetCenter.y, 
-      lastDx, lastDy, 
-      target.size/2
+    // Para relacionamentos usamos a mesma abordagem simplificada
+    const targetDx = agg.x - target.x;
+    const targetDy = agg.y - target.y;
+    
+    const targetLen = Math.sqrt(targetDx*targetDx + targetDy*targetDy);
+    if (targetLen === 0) return;
+    
+    const targetNdx = targetDx / targetLen;
+    const targetNdy = targetDy / targetLen;
+    
+    const targetHalf = (target.size || relationshipSize) / 2;
+    
+    const targetT = Math.min(
+      Math.abs(targetHalf / targetNdx),
+      Math.abs(targetHalf / targetNdy)
     );
+    
+    targetBorder = {
+      x: target.x + targetNdx * targetT,
+      y: target.y + targetNdy * targetT
+    };
   }
+  
+  // Montamos os pontos da polyline
+  let points = [aggBorder];
+  
+  // Adicionamos os breakpoints
+  if (conn.breakpoints && conn.breakpoints.length > 0) {
+    points.push(...conn.breakpoints);
+  }
+  
+  // Adicionamos o ponto na borda do alvo
+  points.push(targetBorder);
   
   // Desenha a linha de conexão
   context.beginPath();
@@ -1906,7 +2053,7 @@ function getMousePos(evt) {
     context.lineTo(points[i].x, points[i].y);
   }
   
-  // Define espessura maior se for a conexão selecionada
+  // Define espessura maior se for selecionada
   context.lineWidth = (selectedAggregationConnection && 
                     selectedAggregationConnection.aggregationId === agg.id && 
                     ((conn.entityId && selectedAggregationConnection.entityId === conn.entityId) || 
@@ -1941,16 +2088,16 @@ function getMousePos(evt) {
     };
   }
   
-  // Desenha o ícone de exclusão se for a conexão selecionada
+  // Desenha o ícone de exclusão se selecionado
   if (selectedAggregationConnection && 
       selectedAggregationConnection.aggregationId === agg.id && 
       ((conn.entityId && selectedAggregationConnection.entityId === conn.entityId) || 
       (conn.relationshipId && selectedAggregationConnection.relationshipId === conn.relationshipId))) {
     
-    // Calcula a posição do ícone a 25% do primeiro segmento
+    // Posição do ícone (25% do primeiro segmento)
     let fraction = 0.25;
     let start = points[0];
-    let next = points[1]; // Garantido pois a polyline tem pelo menos 2 pontos
+    let next = points[1];
     let iconPos = {
       x: start.x + (next.x - start.x) * fraction,
       y: start.y + (next.y - start.y) * fraction
@@ -1958,7 +2105,7 @@ function getMousePos(evt) {
     
     let iconSize = globalIconSize + 4;
     
-    // Desenha o ícone (X) vermelho
+    // Desenha o ícone
     context.save();
     context.fillStyle = "#b91c1c";
     context.beginPath();
@@ -1974,7 +2121,7 @@ function getMousePos(evt) {
     context.stroke();
     context.restore();
     
-    // Armazena retângulo do ícone para detecção de cliques
+    // Armazena o retângulo para detecção de cliques
     selectedAggregationConnection.iconRect = {
       x: iconPos.x - iconSize/2,
       y: iconPos.y - iconSize/2,
@@ -1986,71 +2133,86 @@ function getMousePos(evt) {
 
 
 
-
     function drawAll(context) {
       context.clearRect(0, 0, mainWidth, mainHeight);
       context.font = `${fontSize}px Poppins`;
 
-      // Desenha conexões entre atributos e seus pais
-      attributes.forEach(a => {
-        if (a.parentType && a.parentId != null) {
-          context.strokeStyle = "#000000";
-          context.lineWidth = 2;
-          if (a.parentType === "entity") {
-            const e = entities.find(en => en.id === a.parentId);
-            if (e) {
-              const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
-              const aBorder = getCircleBorderPoint(a.x, a.y, eCenter.x - a.x, eCenter.y - a.y, a.radiusX, a.radiusY);
-              const eBorder = getRectBorderPoint(eCenter.x, eCenter.y, a.x - eCenter.x, a.y - eCenter.y, e.width/2, e.height/2);
-              context.beginPath();
-              context.moveTo(eBorder.x, eBorder.y);
-              context.lineTo(aBorder.x, aBorder.y);
-              context.stroke();
-            }
-          } else if (a.parentType === "relationship") {
-            const r = relationships.find(rr => rr.id === a.parentId);
-            if (r) {
-              const rBorder = getDiamondBorderPoint(r.x, r.y, a.x - r.x, a.y - r.y, r.size/2);
-              const aBorder = getCircleBorderPoint(a.x, a.y, r.x - a.x, r.y - a.y, a.radiusX, a.radiusY);
-              context.beginPath();
-              context.moveTo(rBorder.x, rBorder.y);
-              context.lineTo(aBorder.x, aBorder.y);
-              context.stroke();
-            }
-          } else if (a.parentType === "attribute") {
-            const pA = attributes.find(at => at.id === a.parentId);
-            if (pA) {
-              const dx = a.x - pA.x, dy = a.y - pA.y;
-              const pBorder = getCircleBorderPoint(pA.x, pA.y, dx, dy, pA.radiusX, pA.radiusY);
-              const cBorder = getCircleBorderPoint(a.x, a.y, -dx, -dy, a.radiusX, a.radiusY);
-              context.beginPath();
-              context.moveTo(pBorder.x, pBorder.y);
-              context.lineTo(cBorder.x, cBorder.y);
-              context.stroke();
-            }
-          } else if (a.parentType === "aggregation") {
-            // Adicionar conexão entre agregação e atributo
-            const aggr = aggregations.find(ag => ag.id === a.parentId);
-            if (aggr) {
-              const half = (aggr.size || relationshipSize)/2;
-              const rectSize = half * 1.2;
-              // Calcula o ponto na borda do retângulo da agregação
-              const dx = a.x - aggr.x, dy = a.y - aggr.y;
-              // Ponto na borda do retângulo da agregação
-              const aggrBorder = getRectBorderPoint(
-                aggr.x, aggr.y, 
-                dx, dy, 
-                rectSize, rectSize
-              );
-              const aBorder = getCircleBorderPoint(a.x, a.y, -dx, -dy, a.radiusX, a.radiusY);
-              context.beginPath();
-              context.moveTo(aggrBorder.x, aggrBorder.y);
-              context.lineTo(aBorder.x, aBorder.y);
-              context.stroke();
+
+        // Desenha conexões entre atributos e seus pais
+        attributes.forEach(a => {
+          if (a.parentType && a.parentId != null) {
+            context.strokeStyle = "#000000";
+            context.lineWidth = 2;
+            
+            if (a.parentType === "entity") {
+              const e = entities.find(en => en.id === a.parentId);
+              if (e) {
+                const eCenter = { x: e.x + e.width/2, y: e.y + e.height/2 };
+                // Conecta ao centro do círculo do atributo
+                context.beginPath();
+                context.moveTo(eCenter.x, eCenter.y);
+                context.lineTo(a.x, a.y);
+                context.stroke();
+              }
+            } else if (a.parentType === "relationship") {
+              const r = relationships.find(rr => rr.id === a.parentId);
+              if (r) {
+                // Vetor do centro do relacionamento para o atributo
+                const dx = a.x - r.x;
+                const dy = a.y - r.y;
+                
+                // Calculamos o ponto correto de interseção na borda do losango
+                const half = (r.size || relationshipSize) / 2;
+                const borderPoint = getDiamondBorderPointCorrect(r.x, r.y, a.x, a.y, half);
+                
+                // Desenhamos a linha do ponto de interseção até o atributo
+                context.beginPath();
+                context.moveTo(borderPoint.x, borderPoint.y);
+                context.lineTo(a.x, a.y);
+                context.stroke();
+              }
+            } else if (a.parentType === "attribute") {
+              const pA = attributes.find(at => at.id === a.parentId);
+              if (pA) {
+                // Conecta atributo pai ao filho
+                context.beginPath();
+                context.moveTo(pA.x, pA.y);
+                context.lineTo(a.x, a.y);
+                context.stroke();
+              }
+            } else if (a.parentType === "aggregation") {
+              const aggr = aggregations.find(ag => ag.id === a.parentId);
+              if (aggr) {
+                const half = (aggr.size || relationshipSize)/2;
+                const rectSize = half * 1.2;
+                
+                // Usamos a mesma abordagem simples para agregações
+                const dx = a.x - aggr.x;
+                const dy = a.y - aggr.y;
+                
+                const len = Math.sqrt(dx*dx + dy*dy);
+                if (len === 0) return;
+                
+                const ndx = dx / len;
+                const ndy = dy / len;
+                
+                // Aqui usamos rectSize pois a agregação é um pouco maior
+                const t = Math.min(
+                  Math.abs(rectSize / ndx),
+                  Math.abs(rectSize / ndy)
+                );
+                
+                const intersectX = aggr.x + ndx * t;
+                const intersectY = aggr.y + ndy * t;
+                
+                context.beginPath();
+                context.moveTo(intersectX, intersectY);
+                context.lineTo(a.x, a.y);
+                context.stroke();
+              }
             }
           }
-        }
-      });
+        });
 
       // Desenha as conexões entre relacionamentos e entidades
       relationships.forEach(r => {
@@ -2134,68 +2296,80 @@ function getMousePos(evt) {
         context.restore();
       });
 
+      // Desenha os atributos com o novo estilo
       attributes.forEach(a => {
         context.save();
         context.shadowColor = "rgba(0,0,0,0.5)";
         context.shadowBlur = 10;
         
-        // Determina o estilo baseado no tipo de atributo
+        // Determina o estilo com base no tipo de atributo
         if (a.derived) {
-          context.fillStyle = normalColors.derived.fill;
           context.strokeStyle = a.selected ? "#60a5fa" : normalColors.derived.stroke;
           context.setLineDash([4, 2]);
         } else if (a.multivalued) {
-          context.fillStyle = normalColors.multivalued.fill;
           context.strokeStyle = a.selected ? "#60a5fa" : normalColors.multivalued.stroke;
         } else {
-          context.fillStyle = normalColors.attribute.fill;
           context.strokeStyle = a.selected ? "#60a5fa" : normalColors.attribute.stroke;
         }
         
         context.lineWidth = a.selected ? 3 : 2;
         
-        const margin = 12;
-        let rx = a.radiusX || defaultAttributeRadiusX;
-        let ry = a.radiusY || defaultAttributeRadiusY;
-        const lines = wrapText(context, a.name, rx*2 - margin);
+        // Determina se o atributo é chave primária (preenchido)
+        if (a.primary) {
+          context.fillStyle = a.derived ? normalColors.derived.fill : normalColors.attribute.fill;
+        } else {
+          context.fillStyle = "white"; // Fundo branco para os não-chave
+        }
         
-        let maxLineWidth = 0;
-        lines.forEach(line => {
-          let tw = context.measureText(line).width;
-          if (tw > maxLineWidth) maxLineWidth = tw;
-        });
-        
-        let neededWidth = maxLineWidth + margin;
-        let neededHeight = lines.length*(fontSize*1.2) + margin;
-        rx = Math.max(rx, neededWidth / 2);
-        ry = Math.max(ry, neededHeight / 2);
-        a.radiusX = rx;
-        a.radiusY = ry;
-        
-        // Desenha a elipse principal
+        // Desenha o círculo do atributo
         context.beginPath();
-        context.ellipse(a.x, a.y, rx, ry, 0, 0, 2*Math.PI);
+        context.arc(a.x, a.y, ATTR_CIRCLE_RADIUS, 0, 2 * Math.PI);
         context.fill();
         context.stroke();
         
-        // Desenha a segunda elipse para atributos multivalorados
+        // Desenha o segundo círculo para atributos multivalorados
         if (a.multivalued) {
-          // Desenha a elipse interna um pouco menor
           context.beginPath();
-          context.ellipse(a.x, a.y, rx*0.75, ry*0.75, 0, 0, 2*Math.PI);
+          context.arc(a.x, a.y, ATTR_CIRCLE_RADIUS * 0.7, 0, 2 * Math.PI);
           context.stroke();
         }
         
+        // Resetar linha tracejada para o texto
         context.setLineDash([]);
-        context.fillStyle = "#ffffff";
-        drawWrappedText(context, a.name, a.x, a.y, rx*2 - margin, a.primary);
+        
+        // Preparar para desenhar o texto
+        context.fillStyle = "#000000";
+        context.textAlign = "left";
+        context.textBaseline = "middle";
+        
+        // Determinar o texto a ser exibido
+        let displayText = a.name;
+        
+        // Calcular a largura do texto para ajuste
+        let textWidth = context.measureText(displayText).width;
+        let textHeight = fontSize;
+        
+        // Desenhar o texto à direita do círculo
+        context.fillText(displayText, a.x + ATTR_CIRCLE_RADIUS + ATTR_TEXT_PADDING, a.y + ATTR_TEXT_OFFSET_Y);
+        
+        // Armazenar a "caixa" total do atributo para detecção de cliques
+        a.hitBox = {
+          x: a.x - ATTR_CIRCLE_RADIUS,
+          y: a.y - ATTR_CIRCLE_RADIUS,
+          width: ATTR_CIRCLE_RADIUS * 2 + ATTR_TEXT_PADDING + textWidth,
+          height: Math.max(ATTR_CIRCLE_RADIUS * 2, textHeight)
+        };
+        
+        // Se selecionado, mostrar alças de redimensionamento
         if (a.selected) {
+          // Agora as alças de redimensionamento ficam apenas no círculo, não na elipse
           a.resizeHandles = [
-            { x: a.x - rx - handleSize/2, y: a.y - handleSize/2, width: handleSize, height: handleSize },
-            { x: a.x + rx - handleSize/2, y: a.y - handleSize/2, width: handleSize, height: handleSize },
-            { x: a.x - handleSize/2, y: a.y - ry - handleSize/2, width: handleSize, height: handleSize },
-            { x: a.x - handleSize/2, y: a.y + ry - handleSize/2, width: handleSize, height: handleSize }
+            { x: a.x - ATTR_CIRCLE_RADIUS - handleSize/2, y: a.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: a.x + ATTR_CIRCLE_RADIUS - handleSize/2, y: a.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: a.x - handleSize/2, y: a.y - ATTR_CIRCLE_RADIUS - handleSize/2, width: handleSize, height: handleSize },
+            { x: a.x - handleSize/2, y: a.y + ATTR_CIRCLE_RADIUS - handleSize/2, width: handleSize, height: handleSize }
           ];
+          
           a.resizeHandles.forEach(handle => {
             context.fillStyle = "#ffffff";
             context.strokeStyle = "#000000";
@@ -2205,6 +2379,7 @@ function getMousePos(evt) {
         } else {
           a.resizeHandles = [];
         }
+        
         context.restore();
       });
 
@@ -2484,27 +2659,48 @@ function drawDeletionIcons(context) {
 }
 
     
-    function drawConnectionLine(context, r, conn, e) {
+function drawConnectionLine(context, r, conn, e) {
   const rCenter = { x: r.x, y: r.y };
   const eCenter = { x: e.x + e.width / 2, y: e.y + e.height / 2 };
-  let points = [rCenter];
-  if (conn.breakpoints) {
+  
+  // Cálculo do ponto na borda do losango
+  
+  const half = (r.size || relationshipSize) / 2;
+  const rBorder = getDiamondBorderPointCorrect(r.x, r.y, eCenter.x, eCenter.y, half);
+  
+  // O resto da função permanece igual
+  const eBorder = getRectBorderPoint(
+    eCenter.x, eCenter.y,
+    r.x - eCenter.x, r.y - eCenter.y,
+    e.width / 2, e.height / 2
+  );
+  
+  
+  
+  // Montamos os pontos para a polyline
+  let points = [rBorder];
+  
+  // Adicionamos os breakpoints se existirem
+  if (conn.breakpoints && conn.breakpoints.length > 0) {
     points.push(...conn.breakpoints);
   }
-  points.push(eCenter);
-
-  // Desenho da polilinha
+  
+  // Adicionamos o ponto na borda da entidade
+  points.push(eBorder);
+  
+  // Desenho da polyline
   context.beginPath();
   context.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) {
     context.lineTo(points[i].x, points[i].y);
   }
+  
   context.lineWidth = (selectedConnection && 
-                       selectedConnection.relationshipId === r.id && 
-                       selectedConnection.entityId === conn.entityId) ? 4 : 2;
+                     selectedConnection.relationshipId === r.id && 
+                     selectedConnection.entityId === conn.entityId) ? 4 : 2;
   context.strokeStyle = "#000000";
   context.stroke();
-
+  
   // Desenho dos breakpoints
   if (conn.breakpoints) {
     for (let bp of conn.breakpoints) {
@@ -2514,12 +2710,12 @@ function drawDeletionIcons(context) {
       context.fill();
     }
   }
-
-  // Calcula o ponto médio e desenha a cardinalidade
+  
+  // Desenha a cardinalidade
   let labelPos = getPolylineMidpoint(points);
   context.fillStyle = "#000000";
   context.fillText(conn.cardinality, labelPos.x, labelPos.y - 5);
-
+  
   let textWidth = context.measureText(conn.cardinality).width;
   conn.labelRect = {
     x: labelPos.x - textWidth / 2,
@@ -2527,59 +2723,49 @@ function drawDeletionIcons(context) {
     width: textWidth,
     height: fontSize
   };
-
-  // Desenha o ícone de exclusão
+  
+  // Desenha o ícone de exclusão se selecionado
   if (selectedConnection && 
       selectedConnection.relationshipId === r.id && 
       selectedConnection.entityId === conn.entityId) {
-    // Calcula a posição do ícone de exclusão
-  let iconPos;
-  if (points.length === 2) {
-    // Sem breakpoints: ponto médio da linha reta
-    iconPos = {
-      x: (points[0].x + points[1].x) / 2,
-      y: (points[0].y + points[1].y) / 2
-    };
-  } else {
-    // Com breakpoints: usa getPolylineMidpoint
-    iconPos = getPolylineMidpoint(points);
-  }
-
-  let iconSize = globalIconSize + 4;
-  // Calcula o ponto de ícone a 35% do primeiro segmento
-  let fraction = 0.35;
+    
+    // Cálculo da posição do ícone (35% do primeiro segmento)
+    let fraction = 0.35;
     let start = points[0];
-    let next = points[1]; // Garantido pois a polyline tem pelo menos 2 pontos
-    iconPos = {
+    let next = points[1]; // Garantido ter pelo menos 2 pontos
+    let iconPos = {
       x: start.x + (next.x - start.x) * fraction,
       y: start.y + (next.y - start.y) * fraction
     };
-    let delX = iconPos.x;
-    let delY = iconPos.y;
-
+    
+    let iconSize = globalIconSize + 4;
+    
+    // Desenha o ícone
     context.save();
     context.fillStyle = "#b91c1c";
     context.beginPath();
-    context.arc(delX, delY, iconSize / 2, 0, 2*Math.PI);
+    context.arc(iconPos.x, iconPos.y, iconSize / 2, 0, 2*Math.PI);
     context.fill();
     context.strokeStyle = "#ffffff";
     context.lineWidth = 2;
     context.beginPath();
-    context.moveTo(delX - iconSize/4, delY - iconSize/4);
-    context.lineTo(delX + iconSize/4, delY + iconSize/4);
-    context.moveTo(delX + iconSize/4, delY - iconSize/4);
-    context.lineTo(delX - iconSize/4, delY + iconSize/4);
+    context.moveTo(iconPos.x - iconSize/4, iconPos.y - iconSize/4);
+    context.lineTo(iconPos.x + iconSize/4, iconPos.y + iconSize/4);
+    context.moveTo(iconPos.x + iconSize/4, iconPos.y - iconSize/4);
+    context.lineTo(iconPos.x - iconSize/4, iconPos.y + iconSize/4);
     context.stroke();
     context.restore();
-
+    
+    // Armazena retângulo para detecção de cliques
     selectedConnection.iconRect = {
-      x: delX - iconSize/2,
-      y: delY - iconSize/2,
+      x: iconPos.x - iconSize/2,
+      y: iconPos.y - iconSize/2,
       width: iconSize,
       height: iconSize
     };
   }
 }
+
 
 function drawSpecConnectionLine(context, spec, conn, e) {
   const vertex = getSpecializationVertices(spec)[conn.vertex];
@@ -2701,36 +2887,59 @@ function drawPreview() {
       ctx.stroke();
       break;
       
-    case "attribute":
-      // Para atributos, o centro da elipse já é centralizado
-      ctx.fillStyle = normalColors.attribute.fill;
+      case "attribute":
+      // Novo preview para atributo simples
+      ctx.fillStyle = "white";
       ctx.strokeStyle = normalColors.attribute.stroke;
       ctx.beginPath();
-      ctx.ellipse(
-        centerX,   // centro X 
-        centerY,   // centro Y
-        defaultAttributeRadiusX, 
-        defaultAttributeRadiusY, 
-        0, 0, Math.PI*2
-      );
+      ctx.arc(centerX, centerY, ATTR_CIRCLE_RADIUS, 0, 2 * Math.PI);
       ctx.fill();
       ctx.stroke();
+      
+      // Texto de exemplo
+      ctx.fillStyle = "#000000";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Atributo", centerX + ATTR_CIRCLE_RADIUS + ATTR_TEXT_PADDING, centerY + ATTR_TEXT_OFFSET_Y);
       break;
       
     case "derivedAttribute":
-      // Mesmo para atributos derivados
-      ctx.fillStyle = normalColors.derived.fill;
+      // Novo preview para atributo derivado
+      ctx.fillStyle = "white";
       ctx.strokeStyle = normalColors.derived.stroke;
+      ctx.setLineDash([4, 2]);
       ctx.beginPath();
-      ctx.ellipse(
-        centerX, 
-        centerY, 
-        defaultAttributeRadiusX, 
-        defaultAttributeRadiusY, 
-        0, 0, Math.PI*2
-      );
+      ctx.arc(centerX, centerY, ATTR_CIRCLE_RADIUS, 0, 2 * Math.PI);
       ctx.fill();
       ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Texto de exemplo
+      ctx.fillStyle = "#000000";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Derivado", centerX + ATTR_CIRCLE_RADIUS + ATTR_TEXT_PADDING, centerY + ATTR_TEXT_OFFSET_Y);
+      break;
+      
+    case "multivaluedAttribute":
+      // Novo preview para atributo multivalorado
+      ctx.fillStyle = "white";
+      ctx.strokeStyle = normalColors.multivalued.stroke;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, ATTR_CIRCLE_RADIUS, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Círculo interno para multivalorado
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, ATTR_CIRCLE_RADIUS * 0.7, 0, 2 * Math.PI);
+      ctx.stroke();
+      
+      // Texto de exemplo
+      ctx.fillStyle = "#000000";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Multivaluado", centerX + ATTR_CIRCLE_RADIUS + ATTR_TEXT_PADDING, centerY + ATTR_TEXT_OFFSET_Y);
       break;
       
     case "relationship":
@@ -2765,34 +2974,7 @@ function drawPreview() {
       ctx.fill();
       ctx.stroke();
       break;
-    
-      case "multivaluedAttribute":
-        // Preview for multivalued attribute
-        ctx.fillStyle = normalColors.multivalued.fill;
-        ctx.strokeStyle = normalColors.multivalued.stroke;
-        ctx.beginPath();
-        ctx.ellipse(
-          centerX, 
-          centerY, 
-          defaultAttributeRadiusX, 
-          defaultAttributeRadiusY, 
-          0, 0, Math.PI*2
-        );
-        ctx.fill();
-        ctx.stroke();
-        
-        // Draw the inner ellipse for multivalued
-        ctx.beginPath();
-        ctx.ellipse(
-          centerX, 
-          centerY, 
-          defaultAttributeRadiusX * 0.75, 
-          defaultAttributeRadiusY * 0.75, 
-          0, 0, Math.PI*2
-        );
-        ctx.stroke();
-        break;
-
+  
       // Adicione o caso para agregação
     case "aggregation":
       ctx.fillStyle = normalColors.aggregation.fill;
@@ -2829,30 +3011,32 @@ function createObjectAt(type, cx, cy) {
     const drop = getDraggableAt(cx, cy);
     if (!drop || (drop.type !== "entity" && drop.type !== "relationship" && 
                   drop.type !== "attribute" && drop.type !== "derivedAttribute" && 
-                  drop.type !== "aggregation")) { // Adicionar aggregation aqui
+                  drop.type !== "aggregation")) {
       alert("O atributo deve ser arrastado sobre uma entidade, relacionamento, outro atributo ou agregação.");
       cleanupToolbarDrag();
       draw();
       return;
     }
     
+    
     // Lógica para atributos
     let parentObj = drop.element;
     let posX, posY;
     if (drop.type === "entity") {
-      posX = parentObj.x + (parentObj.width || defaultEntityWidth) + defaultAttributeRadiusX + 10;
+      posX = parentObj.x + (parentObj.width || defaultEntityWidth) + 30;
       posY = parentObj.y + (parentObj.height || defaultEntityHeight)/2;
     } else if (drop.type === "relationship") {
-      posX = parentObj.x + (parentObj.size || relationshipSize)/2 + defaultAttributeRadiusX + 10;
+      posX = parentObj.x + (parentObj.size || relationshipSize)/2 + 30;
       posY = parentObj.y;
-    } else if (drop.type === "aggregation") { // Adicionar caso para agregação
-      posX = parentObj.x + (parentObj.size || relationshipSize)/2 + defaultAttributeRadiusX + 20;
+    } else if (drop.type === "aggregation") {
+      posX = parentObj.x + (parentObj.size || relationshipSize)/2 + 30;
       posY = parentObj.y;
     } else if (drop.type === "attribute" || drop.type === "derivedAttribute" || drop.type === "multivaluedAttribute") {
-      posX = parentObj.x + (parentObj.radiusX || defaultAttributeRadiusX) + 10;
+      posX = parentObj.x + 30;
       posY = parentObj.y;
     }
     
+    // Criar o novo atributo
     const newA = {
       id: attributeIdCounter++,
       x: posX,
@@ -2866,12 +3050,16 @@ function createObjectAt(type, cx, cy) {
       multivalued: (type === "multivaluedAttribute"),
       primary: false,
       selected: false,
-      radiusX: defaultAttributeRadiusX,
-      radiusY: defaultAttributeRadiusY,
-      objType: "attribute" // Mantenha como "attribute" para consistência
+      objType: "attribute",
+      hitBox: {
+        x: posX - ATTR_CIRCLE_RADIUS,
+        y: posY - ATTR_CIRCLE_RADIUS,
+        width: ATTR_CIRCLE_RADIUS * 2 + ATTR_TEXT_PADDING + 100, // Valor provisório para largura do texto
+        height: ATTR_CIRCLE_RADIUS * 2
+      }
     };
     attributes.push(newA);
-  } else if (type === "entity") {
+    }  else if (type === "entity") {
     // Ajuste explícito para entidades
     const newE = {
       id: entityIdCounter++,
@@ -3035,12 +3223,10 @@ function createObjectAt(type, cx, cy) {
           }
         }
 
-        // Verifica atributos
+        // Verifica atributos - Agora usando a hitBox para detecção de cliques
         for (let i = attributes.length - 1; i >= 0; i--) {
           const a = attributes[i];
-          let rx = a.radiusX || defaultAttributeRadiusX;
-          let ry = a.radiusY || defaultAttributeRadiusY;
-          if (Math.pow((x - a.x) / rx, 2) + Math.pow((y - a.y) / ry, 2) <= 1) {
+          if (a.hitBox && isInsideRect({x, y}, a.hitBox)) {
             // Retorna o tipo correto baseado nas propriedades do atributo
             if (a.derived) {
               return { type: "derivedAttribute", element: a };
@@ -4545,6 +4731,12 @@ function onCanvasDblClick(evt){
       // 2) Converte (compX, compY) do “mundo” para tela
       let screenX = rect.left + (compX + panOffset.x) * zoom;
       let screenY = rect.top  + (compY + panOffset.y) * zoom;
+
+      // Posicionamento especial para atributos
+      if (item.objType === "attribute" || item.objType === "derivedAttribute" || item.objType === "multivaluedAttribute") {
+        // Para atributos, posiciona o editor ao lado do círculo
+        screenX = rect.left + ((item.x + ATTR_CIRCLE_RADIUS + ATTR_TEXT_PADDING) + panOffset.x) * zoom;
+      }
       
       // 3) Cria o input na posição correta
       inlineInput = $("<input type='text' class='p-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white' />")
@@ -4554,23 +4746,22 @@ function onCanvasDblClick(evt){
           fontSize: "16px",
           zIndex: 1000,
           width: "160px",
-          // Ajuste se quiser centralizar exatamente no compX, compY
-          left: (screenX - 80) + "px",
-          top:  (screenY - 20) + "px"
+          left: (screenX) + "px",
+          top: (screenY - 10) + "px"
         });
       
-      $("body").append(inlineInput);
-      inlineInput.focus().select();
-      
-      inlineInput.on("blur", function() {
-        item.name = inlineInput.val();
-        $(inlineInput).remove();
-        inlineInput = null;
-        saveState();
-        draw();
-      }).on("keydown", function(e) {
-        if (e.key === "Enter") inlineInput.blur();
-      });
+        $("body").append(inlineInput);
+        inlineInput.focus().select();
+        
+        inlineInput.on("blur", function() {
+          item.name = inlineInput.val();
+          $(inlineInput).remove();
+          inlineInput = null;
+          saveState();
+          draw();
+        }).on("keydown", function(e) {
+          if (e.key === "Enter") inlineInput.blur();
+        });
     }
 
     function showSpecTypeEditor(spec, compX, compY) {
