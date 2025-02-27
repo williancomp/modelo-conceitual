@@ -879,6 +879,7 @@
     const sidebar = document.getElementById("sidebar");
 
     let clipboard = null;
+    let lastMousePos = { x: 0, y: 0 };
 
     // Novas constantes para dimensionamento dos atributos
     const ATTR_CIRCLE_RADIUS = 12; // Raio do círculo do atributo
@@ -1090,50 +1091,86 @@
     }
 
 
-    // Função que copia os objetos selecionados para o clipboard
-function copySelection() {
+    function copySelection() {
   clipboard = {
     entities: [],
     attributes: [],
     relationships: [],
     specializations: [],
-    aggregations: []
+    aggregations: [],
+    // Armazena a bounding box dos objetos copiados
+    boundingBox: { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
   };
+
+  // Função auxiliar para atualizar a bounding box
+  function updateBB(obj, bb) {
+    if (obj.x !== undefined && obj.y !== undefined) {
+      bb.minX = Math.min(bb.minX, obj.x);
+      bb.minY = Math.min(bb.minY, obj.y);
+      // Para objetos com dimensões
+      if (obj.width && obj.height) {
+        bb.maxX = Math.max(bb.maxX, obj.x + obj.width);
+        bb.maxY = Math.max(bb.maxY, obj.y + obj.height);
+      } else {
+        // Se não houver dimensões (como atributos), considere um raio
+        let r = ATTR_CIRCLE_RADIUS || 12;
+        bb.maxX = Math.max(bb.maxX, obj.x + r);
+        bb.maxY = Math.max(bb.maxY, obj.y + r);
+      }
+    }
+  }
 
   entities.forEach(e => {
     if (e.selected) {
-      // Clona o objeto usando JSON para cópia profunda
-      clipboard.entities.push(JSON.parse(JSON.stringify(e)));
+      let clone = JSON.parse(JSON.stringify(e));
+      clipboard.entities.push(clone);
+      updateBB(clone, clipboard.boundingBox);
     }
   });
   attributes.forEach(a => {
     if (a.selected) {
-      clipboard.attributes.push(JSON.parse(JSON.stringify(a)));
+      let clone = JSON.parse(JSON.stringify(a));
+      clipboard.attributes.push(clone);
+      updateBB(clone, clipboard.boundingBox);
     }
   });
   relationships.forEach(r => {
     if (r.selected) {
-      clipboard.relationships.push(JSON.parse(JSON.stringify(r)));
+      let clone = JSON.parse(JSON.stringify(r));
+      clipboard.relationships.push(clone);
+      updateBB(clone, clipboard.boundingBox);
     }
   });
   specializations.forEach(s => {
     if (s.selected) {
-      clipboard.specializations.push(JSON.parse(JSON.stringify(s)));
+      let clone = JSON.parse(JSON.stringify(s));
+      clipboard.specializations.push(clone);
+      updateBB(clone, clipboard.boundingBox);
     }
   });
   aggregations.forEach(agg => {
     if (agg.selected) {
-      clipboard.aggregations.push(JSON.parse(JSON.stringify(agg)));
+      let clone = JSON.parse(JSON.stringify(agg));
+      clipboard.aggregations.push(clone);
+      updateBB(clone, clipboard.boundingBox);
     }
   });
 }
 
-// Função que cola os objetos previamente copiados
+
+
 function pasteClipboard() {
   if (!clipboard) return;
-  // Deslocamento para os objetos colados (para que não fiquem exatamente sobre os originais)
-  const offset = { x: 20, y: 20 };
-
+  
+  // Calcula o centro da bounding box dos objetos copiados
+  const bb = clipboard.boundingBox;
+  const centerX = (bb.minX + bb.maxX) / 2;
+  const centerY = (bb.minY + bb.maxY) / 2;
+  
+  // Calcula o deslocamento para posicionar o centro do grupo no lastMousePos
+  const dx = lastMousePos.x - centerX;
+  const dy = lastMousePos.y - centerY;
+  
   // Criação de mapas para atualizar os IDs internos
   const entityIdMap = {};
   const attributeIdMap = {};
@@ -1141,13 +1178,16 @@ function pasteClipboard() {
   const specializationIdMap = {};
   const aggregationIdMap = {};
 
+  // Limpa a seleção atual (para que só fiquem os novos colados selecionados)
+  clearSelection();
+
   // Cole as entidades
   clipboard.entities.forEach(oldEntity => {
     let newEntity = JSON.parse(JSON.stringify(oldEntity));
     newEntity.id = entityIdCounter++;
-    newEntity.x += offset.x;
-    newEntity.y += offset.y;
-    newEntity.selected = false;
+    newEntity.x += dx;
+    newEntity.y += dy;
+    newEntity.selected = true; // os novos colados ficam selecionados
     entities.push(newEntity);
     entityIdMap[oldEntity.id] = newEntity.id;
   });
@@ -1156,9 +1196,9 @@ function pasteClipboard() {
   clipboard.attributes.forEach(oldAttr => {
     let newAttr = JSON.parse(JSON.stringify(oldAttr));
     newAttr.id = attributeIdCounter++;
-    newAttr.x += offset.x;
-    newAttr.y += offset.y;
-    newAttr.selected = false;
+    newAttr.x += dx;
+    newAttr.y += dy;
+    newAttr.selected = true;
     if (newAttr.parentType === "entity" && entityIdMap[newAttr.parentId] !== undefined) {
       newAttr.parentId = entityIdMap[newAttr.parentId];
     } else if (newAttr.parentType === "attribute" && attributeIdMap[newAttr.parentId] !== undefined) {
@@ -1176,9 +1216,9 @@ function pasteClipboard() {
   clipboard.relationships.forEach(oldRel => {
     let newRel = JSON.parse(JSON.stringify(oldRel));
     newRel.id = relationshipIdCounter++;
-    newRel.x += offset.x;
-    newRel.y += offset.y;
-    newRel.selected = false;
+    newRel.x += dx;
+    newRel.y += dy;
+    newRel.selected = true;
     if (newRel.connections) {
       newRel.connections.forEach(conn => {
         if (entityIdMap[conn.entityId] !== undefined) {
@@ -1194,9 +1234,9 @@ function pasteClipboard() {
   clipboard.specializations.forEach(oldSpec => {
     let newSpec = JSON.parse(JSON.stringify(oldSpec));
     newSpec.id = specializationIdCounter++;
-    newSpec.x += offset.x;
-    newSpec.y += offset.y;
-    newSpec.selected = false;
+    newSpec.x += dx;
+    newSpec.y += dy;
+    newSpec.selected = true;
     if (newSpec.connections) {
       newSpec.connections.forEach(conn => {
         if (entityIdMap[conn.entityId] !== undefined) {
@@ -1212,9 +1252,9 @@ function pasteClipboard() {
   clipboard.aggregations.forEach(oldAgg => {
     let newAgg = JSON.parse(JSON.stringify(oldAgg));
     newAgg.id = aggregationIdCounter++;
-    newAgg.x += offset.x;
-    newAgg.y += offset.y;
-    newAgg.selected = false;
+    newAgg.x += dx;
+    newAgg.y += dy;
+    newAgg.selected = true;
     if (newAgg.connections) {
       newAgg.connections.forEach(conn => {
         if (conn.entityId && entityIdMap[conn.entityId] !== undefined) {
@@ -1229,7 +1269,7 @@ function pasteClipboard() {
     aggregationIdMap[oldAgg.id] = newAgg.id;
   });
 
-  // Após colar, salvamos o estado e redesenhamos
+  // Após colar, salve o estado e redesenhe
   saveState();
   draw();
 }
@@ -4185,6 +4225,7 @@ function onCanvasStart(evt) {
     function onCanvasMove(evt) {
       evt.preventDefault();
       let pos = getMousePos(evt);
+      lastMousePos = pos;
 
       // Se estiver arrastando um breakpoint, atualiza sua posição
       if (isDraggingBreakpoint && activeBreakpoint) {
