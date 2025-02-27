@@ -302,27 +302,35 @@
     }
     
     /* Tooltips melhorados */
-  .tooltip .tooltip-text {
-    visibility: hidden;
-    width: auto;
-    min-width: 120px;
-    background-color: rgba(0, 0, 0, 0.9);
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 8px 12px;
-    position: absolute;
-    z-index: 1060;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    white-space: normal;
-    font-size: 0.9rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    pointer-events: none;
-  }
+    .tooltip .tooltip-text {
+  visibility: hidden;
+  width: auto;
+  min-width: 120px;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 1060;
+  /* Alterado de bottom para top para posicionar abaixo */
+  top: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: normal;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.desktop-menu {
+  display: grid;
+  grid-auto-flow: row;    /* ou column, dependendo da lógica */
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
     
     .tooltip:hover .tooltip-text {
       visibility: visible;
@@ -386,18 +394,33 @@
     height: 24px;
   }
 
+
+@media (max-width: 1024px) {
+  .main-menu-item {
+    padding: 4px 8px; 
+    font-size: 0.975rem; 
+  }
+}
 /* Estilo para os itens do menu principal (objetos) */
 .main-menu-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
+  padding: 4px 8px;
+  font-size: 0.975rem; 
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s;
   white-space: nowrap;
   background: rgba(255, 255, 255, 0.1);
   margin-right: 8px;
+}
+
+
+#extraButtons {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
   
   .main-menu-item:hover {
@@ -579,60 +602,6 @@
       </div>
 
       
-      
-      <!-- Categorias em submenus -->
-      
-      <!-- Categoria: Texto -->
-      <div class="menu-category">
-        <div class="menu-category-btn text-btn">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-            <path d="M4 7h16M4 12h16M4 17h10" />
-          </svg>
-          <span>Texto</span>
-        </div>
-        <div class="menu-dropdown">
-          <div id="btnIncreaseFont" class="menu-item tooltip">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-              <path d="M12 4v16m-8-8h16" />
-            </svg>
-            <span>Aumentar</span>
-            <span class="tooltip-text">Aumentar o tamanho do texto</span>
-          </div>
-          <div id="btnDecreaseFont" class="menu-item tooltip">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-              <path d="M4 12h16" />
-            </svg>
-            <span>Diminuir</span>
-            <span class="tooltip-text">Diminuir o tamanho do texto</span>
-          </div>
-        </div>
-      </div>
-      
-      
-      
-      <!-- Ações diretas (à direita) -->
-      <div class="flex ml-auto">
-        <!-- Desfazer/Refazer -->
-        <div id="btnUndo" class="menu-item tooltip">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-            <path d="M15 4l-8 8 8 8" />
-          </svg>
-          <span class="tooltip-text">Desfazer</span>
-        </div>
-        <div id="btnRedo" class="menu-item tooltip">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-            <path d="M9 4l8 8-8 8" />
-          </svg>
-          <span class="tooltip-text">Refazer</span>
-        </div>
-        <!-- Limpar tudo -->
-        <div id="btnClear" class="menu-item tooltip ml-2">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-            <path d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span class="tooltip-text">Limpar tudo</span>
-        </div>
-      </div>
     </div>
   </nav>
   
@@ -809,21 +778,84 @@
 
 
 
-    <!-- Botões de Zoom -->
-    <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
-      <button id="btnZoomIn" class="toolbar-button tool-increase flex items-center justify-center tooltip">
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-          <path d="M12 4v16m-8-8h16" />
+  
+    <div class="fixed bottom-4 right-4 flex flex-col items-end gap-2 z-50">
+    
+      <!-- Botão principal que abre/fecha as opções -->
+      
+    
+      <!-- Botões que aparecem acima do toggle quando clicado -->
+      <div id="extraButtons" class="hidden flex flex-col gap-2 opacity-0 translate-y-4 transition-all duration-300">
+        <button id="btnIncreaseFont"
+          class="flex items-center justify-center w-12 h-12
+                 rounded-md shadow bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+          title="Aumentar Fonte">
+          A+
+        </button>
+        <button id="btnDecreaseFont"
+          class="flex items-center justify-center w-12 h-12
+                 rounded-md shadow bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+          title="Diminuir Fonte">
+          A-
+        </button>
+        <button id="btnIncreaseZoom"
+          class="flex items-center justify-center w-12 h-12
+                 rounded-md shadow bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+          title="Aumentar Zoom">
+          🔍+
+        </button>
+        <button id="btnDecreaseZoom"
+          class="flex items-center justify-center w-12 h-12
+                 rounded-md shadow bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+          title="Diminuir Zoom">
+          🔍-
+        </button>
+      </div>
+
+      <button id="btnToggle"
+        class="relative flex items-center justify-center w-12 h-12
+               rounded-md shadow bg-gray-700 hover:bg-gray-600 text-white transition-all duration-300">
+        <svg id="iconPlus" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 transition-transform duration-300"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
-        <span class="tooltip-text">Aumentar Zoom</span>
-      </button>
-      <button id="btnZoomOut" class="toolbar-button tool-decrease flex items-center justify-center tooltip">
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-          <path d="M4 12h16" />
+        <svg id="iconClose" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 absolute opacity-0 transition-opacity duration-300"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
-        <span class="tooltip-text">Diminuir Zoom</span>
       </button>
+    
+      <!-- Linha fixa com os botões de desfazer, refazer e limpar -->
+      <div class="flex flex-row gap-2">
+        <button id="btnUndoFloating"
+          class="flex items-center justify-center w-12 h-12
+                 rounded-md shadow bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+          title="Desfazer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" 
+               viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 4l-8 8 8 8"/>
+          </svg>
+        </button>
+        <button id="btnRedoFloating"
+          class="flex items-center justify-center w-12 h-12
+                 rounded-md shadow bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+          title="Refazer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" 
+               viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 4l8 8-8 8"/>
+          </svg>
+        </button>
+        <button id="btnClearFloating"
+          class="flex items-center justify-center px-4 h-12
+                 rounded-md shadow bg-gray-700 hover:bg-red-600 text-white transition-colors"
+          title="Limpar Tudo">
+          Limpar Tudo
+        </button>
+      </div>
+    
     </div>
+
+
   </main>
   
   <!-- Input oculto para upload de arquivo -->
@@ -846,6 +878,8 @@
     const ctx = canvas.getContext("2d");
     const sidebar = document.getElementById("sidebar");
 
+    let clipboard = null;
+
     // Novas constantes para dimensionamento dos atributos
     const ATTR_CIRCLE_RADIUS = 12; // Raio do círculo do atributo
     const ATTR_TEXT_PADDING = 16; // Espaçamento entre o círculo e o texto
@@ -863,6 +897,9 @@
 
     let selectedAggregationConnection = null;
 
+    const fabToggleBtn = document.getElementById('fab-toggle');
+    const fabSubmenu = document.getElementById('fab-submenu');
+
     
 
     let breakpointTimeout = null;
@@ -873,8 +910,43 @@
     // Variável para controlar se há mudanças não salvas
     let hasUnsavedChanges = false;
 
-      
+    document.getElementById("btnToggle").addEventListener("click", () => {
+  const extraButtons = document.getElementById("extraButtons");
+  const iconPlus = document.getElementById("iconPlus");
+  const iconClose = document.getElementById("iconClose");
 
+  if (extraButtons.classList.contains("hidden")) {
+    // Mostrar botões com fade-in e movimento para cima
+    extraButtons.classList.remove("hidden");
+    setTimeout(() => {
+      extraButtons.style.opacity = "1";
+      extraButtons.style.transform = "translateY(0)";
+    }, 10);
+
+    // Trocar ícone para "X"
+    iconPlus.style.opacity = "0";
+    setTimeout(() => {
+      iconClose.style.opacity = "1";
+    }, 150);
+
+  } else {
+    // Suavizar efeito de fade-out para baixo
+    extraButtons.style.opacity = "0";
+    extraButtons.style.transform = "translateY(10px)";
+
+    setTimeout(() => {
+      extraButtons.classList.add("hidden");
+    }, 300); // Pequeno delay para suavizar antes de esconder
+
+    // Voltar ícone para "+"
+    iconClose.style.opacity = "0";
+    setTimeout(() => {
+      iconPlus.style.opacity = "1";
+    }, 150);
+  }
+});
+
+    
     document.addEventListener('mousedown', function(e) {
       if (inlineInput && !$(e.target).is(inlineInput) && $(e.target).closest(inlineInput).length === 0) {
         inlineInput.blur();
@@ -888,16 +960,56 @@
     });
 
     document.addEventListener('keydown', (e) => {
-      // Se estiver editando (input ou select ativo), não intercepta a tecla espaço
+      // Se o foco estiver em um input, textarea ou elemento editável, não interfere
       if (document.activeElement &&
-          (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) {
+          (document.activeElement.tagName === 'INPUT' ||
+          document.activeElement.tagName === 'TEXTAREA' ||
+          document.activeElement.isContentEditable)) {
         return;
       }
-      if (e.code === 'Space') {
-        isSpacePressed = true;
+
+      // Fechar submenus ao pressionar Delete ou Backspace
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Fecha todos os submenus abertos
+        document.querySelectorAll('.submenu').forEach((submenuElem) => {
+          submenuElem.remove();
+        });
+        // Se houver alguma variável global que guarde o submenu, zere-a:
+        submenu = null;
+        currentSubmenuCloseHandler = null;
+        saveState();
+      }
+
+      // Undo: Ctrl+Z ou Command+Z (sem Shift)
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
+        undo(); // sua função de desfazer
+        return;
+      }
+
+      // Redo: Ctrl+Shift+Z ou Command+Shift+Z
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        redo(); // sua função de refazer
+        return;
+      }
+
+      // Redo: Ctrl+Y ou Command+Y
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Chamada para delete dos objetos (já existente)
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        deleteSelectedObjects(); // sua função de deletar
+        saveState();
       }
     });
+
+
     document.addEventListener('keyup', (e) => {
       if (e.code === 'Space') {
         isSpacePressed = false;
@@ -927,7 +1039,7 @@
     let undoStack = [], redoStack = [];
     const defaultEntityWidth = 160, defaultEntityHeight = 80;
     const defaultAttributeRadiusX = 40, defaultAttributeRadiusY = 20, relationshipSize = 120, defaultSpecializationSize = 100;
-    let fontSize = 16;
+    let fontSize = 18;
 
     let selectedConnection = null, selectedSpecConnection = null;
     let draggingToolbarType = null, draggingNewObj = null, clickPlacementMode = false, toolbarDrag = null;
@@ -977,6 +1089,150 @@
       }
     }
 
+
+    // Função que copia os objetos selecionados para o clipboard
+function copySelection() {
+  clipboard = {
+    entities: [],
+    attributes: [],
+    relationships: [],
+    specializations: [],
+    aggregations: []
+  };
+
+  entities.forEach(e => {
+    if (e.selected) {
+      // Clona o objeto usando JSON para cópia profunda
+      clipboard.entities.push(JSON.parse(JSON.stringify(e)));
+    }
+  });
+  attributes.forEach(a => {
+    if (a.selected) {
+      clipboard.attributes.push(JSON.parse(JSON.stringify(a)));
+    }
+  });
+  relationships.forEach(r => {
+    if (r.selected) {
+      clipboard.relationships.push(JSON.parse(JSON.stringify(r)));
+    }
+  });
+  specializations.forEach(s => {
+    if (s.selected) {
+      clipboard.specializations.push(JSON.parse(JSON.stringify(s)));
+    }
+  });
+  aggregations.forEach(agg => {
+    if (agg.selected) {
+      clipboard.aggregations.push(JSON.parse(JSON.stringify(agg)));
+    }
+  });
+}
+
+// Função que cola os objetos previamente copiados
+function pasteClipboard() {
+  if (!clipboard) return;
+  // Deslocamento para os objetos colados (para que não fiquem exatamente sobre os originais)
+  const offset = { x: 20, y: 20 };
+
+  // Criação de mapas para atualizar os IDs internos
+  const entityIdMap = {};
+  const attributeIdMap = {};
+  const relationshipIdMap = {};
+  const specializationIdMap = {};
+  const aggregationIdMap = {};
+
+  // Cole as entidades
+  clipboard.entities.forEach(oldEntity => {
+    let newEntity = JSON.parse(JSON.stringify(oldEntity));
+    newEntity.id = entityIdCounter++;
+    newEntity.x += offset.x;
+    newEntity.y += offset.y;
+    newEntity.selected = false;
+    entities.push(newEntity);
+    entityIdMap[oldEntity.id] = newEntity.id;
+  });
+
+  // Cole os atributos (atualizando o parentId se necessário)
+  clipboard.attributes.forEach(oldAttr => {
+    let newAttr = JSON.parse(JSON.stringify(oldAttr));
+    newAttr.id = attributeIdCounter++;
+    newAttr.x += offset.x;
+    newAttr.y += offset.y;
+    newAttr.selected = false;
+    if (newAttr.parentType === "entity" && entityIdMap[newAttr.parentId] !== undefined) {
+      newAttr.parentId = entityIdMap[newAttr.parentId];
+    } else if (newAttr.parentType === "attribute" && attributeIdMap[newAttr.parentId] !== undefined) {
+      newAttr.parentId = attributeIdMap[newAttr.parentId];
+    } else if (newAttr.parentType === "relationship" && relationshipIdMap[newAttr.parentId] !== undefined) {
+      newAttr.parentId = relationshipIdMap[newAttr.parentId];
+    } else if (newAttr.parentType === "aggregation" && aggregationIdMap[newAttr.parentId] !== undefined) {
+      newAttr.parentId = aggregationIdMap[newAttr.parentId];
+    }
+    attributes.push(newAttr);
+    attributeIdMap[oldAttr.id] = newAttr.id;
+  });
+
+  // Cole os relacionamentos (atualizando as conexões)
+  clipboard.relationships.forEach(oldRel => {
+    let newRel = JSON.parse(JSON.stringify(oldRel));
+    newRel.id = relationshipIdCounter++;
+    newRel.x += offset.x;
+    newRel.y += offset.y;
+    newRel.selected = false;
+    if (newRel.connections) {
+      newRel.connections.forEach(conn => {
+        if (entityIdMap[conn.entityId] !== undefined) {
+          conn.entityId = entityIdMap[conn.entityId];
+        }
+      });
+    }
+    relationships.push(newRel);
+    relationshipIdMap[oldRel.id] = newRel.id;
+  });
+
+  // Cole as especializações (atualizando as conexões)
+  clipboard.specializations.forEach(oldSpec => {
+    let newSpec = JSON.parse(JSON.stringify(oldSpec));
+    newSpec.id = specializationIdCounter++;
+    newSpec.x += offset.x;
+    newSpec.y += offset.y;
+    newSpec.selected = false;
+    if (newSpec.connections) {
+      newSpec.connections.forEach(conn => {
+        if (entityIdMap[conn.entityId] !== undefined) {
+          conn.entityId = entityIdMap[conn.entityId];
+        }
+      });
+    }
+    specializations.push(newSpec);
+    specializationIdMap[oldSpec.id] = newSpec.id;
+  });
+
+  // Cole as agregações (atualizando as conexões)
+  clipboard.aggregations.forEach(oldAgg => {
+    let newAgg = JSON.parse(JSON.stringify(oldAgg));
+    newAgg.id = aggregationIdCounter++;
+    newAgg.x += offset.x;
+    newAgg.y += offset.y;
+    newAgg.selected = false;
+    if (newAgg.connections) {
+      newAgg.connections.forEach(conn => {
+        if (conn.entityId && entityIdMap[conn.entityId] !== undefined) {
+          conn.entityId = entityIdMap[conn.entityId];
+        }
+        if (conn.relationshipId && relationshipIdMap[conn.relationshipId] !== undefined) {
+          conn.relationshipId = relationshipIdMap[conn.relationshipId];
+        }
+      });
+    }
+    aggregations.push(newAgg);
+    aggregationIdMap[oldAgg.id] = newAgg.id;
+  });
+
+  // Após colar, salvamos o estado e redesenhamos
+  saveState();
+  draw();
+}
 
 
   // Método para salvar antes de fechar a página
@@ -1208,18 +1464,34 @@
       document.getElementById("btnSpecialization").addEventListener("mousedown", (e) => startToolbarDrag("specialization", e));
       document.getElementById("btnIncreaseFont").addEventListener("click", () => { fontSize += 2; draw(); });
       document.getElementById("btnDecreaseFont").addEventListener("click", () => { fontSize = Math.max(8, fontSize - 2); draw(); });
-      document.getElementById("btnClear").addEventListener("click", () => {
+      document.getElementById("btnClearFloating").addEventListener("click", () => {
         saveState();
         entities = [];
         attributes = [];
         relationships = [];
         specializations = [];
+        aggregations = [];
+        fontSize = 18;
         clearSelection();
         draw();
       });
+      document.getElementById("btnClear-mobile").addEventListener("click", () => {
+        saveState();
+        entities = [];
+        attributes = [];
+        relationships = [];
+        specializations = [];
+        aggregations = [];
+        fontSize = 18;
+        clearSelection();
+        draw();
+      });
+
+
+      
       document.getElementById("btnExport").addEventListener("click", exportDiagram);
-      document.getElementById("btnUndo").addEventListener("click", undo);
-      document.getElementById("btnRedo").addEventListener("click", redo);
+      document.getElementById("btnUndoFloating").addEventListener("click", undo);
+      document.getElementById("btnRedoFloating").addEventListener("click", redo);
       document.getElementById("btnSaveFile").addEventListener("click", saveDiagramToFile);
       document.getElementById("btnOpenFile").addEventListener("click", openFileSelector);
     }
@@ -1244,6 +1516,23 @@
         // Não intercepta teclas se estiver editando texto
         if (document.activeElement && 
             (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) {
+          return;
+        }
+        
+
+        // Atalho Copiar: Ctrl+C ou Command+C
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+          e.preventDefault();
+          copySelection();
+          showNotification("Copiado!", "success");
+          return;
+        }
+
+        // Atalho Colar: Ctrl+V ou Command+V
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+          e.preventDefault();
+          pasteClipboard();
+          showNotification("Colado!", "success");
           return;
         }
         
@@ -1980,28 +2269,30 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
     { x: target.x + target.width/2, y: target.y + target.height/2 } : 
     { x: target.x, y: target.y };
   
-  // Cálculo do ponto na borda da agregação (método simplificado)
-  const dx = targetCenter.x - agg.x;
-  const dy = targetCenter.y - agg.y;
   
-  const len = Math.sqrt(dx*dx + dy*dy);
-  if (len === 0) return;
-  
-  const ndx = dx / len;
-  const ndy = dy / len;
   
   const half = (agg.size || relationshipSize) / 2;
-  
-  // Ponto na borda do losango interno da agregação
-  const t = Math.min(
-    Math.abs(half / ndx),
-    Math.abs(half / ndy)
+  const rectSize = half * 1.2;  // mesmo fator que você usa ao desenhar
+
+  // Vetor do centro da agregação até o alvo
+  const dx = targetCenter.x - agg.x;
+  const dy = targetCenter.y - agg.y;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  if (len === 0) return; // evita divisão por zero
+
+  // Direção unitária
+  const ndx = dx / len;
+  const ndy = dy / len;
+
+  // Em vez de getDiamondBorderPoint, basta avançar 'rectSize' nessa direção
+  const aggBorder = getRectBorderPoint(
+    agg.x,   // centro do retângulo
+    agg.y,
+    dx, dy,
+    rectSize, // halfWidth
+    rectSize  // halfHeight (pois é quadrado)
   );
-  
-  const aggBorder = {
-    x: agg.x + ndx * t,
-    y: agg.y + ndy * t
-  };
+
   
   // Ponto na borda do objeto alvo
   let targetBorder;
@@ -2012,27 +2303,17 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
       target.width/2, target.height/2
     );
   } else {
-    // Para relacionamentos usamos a mesma abordagem simplificada
-    const targetDx = agg.x - target.x;
-    const targetDy = agg.y - target.y;
-    
-    const targetLen = Math.sqrt(targetDx*targetDx + targetDy*targetDy);
-    if (targetLen === 0) return;
-    
-    const targetNdx = targetDx / targetLen;
-    const targetNdy = targetDy / targetLen;
-    
-    const targetHalf = (target.size || relationshipSize) / 2;
-    
-    const targetT = Math.min(
-      Math.abs(targetHalf / targetNdx),
-      Math.abs(targetHalf / targetNdy)
+    // Em vez do cálculo manual, use getDiamondBorderPointCorrect:
+    const halfRel = (target.size || relationshipSize) / 2;
+    // O primeiro par (cx, cy) é o centro do LOSANGO (target.x, target.y).
+    // O segundo par (targetX, targetY) é para onde queremos a borda (agg.x, agg.y).
+    targetBorder = getDiamondBorderPointCorrect(
+      target.x, 
+      target.y, 
+      agg.x,      // para onde a linha aponta
+      agg.y, 
+      halfRel
     );
-    
-    targetBorder = {
-      x: target.x + targetNdx * targetT,
-      y: target.y + targetNdy * targetT
-    };
   }
   
   // Montamos os pontos da polyline
@@ -2074,61 +2355,47 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
   
   // Desenha a cardinalidade
   if (conn.cardinality) {
+    // Calcular a posição e medir o texto
     let labelPos = getPolylineMidpoint(points);
-    context.fillStyle = "#000000";
-    context.fillText(conn.cardinality, labelPos.x, labelPos.y - 5);
+    const text = conn.cardinality || "";
+    const padding = 2;                // Espaço extra em volta do texto
+    context.font = `${fontSize}px Poppins`; 
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+
+    // Medidas do texto
+    const textWidth = context.measureText(text).width + 10;
+    const textHeight = fontSize; // ou fontSize * 1.2, se quiser extra
+
+    // Para ficar circular, pegamos o maior entre (metade da largura) e (metade da altura)
+    const radius = Math.max(textWidth / 2, textHeight / 2) + padding;
+
+    // Vamos desenhar o texto “acima” da linha em Y-5
+    const textCenterX = labelPos.x ;
+    const textCenterY = labelPos.y - 1;  // Ajuste vertical para ficar um pouco acima
+
+    // 1) Desenha o círculo de fundo
+    context.beginPath();
+    context.arc(textCenterX, textCenterY, radius, 0, 2 * Math.PI);
+    context.fillStyle = "#ffffff";  // Cor de fundo
+    context.fill();
+
     
-    // Armazena a posição do label para detecção de cliques
-    let textWidth = context.measureText(conn.cardinality).width;
+    // 2) Desenha o texto em cima do círculo
+    context.fillStyle = "#000000";    // Cor do texto
+    context.fillText(text, textCenterX, textCenterY);
+
+
+    // 3)  Atualiza conn.labelRect, para clique:
     conn.labelRect = {
-      x: labelPos.x - textWidth / 2,
-      y: (labelPos.y - 5) - fontSize,
-      width: textWidth,
-      height: fontSize
+      x: textCenterX - radius,
+      y: textCenterY - radius,
+      width: radius * 2,
+      height: radius * 2
     };
   }
   
-  // Desenha o ícone de exclusão se selecionado
-  if (selectedAggregationConnection && 
-      selectedAggregationConnection.aggregationId === agg.id && 
-      ((conn.entityId && selectedAggregationConnection.entityId === conn.entityId) || 
-      (conn.relationshipId && selectedAggregationConnection.relationshipId === conn.relationshipId))) {
-    
-    // Posição do ícone (25% do primeiro segmento)
-    let fraction = 0.25;
-    let start = points[0];
-    let next = points[1];
-    let iconPos = {
-      x: start.x + (next.x - start.x) * fraction,
-      y: start.y + (next.y - start.y) * fraction
-    };
-    
-    let iconSize = globalIconSize + 4;
-    
-    // Desenha o ícone
-    context.save();
-    context.fillStyle = "#b91c1c";
-    context.beginPath();
-    context.arc(iconPos.x, iconPos.y, iconSize / 2, 0, 2*Math.PI);
-    context.fill();
-    context.strokeStyle = "#ffffff";
-    context.lineWidth = 2;
-    context.beginPath();
-    context.moveTo(iconPos.x - iconSize/4, iconPos.y - iconSize/4);
-    context.lineTo(iconPos.x + iconSize/4, iconPos.y + iconSize/4);
-    context.moveTo(iconPos.x + iconSize/4, iconPos.y - iconSize/4);
-    context.lineTo(iconPos.x - iconSize/4, iconPos.y + iconSize/4);
-    context.stroke();
-    context.restore();
-    
-    // Armazena o retângulo para detecção de cliques
-    selectedAggregationConnection.iconRect = {
-      x: iconPos.x - iconSize/2,
-      y: iconPos.y - iconSize/2,
-      width: iconSize,
-      height: iconSize
-    };
-  }
+  
 }
 
 
@@ -2247,6 +2514,60 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
         }
       });
 
+
+
+      // Desenhar agregações
+      aggregations.forEach(agg => {
+        context.save();
+        context.shadowColor = "rgba(0,0,0,0.5)";
+        context.shadowBlur = 10;
+        context.fillStyle = normalColors.aggregation.fill;
+        context.strokeStyle = agg.selected ? "#60a5fa" : normalColors.aggregation.stroke;
+        context.lineWidth = agg.selected ? 3 : 2;
+        
+        const half = (agg.size || relationshipSize)/2;
+        const rectSize = half * 1.2;
+        
+        // Desenha o retângulo externo
+        context.beginPath();
+        context.rect(agg.x - rectSize, agg.y - rectSize, rectSize*2, rectSize*2);
+        context.stroke();
+        
+        // Desenha o losango interno
+        context.beginPath();
+        context.moveTo(agg.x, agg.y - half);
+        context.lineTo(agg.x + half, agg.y);
+        context.lineTo(agg.x, agg.y + half);
+        context.lineTo(agg.x - half, agg.y);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        
+        // Desenha o texto da agregação
+        context.fillStyle = "#ffffff";
+        drawWrappedText(context, agg.name, agg.x, agg.y, agg.size - 20, false);
+        
+        // Desenha as alças de redimensionamento se selecionado
+        if (agg.selected) {
+          agg.resizeHandles = [
+            { x: agg.x - rectSize - handleSize/2, y: agg.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: agg.x + rectSize - handleSize/2, y: agg.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: agg.x - handleSize/2, y: agg.y - rectSize - handleSize/2, width: handleSize, height: handleSize },
+            { x: agg.x - handleSize/2, y: agg.y + rectSize - handleSize/2, width: handleSize, height: handleSize }
+          ];
+          agg.resizeHandles.forEach(handle => {
+            context.fillStyle = "#ffffff";
+            context.strokeStyle = "#000000";
+            context.fillRect(handle.x, handle.y, handle.width, handle.height);
+            context.strokeRect(handle.x, handle.y, handle.width, handle.height);
+          });
+        } else {
+          agg.resizeHandles = [];
+        }
+        
+        context.restore();
+      });
+
       entities.forEach(e => {
         context.save();
         context.shadowColor = "rgba(0,0,0,0.5)";
@@ -2272,8 +2593,18 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
         context.roundRect(e.x, e.y, e.width, e.height, 8);
         context.fill();
         context.stroke();
+
+        // Se a entidade estiver em um relacionamento fraco, desenha um retângulo interno para efeito de linha dupla
+        if (isEntityWeak(e)) {
+          let inset = 3; // ajuste conforme desejado
+          context.beginPath();
+          context.roundRect(e.x + inset+4, e.y + inset + 4, e.width - inset*4.5, e.height - inset*4.5, 6);
+          context.stroke();
+        }
+
         context.fillStyle = "#ffffff";
         drawWrappedText(context, e.name, e.x + e.width/2, e.y + e.height/2, e.width - margin, false);
+
 
         if (e.selected) {
           e.resizeHandles = [
@@ -2390,7 +2721,7 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
         context.fillStyle = normalColors.relationship.fill;
         context.strokeStyle = r.selected ? "#60a5fa" : normalColors.relationship.stroke;
         context.lineWidth = r.selected ? 3 : 2;
-        const half = (r.size || relationshipSize)/2;
+        const half = (r.size || relationshipSize) / 2;
         context.beginPath();
         context.moveTo(r.x, r.y - half);
         context.lineTo(r.x + half, r.y);
@@ -2399,6 +2730,21 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
         context.closePath();
         context.fill();
         context.stroke();
+
+        // Se o relacionamento for fraco, desenha um losango interno para efeito de linha dupla
+        if (isRelationshipWeak(r)) {
+          let offset = 8; // ajuste conforme desejado
+          let innerHalf = half - offset;
+          context.beginPath();
+          context.moveTo(r.x, r.y - innerHalf);
+          context.lineTo(r.x + innerHalf, r.y);
+          context.lineTo(r.x, r.y + innerHalf);
+          context.lineTo(r.x - innerHalf, r.y);
+          context.closePath();
+          // Para o contorno interno, pode-se usar a mesma cor e largura
+          context.stroke();
+        }
+
         // Desenha o texto do relacionamento por cima (não interfere nas conexões)
         context.fillStyle = "#ffffff";
         drawWrappedText(context, r.name, r.x, r.y, r.size - 20, false);
@@ -2459,57 +2805,7 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
 
 
 
-      // Desenhar agregações
-      aggregations.forEach(agg => {
-        context.save();
-        context.shadowColor = "rgba(0,0,0,0.5)";
-        context.shadowBlur = 10;
-        context.fillStyle = normalColors.aggregation.fill;
-        context.strokeStyle = agg.selected ? "#60a5fa" : normalColors.aggregation.stroke;
-        context.lineWidth = agg.selected ? 3 : 2;
-        
-        const half = (agg.size || relationshipSize)/2;
-        const rectSize = half * 1.2;
-        
-        // Desenha o retângulo externo
-        context.beginPath();
-        context.rect(agg.x - rectSize, agg.y - rectSize, rectSize*2, rectSize*2);
-        context.stroke();
-        
-        // Desenha o losango interno
-        context.beginPath();
-        context.moveTo(agg.x, agg.y - half);
-        context.lineTo(agg.x + half, agg.y);
-        context.lineTo(agg.x, agg.y + half);
-        context.lineTo(agg.x - half, agg.y);
-        context.closePath();
-        context.fill();
-        context.stroke();
-        
-        // Desenha o texto da agregação
-        context.fillStyle = "#ffffff";
-        drawWrappedText(context, agg.name, agg.x, agg.y, agg.size - 20, false);
-        
-        // Desenha as alças de redimensionamento se selecionado
-        if (agg.selected) {
-          agg.resizeHandles = [
-            { x: agg.x - rectSize - handleSize/2, y: agg.y - handleSize/2, width: handleSize, height: handleSize },
-            { x: agg.x + rectSize - handleSize/2, y: agg.y - handleSize/2, width: handleSize, height: handleSize },
-            { x: agg.x - handleSize/2, y: agg.y - rectSize - handleSize/2, width: handleSize, height: handleSize },
-            { x: agg.x - handleSize/2, y: agg.y + rectSize - handleSize/2, width: handleSize, height: handleSize }
-          ];
-          agg.resizeHandles.forEach(handle => {
-            context.fillStyle = "#ffffff";
-            context.strokeStyle = "#000000";
-            context.fillRect(handle.x, handle.y, handle.width, handle.height);
-            context.strokeRect(handle.x, handle.y, handle.width, handle.height);
-          });
-        } else {
-          agg.resizeHandles = [];
-        }
-        
-        context.restore();
-      });
+      
       
       
       
@@ -2522,6 +2818,21 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
       }
     }
 
+
+
+// Verifica se um relacionamento é fraco (todas as conexões são weak)
+function isRelationshipWeak(r) {
+  return r.connections
+      && r.connections.length > 0
+      && r.connections.some(conn => conn.weak);
+}
+
+// Verifica se uma entidade está envolvida em algum relacionamento fraco
+function isEntityWeak(e) {
+  return relationships.some(r =>
+    r.connections && r.connections.some(conn => conn.entityId === e.id && conn.weak)
+  );
+}
 
 // Também substitua a função getAggregationBorderPoint pela versão simplificada:
 function getAggregationBorderPoint(agg, dx, dy) {
@@ -2670,9 +2981,17 @@ function drawConnectionLine(context, r, conn, e) {
     context.lineTo(points[i].x, points[i].y);
   }
   
-  context.lineWidth = (selectedConnection && 
-                     selectedConnection.relationshipId === r.id && 
-                     selectedConnection.entityId === conn.entityId) ? 4 : 2;
+  // Define a espessura base: se a conexão for marcada como weak (fraca), usa 6, senão 2.
+  let baseLineWidth = (conn.weak) ? 6 : 2;
+  // Se a conexão estiver selecionada, adiciona 2 (ou outro valor) para evidenciar a seleção.
+  if (
+    selectedConnection &&
+    selectedConnection.relationshipId === r.id &&
+    selectedConnection.entityId === conn.entityId
+  ) {
+    baseLineWidth += 2;
+  }
+  context.lineWidth = baseLineWidth;
   context.strokeStyle = "#000000";
   context.stroke();
   
@@ -2687,58 +3006,46 @@ function drawConnectionLine(context, r, conn, e) {
   }
   
   // Desenha a cardinalidade
+  // Calcular a posição e medir o texto
   let labelPos = getPolylineMidpoint(points);
-  context.fillStyle = "#000000";
-  context.fillText(conn.cardinality, labelPos.x, labelPos.y - 5);
+  const text = conn.cardinality || "";
+  const padding = 2;                // Espaço extra em volta do texto
+  context.font = `${fontSize}px Poppins`; 
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+
+  // Medidas do texto
+  const textWidth = context.measureText(text).width + 10;
+  const textHeight = fontSize; // ou fontSize * 1.2, se quiser extra
+
+  // Para ficar circular, pegamos o maior entre (metade da largura) e (metade da altura)
+  const radius = Math.max(textWidth / 2, textHeight / 2) + padding;
+
+  // Vamos desenhar o texto “acima” da linha em Y-5
+  const textCenterX = labelPos.x ;
+  const textCenterY = labelPos.y - 1;  // Ajuste vertical para ficar um pouco acima
+
+  // 1) Desenha o círculo de fundo
+  context.beginPath();
+  context.arc(textCenterX, textCenterY, radius, 0, 2 * Math.PI);
+  context.fillStyle = "#ffffff";  // Cor de fundo
+  context.fill();
+
   
-  let textWidth = context.measureText(conn.cardinality).width;
+  // 2) Desenha o texto em cima do círculo
+  context.fillStyle = "#000000";    // Cor do texto
+  context.fillText(text, textCenterX, textCenterY);
+
+
+  // 3)  Atualiza conn.labelRect, para clique:
   conn.labelRect = {
-    x: labelPos.x - textWidth / 2,
-    y: (labelPos.y - 5) - fontSize,
-    width: textWidth,
-    height: fontSize
+    x: textCenterX - radius,
+    y: textCenterY - radius,
+    width: radius * 2,
+    height: radius * 2
   };
   
-  // Desenha o ícone de exclusão se selecionado
-  if (selectedConnection && 
-      selectedConnection.relationshipId === r.id && 
-      selectedConnection.entityId === conn.entityId) {
-    
-    // Cálculo da posição do ícone (35% do primeiro segmento)
-    let fraction = 0.35;
-    let start = points[0];
-    let next = points[1]; // Garantido ter pelo menos 2 pontos
-    let iconPos = {
-      x: start.x + (next.x - start.x) * fraction,
-      y: start.y + (next.y - start.y) * fraction
-    };
-    
-    let iconSize = globalIconSize + 4;
-    
-    // Desenha o ícone
-    context.save();
-    context.fillStyle = "#b91c1c";
-    context.beginPath();
-    context.arc(iconPos.x, iconPos.y, iconSize / 2, 0, 2*Math.PI);
-    context.fill();
-    context.strokeStyle = "#ffffff";
-    context.lineWidth = 2;
-    context.beginPath();
-    context.moveTo(iconPos.x - iconSize/4, iconPos.y - iconSize/4);
-    context.lineTo(iconPos.x + iconSize/4, iconPos.y + iconSize/4);
-    context.moveTo(iconPos.x + iconSize/4, iconPos.y - iconSize/4);
-    context.lineTo(iconPos.x - iconSize/4, iconPos.y + iconSize/4);
-    context.stroke();
-    context.restore();
-    
-    // Armazena retângulo para detecção de cliques
-    selectedConnection.iconRect = {
-      x: iconPos.x - iconSize/2,
-      y: iconPos.y - iconSize/2,
-      width: iconSize,
-      height: iconSize
-    };
-  }
+  
 }
 
 
@@ -2780,57 +3087,7 @@ function drawSpecConnectionLine(context, spec, conn, e) {
     }
   }
 
-  // Calcula a posição do ícone de exclusão
-  let iconPos;
-  if (points.length === 2) {
-    // Sem breakpoints: ponto médio da linha reta
-    iconPos = {
-      x: (points[0].x + points[1].x) / 2,
-      y: (points[0].y + points[1].y) / 2
-    };
-  } else {
-    // Com breakpoints: usa getPolylineMidpoint
-    iconPos = getPolylineMidpoint(points);
-  }
-
-  let iconSize = globalIconSize + 4;
-  // Calcula o ponto de ícone a 20% do primeiro segmento
-  let fraction = 0.2;
-    let start = points[0];
-    let next = points[1]; // Garantido pois a polyline tem pelo menos 2 pontos
-    iconPos = {
-      x: start.x + (next.x - start.x) * fraction,
-      y: start.y + (next.y - start.y) * fraction
-    };
-    let delX = iconPos.x;
-    let delY = iconPos.y;
-
-  if (selectedSpecConnection &&
-      selectedSpecConnection.specializationId === spec.id &&
-      selectedSpecConnection.vertex === conn.vertex &&
-      selectedSpecConnection.entityId === conn.entityId) {
-    context.save();
-    context.fillStyle = "#b91c1c";
-    context.beginPath();
-    context.arc(delX, delY, iconSize / 2, 0, 2 * Math.PI);
-    context.fill();
-    context.strokeStyle = "#ffffff";
-    context.lineWidth = 2;
-    context.beginPath();
-    context.moveTo(delX - iconSize / 4, delY - iconSize / 4);
-    context.lineTo(delX + iconSize / 4, delY + iconSize / 4);
-    context.moveTo(delX + iconSize / 4, delY - iconSize / 4);
-    context.lineTo(delX - iconSize / 4, delY + iconSize / 4);
-    context.stroke();
-    context.restore();
-
-    selectedSpecConnection.iconRect = { 
-      x: delX - iconSize / 2, 
-      y: delY - iconSize / 2, 
-      width: iconSize, 
-      height: iconSize 
-    };
-  }
+  
 }    
 
 
@@ -3079,7 +3336,7 @@ function createObjectAt(type, cx, cy) {
       x: cx,  // Posição do centro X
       y: cy,  // Posição do centro Y
       size: relationshipSize,
-      name: "Agregação",
+      name: "Agrega.",
       connections: [],
       selected: false,
       objType: "aggregation"
@@ -3127,17 +3384,16 @@ function createObjectAt(type, cx, cy) {
           startPoint = getRectBorderPoint(center.x, center.y, dx, dy, obj.width/2, obj.height/2);
         } else if (obj.objType === "relationship") {
           let center = { x: obj.x, y: obj.y };
-          let dx = currentPos.x - center.x;
-          let dy = currentPos.y - center.y;
-          startPoint = getDiamondBorderPoint(center.x, center.y, dx, dy, obj.size/2);
+          startPoint = getDiamondBorderPointCorrect(center.x, center.y, currentPos.x, currentPos.y, obj.size);
         } else if (obj.objType === "specialization") {
           startPoint = getTriangleBorderPoint(obj, currentPos);
         } else if (obj.objType === "aggregation") {
-          // Adicionar caso para agregação
           let center = { x: obj.x, y: obj.y };
           let dx = currentPos.x - center.x;
           let dy = currentPos.y - center.y;
-          startPoint = getDiamondBorderPoint(center.x, center.y, dx, dy, obj.size/2);
+          const half = (obj.size || relationshipSize) / 2;
+          const rectSize = half * 1.2; // mesmo fator usado para desenhar a agregação
+          startPoint = getRectBorderPoint(center.x, center.y, dx, dy, rectSize, rectSize);
         }
         
         ctx.moveTo(startPoint.x, startPoint.y);
@@ -3563,11 +3819,7 @@ function onCanvasStart(evt) {
 
   let hit = getDraggableAt(pos.x, pos.y);
 
-  // Verificar se clicou no ícone de exclusão da conexão de agregação
-  if (selectedAggregationConnection && selectedAggregationConnection.iconRect && 
-      isInsideRect(pos, selectedAggregationConnection.iconRect)) {
-    return; // Será tratado pelo click handler
-  }
+  
 
   if (hit && hit.type === "resize") {
     isResizing = true;
@@ -3877,7 +4129,7 @@ function onCanvasStart(evt) {
             if (!isDraggingObject && !isDraggingGroup) {
               showSubmenu(hit.element, pos.x, pos.y);
             }
-          }, 200);
+          }, 100);
         }
         $(canvas).on("mousemove.drag", onCanvasMove);
         $(canvas).on("mouseup.drag", () => {
@@ -4152,7 +4404,7 @@ function onCanvasEnd(evt) {
         entityId: pendingConnectionHit.connection.entityId,
         iconRect: null
       };
-      justSelectedConnection = true;
+      
     } else if (pendingConnectionHit.type === "aggregation-connection") {
       // Adicione aqui a seleção da conexão de agregação
       selectedAggregationConnection = {
@@ -4161,7 +4413,7 @@ function onCanvasEnd(evt) {
         relationshipId: pendingConnectionHit.connection.relationshipId,
         iconRect: null
       };
-      justSelectedConnection = true;
+      
     }
     
     pendingConnectionHit = null;
@@ -4359,72 +4611,25 @@ canvas.addEventListener("click", function(evt) {
     return;
   }
 
-  // Se a conexão foi apenas selecionada, ignora esse clique para exclusão
-  if (justSelectedConnection) {
-    justSelectedConnection = false;
+  
+
+  // Mostrar o submenu ao clicar na linha
+    if (selectedConnection /* e se for identificado um clique na área da conexão */) {
+    showConnectionSubmenu(selectedConnection, pos.x, pos.y);
+    return;
+  }
+  // Se a conexão de especialização foi selecionada:
+  if (selectedSpecConnection) {
+    showSpecConnectionSubmenu(selectedSpecConnection, pos.x, pos.y);
+    return;
+  }
+  // Se a conexão de agregação foi selecionada:
+  if (selectedAggregationConnection) {
+    showAggregationConnectionSubmenu(selectedAggregationConnection, pos.x, pos.y);
     return;
   }
 
-  // 1) Se clicou no ícone de exclusão de uma conexão (linha)
-  if (selectedConnection && selectedConnection.iconRect) {
-    if (isInsideRect(pos, selectedConnection.iconRect)) {
-      // A lógica de remover a conexão é a mesma do "deleteSelectedObjects" 
-      // (item 7 no seu deleteSelectedObjects).
-      let r = relationships.find(rr => rr.id === selectedConnection.relationshipId);
-      if (r) {
-        r.connections = r.connections.filter(
-          conn => conn.entityId !== selectedConnection.entityId
-        );
-      }
-      selectedConnection = null;
-      saveState();
-      clearSelection();
-      draw();
-      return; // sai imediatamente para não continuar no loop
-    }
-  }
-
-  // 2) Se clicou no ícone de exclusão de uma especialização, faça algo similar ao dos relacionamentos
-  if (selectedSpecConnection && selectedSpecConnection.iconRect) {
-    if (isInsideRect(pos, selectedSpecConnection.iconRect)) {
-      let s = specializations.find(sp => sp.id === selectedSpecConnection.specializationId);
-      if (s && s.connections) {
-        s.connections = s.connections.filter(conn =>
-          !(conn.entityId === selectedSpecConnection.entityId && conn.vertex === selectedSpecConnection.vertex)
-        );
-      }
-      selectedSpecConnection = null;
-      saveState();
-      clearSelection();
-      draw();
-      return;
-    }
-  }
-
-
-  // 3) Verificar clique no ícone de exclusão de uma agregação
-  if (selectedAggregationConnection && selectedAggregationConnection.iconRect) {
-    if (isInsideRect(pos, selectedAggregationConnection.iconRect)) {
-      let agg = aggregations.find(a => a.id === selectedAggregationConnection.aggregationId);
-      if (agg) {
-        // Filtra a conexão a ser removida
-        agg.connections = agg.connections.filter(conn => {
-          if (selectedAggregationConnection.entityId && conn.entityId === selectedAggregationConnection.entityId) {
-            return false;
-          }
-          if (selectedAggregationConnection.relationshipId && conn.relationshipId === selectedAggregationConnection.relationshipId) {
-            return false;
-          }
-          return true;
-        });
-      }
-      selectedAggregationConnection = null;
-      saveState();
-      clearSelection();
-      draw();
-      return;
-    }
-  }
+  
 
 
   // Importante: Se temos um pendingConnectionHit, isso significa que nosso onCanvasStart
@@ -4440,7 +4645,7 @@ canvas.addEventListener("click", function(evt) {
         entityId: pendingConnectionHit.connection.entityId,
         iconRect: null
       };
-      justSelectedConnection = true;
+      
     } else if (pendingConnectionHit.type === "specialization-connection") {
       selectedSpecConnection = {
         specializationId: pendingConnectionHit.specialization.id,
@@ -4456,7 +4661,7 @@ canvas.addEventListener("click", function(evt) {
         relationshipId: pendingConnectionHit.connection.relationshipId,
         iconRect: null
       };
-      justSelectedConnection = true;
+      
     }
     
     pendingConnectionHit = null;
@@ -4465,7 +4670,7 @@ canvas.addEventListener("click", function(evt) {
     return;
   }
 
-  // 3) Caso não tenha clicado em nenhum ícone de exclusão,
+  
   //    prossiga com o que você já faz para breakpoints e labelRect etc.
   for (let r of relationships) {
     for (let conn of r.connections) {
@@ -4474,6 +4679,213 @@ canvas.addEventListener("click", function(evt) {
     }
   }
 });
+
+
+
+function showConnectionSubmenu(connInfo, x, y) {
+  // Cria o submenu
+  const submenu = document.createElement("div");
+  submenu.className = "submenu";
+  document.body.appendChild(submenu);
+
+  // Cria o item para alternar o status "Rel. Fraco" / "Excluir Rel. Fraco"
+  const weakItem = document.createElement("div");
+  weakItem.className = "submenu-item";
+
+  // Localiza a conexão real para saber se já está marcada como weak.
+  let rObj = relationships.find(rr => rr.id === connInfo.relationshipId);
+  let connectionObj = rObj ? rObj.connections.find(c => c.entityId === connInfo.entityId) : null;
+
+  if (connectionObj && !connectionObj.weak) {
+    weakItem.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+  <!-- Losango com borda tracejada -->
+  <path d="M12 2 L22 12 L12 22 L2 12 Z" stroke-dasharray="4 2"/>
+</svg>
+<span class="text-white ml-2">Rel. Fraco</span>`;
+  } else {
+    weakItem.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+  <!-- Losango com borda tracejada -->
+  <path d="M12 2 L22 12 L12 22 L2 12 Z" stroke-dasharray="4 2"/>
+  <!-- Sobreposição de um X -->
+  <line x1="8" y1="8" x2="16" y2="16"/>
+  <line x1="16" y1="8" x2="8" y2="16"/>
+</svg>
+<span class="text-white ml-2">Excluir Rel. Fraco</span>`;
+  }
+  weakItem.addEventListener("click", function(e) {
+    e.preventDefault();
+    let r = relationships.find(rr => rr.id === connInfo.relationshipId);
+    if (r) {
+      let conn = r.connections.find(c => c.entityId === connInfo.entityId);
+      if (conn) {
+        // Alterna o status weak
+        conn.weak = !conn.weak;
+      }
+    }
+    document.body.removeChild(submenu);
+    saveState();
+    clearSelection();
+    draw();
+  });
+  submenu.appendChild(weakItem);
+
+  // Cria o item "Deletar"
+  const deleteItem = document.createElement("div");
+  deleteItem.className = "submenu-item";
+  deleteItem.innerHTML = `<svg class="w-5 h-5 text-white" fill="none" 
+    stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+    </svg><span class="text-white ml-2">Deletar</span>`;
+  
+  // Define a ação de clique para deletar a conexão
+  deleteItem.addEventListener("click", function(e) {
+    e.preventDefault();
+    // Procura o relacionamento correspondente
+    let r = relationships.find(rr => rr.id === connInfo.relationshipId);
+    if (r) {
+      r.connections = r.connections.filter(c => c.entityId !== connInfo.entityId);
+    }
+    // Fecha o submenu e atualiza o desenho
+    document.body.removeChild(submenu);
+    selectedConnection = null;
+    saveState();
+    clearSelection();
+    draw();
+  });
+  
+  submenu.appendChild(deleteItem);
+  
+  // Posiciona o submenu próximo ao clique (ajuste conforme necessário)
+  submenu.style.position = "fixed";
+  submenu.style.left = (x - 90) + "px";
+  submenu.style.top = (y - 180) + "px";
+  submenu.style.zIndex = "1050";
+  submenu.style.backgroundColor = "#1f2937";
+  submenu.style.borderRadius = "8px";
+  submenu.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
+  submenu.style.padding = "8px";
+  submenu.style.display = "flex";
+  submenu.style.flexDirection = "column";
+  submenu.style.gap = "4px";
+
+  // Adiciona um handler para fechar o submenu ao clicar fora
+  setTimeout(() => {
+    document.addEventListener("click", function handler(e) {
+      if (!submenu.contains(e.target)) {
+        document.body.removeChild(submenu);
+        document.removeEventListener("click", handler);
+      }
+    });
+  }, 100);
+}
+
+
+function showSpecConnectionSubmenu(connInfo, x, y) {
+  // Cria e configura o submenu para conexões de especialização
+  const submenu = document.createElement("div");
+  submenu.className = "submenu";
+  document.body.appendChild(submenu);
+
+  const deleteItem = document.createElement("div");
+  deleteItem.className = "submenu-item";
+  deleteItem.innerHTML = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+    stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+    </svg><span class="text-white ml-2">Deletar</span>`;
+  
+  deleteItem.addEventListener("click", function(e) {
+    e.preventDefault();
+    // Procura a especialização correspondente e remove a conexão
+    let spec = specializations.find(sp => sp.id === connInfo.specializationId);
+    if (spec && spec.connections) {
+      spec.connections = spec.connections.filter(c => 
+        !(c.entityId === connInfo.entityId && c.vertex === connInfo.vertex)
+      );
+    }
+    document.body.removeChild(submenu);
+    selectedSpecConnection = null;
+    saveState();
+    clearSelection();
+    draw();
+  });
+  
+  submenu.appendChild(deleteItem);
+  // Posiciona e estiliza o submenu (semelhante à função showConnectionSubmenu)
+  submenu.style.position = "fixed";
+  submenu.style.left = (x - 80) + "px";
+  submenu.style.top = (y - 140) + "px";
+  submenu.style.zIndex = "1050";
+  submenu.style.backgroundColor = "#1f2937";
+  submenu.style.borderRadius = "8px";
+  submenu.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
+  submenu.style.padding = "8px";
+  submenu.style.display = "flex";
+  submenu.style.flexDirection = "column";
+  submenu.style.gap = "4px";
+  
+  setTimeout(() => {
+    document.addEventListener("click", function handler(e) {
+      if (!submenu.contains(e.target)) {
+        document.body.removeChild(submenu);
+        document.removeEventListener("click", handler);
+      }
+    });
+  }, 100);
+}
+
+function showAggregationConnectionSubmenu(connInfo, x, y) {
+  // Cria e configura o submenu para conexões de agregação
+  const submenu = document.createElement("div");
+  submenu.className = "submenu";
+  document.body.appendChild(submenu);
+
+  const deleteItem = document.createElement("div");
+  deleteItem.className = "submenu-item";
+  deleteItem.innerHTML = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+    stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+    </svg><span class="text-white ml-2">Deletar</span>`;
+  
+  deleteItem.addEventListener("click", function(e) {
+    e.preventDefault();
+    // Procura a agregação correspondente e remove a conexão
+    let agg = aggregations.find(a => a.id === connInfo.aggregationId);
+    if (agg && agg.connections) {
+      agg.connections = agg.connections.filter(c => 
+        !(c.entityId === connInfo.entityId || c.relationshipId === connInfo.relationshipId)
+      );
+    }
+    document.body.removeChild(submenu);
+    selectedAggregationConnection = null;
+    saveState();
+    clearSelection();
+    draw();
+  });
+  
+  submenu.appendChild(deleteItem);
+  // Posiciona e estiliza o submenu
+  submenu.style.position = "fixed";
+  submenu.style.left = (x - 80) + "px";
+  submenu.style.top = (y - 135) + "px";
+  submenu.style.zIndex = "1050";
+  submenu.style.backgroundColor = "#1f2937";
+  submenu.style.borderRadius = "8px";
+  submenu.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
+  submenu.style.padding = "8px";
+  submenu.style.display = "flex";
+  submenu.style.flexDirection = "column";
+  submenu.style.gap = "4px";
+  
+  setTimeout(() => {
+    document.addEventListener("click", function handler(e) {
+      if (!submenu.contains(e.target)) {
+        document.body.removeChild(submenu);
+        document.removeEventListener("click", handler);
+      }
+    });
+  }, 100);
+}
+
 
 function onCanvasContextMenu(evt) {
   evt.preventDefault();
@@ -4879,8 +5291,7 @@ function showSubmenu(element, x, y) {
           current: { x: x, y: y }
         };
         
-        // Altera cursor para indicar modo de relacionamento
-        canvas.style.cursor = 'crosshair';
+        
         
         // Mostra ao usuário o que está acontecendo
         showNotification("Clique em outro objeto para relacionar", "info");
@@ -4939,7 +5350,7 @@ function showSubmenu(element, x, y) {
           current: { x: x, y: y }
         };
         
-        canvas.style.cursor = 'crosshair';
+        
         showNotification("Clique em uma entidade ou relacionamento para conectar", "info");
         
         clearSelection();
@@ -5168,8 +5579,7 @@ function startClickRelationMode(element) {
     current: { x: centerX, y: centerY }  // Inicialmente igual ao ponto de início
   };
   
-  // Muda o cursor para indicar que estamos em modo de relacionamento
-  canvas.style.cursor = "crosshair";
+  
   
   // Desenha a tela para mostrar o elemento selecionado
   clearSelection();
@@ -5348,7 +5758,7 @@ function handleConnectionDrop(draggingConnection, drop) {
       x: midX,
       y: midY,
       size: relationshipSize,
-      name: "Relacionamento",
+      name: "Rel.",
       connections: [],
       selected: false,
       objType: "relationship"
@@ -5490,21 +5900,21 @@ function getSubmenuHit(x, y) {
 
     // Listener para ESC e Delete (exclusão dos objetos selecionados)
     document.addEventListener("keydown", function(e) {
-    if (e.key === "Escape") {
-      // Se estiver em modo de relacionamento, cancela
-      if (isDraggingConnection) {
-        exitClickRelationMode();
+      if (e.key === "Escape") {
+        // Se estiver em modo de relacionamento, cancela
+        if (isDraggingConnection) {
+          exitClickRelationMode();
+        }
+        
+        // Se estiver arrastando algo do toolbar, limpa
+        if (draggingToolbarType) {
+          cleanupToolbarDrag();
+          draw();
+        }
+      } else if (e.key === "Delete") {
+        deleteSelectedObjects();
       }
-      
-      // Se estiver arrastando algo do toolbar, limpa
-      if (draggingToolbarType) {
-        cleanupToolbarDrag();
-        draw();
-      }
-    } else if (e.key === "Delete") {
-      deleteSelectedObjects();
-    }
-  });
+    });
 
 
     function deleteSelectedObjects() {
@@ -5589,18 +5999,7 @@ function getSubmenuHit(x, y) {
     document.getElementById("btnDerivedAttribute").addEventListener("mousedown", (e) => startToolbarDrag("derivedAttribute", e));
     document.getElementById("btnRelationship").addEventListener("mousedown", (e) => startToolbarDrag("relationship", e));
     document.getElementById("btnSpecialization").addEventListener("mousedown", (e) => startToolbarDrag("specialization", e));
-    document.getElementById("btnIncreaseFont").addEventListener("click", () => { fontSize += 2; draw(); });
-    document.getElementById("btnDecreaseFont").addEventListener("click", () => { fontSize = Math.max(8, fontSize - 2); draw(); });
-    document.getElementById("btnClear").addEventListener("click", () => {
-      saveState();
-      entities = [];
-      attributes = [];
-      relationships = [];
-      specializations = [];
-      aggregations = [];
-      clearSelection();
-      draw();
-    });
+    
     
     function exportDiagram() {
         // 1. Calcular os limites reais do diagrama (encontrar min/max de todos os objetos)
@@ -5710,18 +6109,16 @@ function getSubmenuHit(x, y) {
         
         link.click();
     }
-    document.getElementById("btnUndo").addEventListener("click", undo);
-    document.getElementById("btnRedo").addEventListener("click", redo);
-
+    
     
     // Configuração dos botões de zoom
-    document.getElementById("btnZoomIn").addEventListener("click", () => {
+    document.getElementById("btnIncreaseZoom").addEventListener("click", () => {
       // Incrementa o zoom (por exemplo, 10% cada vez)
       zoom = Math.min(zoom * 1.1, 3.0);  // Limita o zoom máximo a 3x
       draw();
     });
 
-    document.getElementById("btnZoomOut").addEventListener("click", () => {
+    document.getElementById("btnDecreaseZoom").addEventListener("click", () => {
       // Decrementa o zoom (por exemplo, 10% cada vez)
       zoom = Math.max(zoom / 1.1, 0.3);  // Limita o zoom mínimo a 0.3x
       draw();
