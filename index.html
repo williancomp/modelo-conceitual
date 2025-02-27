@@ -2299,7 +2299,7 @@ function lineSegmentIntersection(line1, line2) {
     }
 
 
-// Da mesma forma, atualizamos a conexão para agregações
+    // Corrigir a função drawAggregationConnectionLine primeiro
 function drawAggregationConnectionLine(context, agg, conn, target) {
   // Ponto central da agregação
   const aggCenter = { x: agg.x, y: agg.y };
@@ -2309,49 +2309,49 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
     { x: target.x + target.width/2, y: target.y + target.height/2 } : 
     { x: target.x, y: target.y };
   
-  
-  
   const half = (agg.size || relationshipSize) / 2;
   const rectSize = half * 1.2;  // mesmo fator que você usa ao desenhar
 
-  // Vetor do centro da agregação até o alvo
-  const dx = targetCenter.x - agg.x;
-  const dy = targetCenter.y - agg.y;
-  const len = Math.sqrt(dx*dx + dy*dy);
-  if (len === 0) return; // evita divisão por zero
-
-  // Direção unitária
-  const ndx = dx / len;
-  const ndy = dy / len;
-
-  // Em vez de getDiamondBorderPoint, basta avançar 'rectSize' nessa direção
+  // Calcula o ponto na borda da agregação, olhando para o primeiro breakpoint ou para o alvo
+  let firstTarget = (conn.breakpoints && conn.breakpoints.length > 0) ? 
+    conn.breakpoints[0] : targetCenter;
+    
+  // Vetor do centro da agregação até o primeiro ponto alvo
+  const dx1 = firstTarget.x - agg.x;
+  const dy1 = firstTarget.y - agg.y;
+  
+  // Calcula o ponto na borda da agregação
   const aggBorder = getRectBorderPoint(
     agg.x,   // centro do retângulo
     agg.y,
-    dx, dy,
+    dx1, dy1,
     rectSize, // halfWidth
     rectSize  // halfHeight (pois é quadrado)
   );
-
   
   // Ponto na borda do objeto alvo
+  let lastSource = (conn.breakpoints && conn.breakpoints.length > 0) ?
+    conn.breakpoints[conn.breakpoints.length - 1] : aggBorder;
+    
   let targetBorder;
   if (target.objType === "entity") {
+    // Vetor do centro da entidade para o último ponto da linha
+    const dx2 = lastSource.x - targetCenter.x;
+    const dy2 = lastSource.y - targetCenter.y;
+    
     targetBorder = getRectBorderPoint(
       targetCenter.x, targetCenter.y,
-      agg.x - targetCenter.x, agg.y - targetCenter.y,
+      dx2, dy2,
       target.width/2, target.height/2
     );
   } else {
-    // Em vez do cálculo manual, use getDiamondBorderPointCorrect:
+    // Para relacionamentos (losangos)
     const halfRel = (target.size || relationshipSize) / 2;
-    // O primeiro par (cx, cy) é o centro do LOSANGO (target.x, target.y).
-    // O segundo par (targetX, targetY) é para onde queremos a borda (agg.x, agg.y).
     targetBorder = getDiamondBorderPointCorrect(
       target.x, 
       target.y, 
-      agg.x,      // para onde a linha aponta
-      agg.y, 
+      lastSource.x,      
+      lastSource.y, 
       halfRel
     );
   }
@@ -2410,7 +2410,7 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
     // Para ficar circular, pegamos o maior entre (metade da largura) e (metade da altura)
     const radius = Math.max(textWidth / 2, textHeight / 2) + padding;
 
-    // Vamos desenhar o texto “acima” da linha em Y-5
+    // Vamos desenhar o texto "acima" da linha em Y-5
     const textCenterX = labelPos.x ;
     const textCenterY = labelPos.y - 1;  // Ajuste vertical para ficar um pouco acima
 
@@ -2434,12 +2434,119 @@ function drawAggregationConnectionLine(context, agg, conn, target) {
       height: radius * 2
     };
   }
+}
+
+// Agora corrigir a função drawConnectionLine que lida com relacionamentos e entidades
+function drawConnectionLine(context, r, conn, e) {
+  const rCenter = { x: r.x, y: r.y };
+  const eCenter = { x: e.x + e.width / 2, y: e.y + e.height / 2 };
   
+  // Calcula o ponto na borda do losango (relacionamento)
+  const half = (r.size || relationshipSize) / 2;
   
+  // Determina para onde apontar a borda do relacionamento
+  let firstTarget = (conn.breakpoints && conn.breakpoints.length > 0) ? 
+    conn.breakpoints[0] : eCenter;
+  
+  // Calcula o ponto correto na borda do losango
+  const rBorder = getDiamondBorderPointCorrect(r.x, r.y, firstTarget.x, firstTarget.y, half);
+  
+  // Determina de onde vem a linha para a entidade
+  let lastSource = (conn.breakpoints && conn.breakpoints.length > 0) ?
+    conn.breakpoints[conn.breakpoints.length - 1] : rBorder;
+  
+  // Calcula o ponto na borda da entidade
+  const eBorder = getRectBorderPoint(
+    eCenter.x, eCenter.y,
+    lastSource.x - eCenter.x, lastSource.y - eCenter.y,
+    e.width / 2, e.height / 2
+  );
+  
+  // Monta os pontos para a polyline
+  let points = [rBorder];
+  
+  // Adiciona os breakpoints se existirem
+  if (conn.breakpoints && conn.breakpoints.length > 0) {
+    points.push(...conn.breakpoints);
+  }
+  
+  // Adiciona o ponto na borda da entidade
+  points.push(eBorder);
+  
+  // Desenho da polyline
+  context.beginPath();
+  context.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    context.lineTo(points[i].x, points[i].y);
+  }
+  
+  // Define a espessura base: se a conexão for marcada como weak (fraca), usa 6, senão 2.
+  let baseLineWidth = (conn.weak) ? 6 : 2;
+  // Se a conexão estiver selecionada, adiciona 2 (ou outro valor) para evidenciar a seleção.
+  if (
+    selectedConnection &&
+    selectedConnection.relationshipId === r.id &&
+    selectedConnection.entityId === conn.entityId
+  ) {
+    baseLineWidth += 2;
+  }
+  context.lineWidth = baseLineWidth;
+  context.strokeStyle = "#000000";
+  context.stroke();
+  
+  // Desenho dos breakpoints
+  if (conn.breakpoints) {
+    for (let bp of conn.breakpoints) {
+      context.beginPath();
+      context.arc(bp.x, bp.y, 5, 0, 2*Math.PI);
+      context.fillStyle = "#000000";
+      context.fill();
+    }
+  }
+  
+  // Desenha a cardinalidade
+  // Calcular a posição e medir o texto
+  let labelPos = getPolylineMidpoint(points);
+  const text = conn.cardinality || "";
+  const padding = 2;                // Espaço extra em volta do texto
+  context.font = `${fontSize}px Poppins`; 
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+
+  // Medidas do texto
+  const textWidth = context.measureText(text).width + 10;
+  const textHeight = fontSize; // ou fontSize * 1.2, se quiser extra
+
+  // Para ficar circular, pegamos o maior entre (metade da largura) e (metade da altura)
+  const radius = Math.max(textWidth / 2, textHeight / 2) + padding;
+
+  // Vamos desenhar o texto "acima" da linha em Y-5
+  const textCenterX = labelPos.x ;
+  const textCenterY = labelPos.y - 1;  // Ajuste vertical para ficar um pouco acima
+
+  // 1) Desenha o círculo de fundo
+  context.beginPath();
+  context.arc(textCenterX, textCenterY, radius, 0, 2 * Math.PI);
+  context.fillStyle = "#ffffff";  // Cor de fundo
+  context.fill();
+
+  
+  // 2) Desenha o texto em cima do círculo
+  context.fillStyle = "#000000";    // Cor do texto
+  context.fillText(text, textCenterX, textCenterY);
+
+
+  // 3)  Atualiza conn.labelRect, para clique:
+  conn.labelRect = {
+    x: textCenterX - radius,
+    y: textCenterY - radius,
+    width: radius * 2,
+    height: radius * 2
+  };
 }
 
 
-
+    
     function drawAll(context) {
       context.clearRect(0, 0, mainWidth, mainHeight);
       context.font = `${fontSize}px Poppins`;
