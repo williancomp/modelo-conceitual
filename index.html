@@ -2631,32 +2631,7 @@ function drawDeletionIconForSpecConnection(context, spec, conn) {
 }
 
 
-function drawDeletionIcons(context) {
-  // Para conexões de relacionamento:
-  relationships.forEach(r => {
-    r.connections.forEach(conn => {
-      if (selectedConnection &&
-          selectedConnection.relationshipId === r.id &&
-          selectedConnection.entityId === conn.entityId) {
-        drawDeletionIconForConnection(context, r, conn);
-      }
-    });
-  });
-  
-  // Para conexões de especialização:
-  specializations.forEach(spec => {
-    if (spec.connections) {
-      spec.connections.forEach(conn => {
-        if (selectedSpecConnection &&
-            selectedSpecConnection.specializationId === spec.id &&
-            selectedSpecConnection.vertex === conn.vertex &&
-            selectedSpecConnection.entityId === conn.entityId) {
-          drawDeletionIconForSpecConnection(context, spec, conn);
-        }
-      });
-    }
-  });
-}
+
 
     
 function drawConnectionLine(context, r, conn, e) {
@@ -3170,10 +3145,6 @@ function createObjectAt(type, cx, cy) {
         ctx.stroke();
         ctx.restore();
       }
-
-      // <-- NOVA LINHA: desenha os ícones de exclusão por último
-      drawDeletionIcons(ctx);
-
 
       ctx.restore();
     }
