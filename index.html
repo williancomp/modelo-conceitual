@@ -3091,24 +3091,39 @@ function drawDeletionIconForSpecConnection(context, spec, conn) {
 
 
 
-    
 function drawConnectionLine(context, r, conn, e) {
+  // Pontos centrais
   const rCenter = { x: r.x, y: r.y };
   const eCenter = { x: e.x + e.width / 2, y: e.y + e.height / 2 };
   
-  // Cálculo do ponto na borda do losango
-  
+  // Tamanho do losango (relacionamento)
   const half = (r.size || relationshipSize) / 2;
-  const rBorder = getDiamondBorderPointCorrect(r.x, r.y, eCenter.x, eCenter.y, half);
   
-  // O resto da função permanece igual
+  // Determina para onde apontar a borda do relacionamento:
+  // - Se houver breakpoints, aponta para o primeiro breakpoint
+  // - Se não houver, aponta para o centro da entidade
+  let firstTarget = (conn.breakpoints && conn.breakpoints.length > 0) ? 
+    conn.breakpoints[0] : eCenter;
+  
+  // Calcula o ponto na borda do relacionamento
+  const rBorder = getDiamondBorderPointCorrect(r.x, r.y, firstTarget.x, firstTarget.y, half);
+  
+  // Determina de onde vem a linha para a entidade:
+  // - Se houver breakpoints, vem do último breakpoint
+  // - Se não houver, vem da borda do relacionamento
+  let lastSource = (conn.breakpoints && conn.breakpoints.length > 0) ?
+    conn.breakpoints[conn.breakpoints.length - 1] : rBorder;
+  
+  // Calcula a direção do vetor para a borda da entidade
+  const dx = lastSource.x - eCenter.x;
+  const dy = lastSource.y - eCenter.y;
+  
+  // Calcula o ponto na borda da entidade
   const eBorder = getRectBorderPoint(
     eCenter.x, eCenter.y,
-    r.x - eCenter.x, r.y - eCenter.y,
+    dx, dy,
     e.width / 2, e.height / 2
   );
-  
-  
   
   // Montamos os pontos para a polyline
   let points = [rBorder];
@@ -3168,8 +3183,8 @@ function drawConnectionLine(context, r, conn, e) {
   // Para ficar circular, pegamos o maior entre (metade da largura) e (metade da altura)
   const radius = Math.max(textWidth / 2, textHeight / 2) + padding;
 
-  // Vamos desenhar o texto “acima” da linha em Y-5
-  const textCenterX = labelPos.x ;
+  // Vamos desenhar o texto "acima" da linha em Y-5
+  const textCenterX = labelPos.x;
   const textCenterY = labelPos.y - 1;  // Ajuste vertical para ficar um pouco acima
 
   // 1) Desenha o círculo de fundo
@@ -3177,12 +3192,10 @@ function drawConnectionLine(context, r, conn, e) {
   context.arc(textCenterX, textCenterY, radius, 0, 2 * Math.PI);
   context.fillStyle = "#ffffff";  // Cor de fundo
   context.fill();
-
   
   // 2) Desenha o texto em cima do círculo
   context.fillStyle = "#000000";    // Cor do texto
   context.fillText(text, textCenterX, textCenterY);
-
 
   // 3)  Atualiza conn.labelRect, para clique:
   conn.labelRect = {
@@ -3191,9 +3204,8 @@ function drawConnectionLine(context, r, conn, e) {
     width: radius * 2,
     height: radius * 2
   };
-  
-  
 }
+
 
 
 function drawSpecConnectionLine(context, spec, conn, e) {
@@ -4905,8 +4917,8 @@ function showConnectionSubmenu(connInfo, x, y) {
   
   // Posiciona o submenu próximo ao clique (ajuste conforme necessário)
   submenu.style.position = "fixed";
-  submenu.style.left = (x - 90) + "px";
-  submenu.style.top = (y - 180) + "px";
+  submenu.style.left = (x - 70) + "px";
+  submenu.style.top = (y - 50) + "px";
   submenu.style.zIndex = "1050";
   submenu.style.backgroundColor = "#1f2937";
   submenu.style.borderRadius = "8px";
@@ -4960,8 +4972,8 @@ function showSpecConnectionSubmenu(connInfo, x, y) {
   submenu.appendChild(deleteItem);
   // Posiciona e estiliza o submenu (semelhante à função showConnectionSubmenu)
   submenu.style.position = "fixed";
-  submenu.style.left = (x - 80) + "px";
-  submenu.style.top = (y - 140) + "px";
+  submenu.style.left = (x - 70) + "px";
+  submenu.style.top = (y - 0) + "px";
   submenu.style.zIndex = "1050";
   submenu.style.backgroundColor = "#1f2937";
   submenu.style.borderRadius = "8px";
@@ -5013,8 +5025,8 @@ function showAggregationConnectionSubmenu(connInfo, x, y) {
   submenu.appendChild(deleteItem);
   // Posiciona e estiliza o submenu
   submenu.style.position = "fixed";
-  submenu.style.left = (x - 80) + "px";
-  submenu.style.top = (y - 135) + "px";
+  submenu.style.left = (x - 60) + "px";
+  submenu.style.top = (y - 10) + "px";
   submenu.style.zIndex = "1050";
   submenu.style.backgroundColor = "#1f2937";
   submenu.style.borderRadius = "8px";
@@ -5231,6 +5243,7 @@ function onCanvasDblClick(evt){
           let compX = hit.type === "entity" ? hit.element.x + (hit.element.width || defaultEntityWidth)/2 : hit.element.x;
           let compY = hit.type === "entity" ? hit.element.y + (hit.element.height || defaultEntityHeight)/2 : hit.element.y;
           showInlineEditor(hit.element, compX, compY);
+          
         }  else if (hit.type === "specialization") {
           showSpecTypeEditor(hit.element, hit.element.x, hit.element.y);
         } else if (hit.type === "connection") {
