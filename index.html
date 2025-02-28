@@ -481,6 +481,28 @@
     background: linear-gradient(to bottom right, #8b5cf6, #6d28d9);
   }
   
+
+  .postit-btn {
+  background: linear-gradient(to bottom right, #ffcc00, #e6b800);
+}
+
+.tool-postit {
+  background: linear-gradient(to bottom right, #ffcc00, #e6b800);
+}
+
+/* Estilo para os post-its no diagrama */
+.postit {
+  background-color: #ffff88;
+  border: 1px solid #e6e600;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  cursor: pointer;
+  padding: 10px;
+  transition: transform 0.2s;
+}
+
+.postit:hover {
+  transform: scale(1.05);
+}
   
   
   </style>
@@ -601,6 +623,14 @@
         <span class="tooltip-text">Adicionar uma agregação</span>
       </div>
 
+      <div id="btnPostit" class="main-menu-item tooltip postit-btn">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-16a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" stroke-width="2.5" />
+          <path d="M8 10h8M8 14h6" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+        <span class="tooltip-text">Adicionar uma anotação (Post-it)</span>
+      </div>
+
       
     </div>
   </nav>
@@ -675,6 +705,19 @@
         </div>
         <span>Agregação</span>
       </div>
+
+
+      <div id="btnPostit-mobile" class="mobile-menu-button">
+        <div class="toolbar-button tool-postit">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-16a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+            <path d="M8 10h8M8 14h6" stroke-linecap="round" />
+          </svg>
+        </div>
+        <span>Post-it</span>
+      </div>
+
+      
 
       
     </div>
@@ -899,6 +942,13 @@
 
     let selectedAggregationConnection = null;
 
+
+    
+
+    <!-- 5. Adicione o contador e armazenamento para os post-its -->
+    let postitIdCounter = 0;
+    let postits = [];
+
     const fabToggleBtn = document.getElementById('fab-toggle');
     const fabSubmenu = document.getElementById('fab-submenu');
 
@@ -961,13 +1011,18 @@
       }
     });
 
-    document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', (e) => {
       // Se o foco estiver em um input, textarea ou elemento editável, não interfere
       if (document.activeElement &&
           (document.activeElement.tagName === 'INPUT' ||
           document.activeElement.tagName === 'TEXTAREA' ||
           document.activeElement.isContentEditable)) {
         return;
+      }
+
+      if (e.code === 'Space') {
+        isSpacePressed = true;
+        e.preventDefault();
       }
 
       // Fechar submenus ao pressionar Delete ou Backspace
@@ -1009,7 +1064,7 @@
         deleteSelectedObjects(); // sua função de deletar
         saveState();
       }
-    });
+});
 
 
     document.addEventListener('keyup', (e) => {
@@ -1074,8 +1129,12 @@
       relationship: { fill: "#ec4899", stroke: "#7e22ce" },
       specialization: { fill: "#facc15", stroke: "#ca8a04" },
       multivalued : { fill: "#06b6d4", stroke: "#0e7490" },
-      aggregation : { fill: "#8b5cf6", stroke: "#6d28d9" }
+      aggregation : { fill: "#8b5cf6", stroke: "#6d28d9" },
+      postit: { fill: "#ffff88", stroke: "#e6e600" } 
     };
+
+
+    
 
     
     // Adicione um flag para verificar se o localStorage está disponível
@@ -1099,6 +1158,7 @@
     relationships: [],
     specializations: [],
     aggregations: [],
+    postits: [],  // Adicione esta linha
     // Armazena a bounding box dos objetos copiados
     boundingBox: { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
   };
@@ -1153,6 +1213,15 @@
     if (agg.selected) {
       let clone = JSON.parse(JSON.stringify(agg));
       clipboard.aggregations.push(clone);
+      updateBB(clone, clipboard.boundingBox);
+    }
+  });
+
+  // E depois no loop de cópia
+  postits.forEach(p => {
+    if (p.selected) {
+      let clone = JSON.parse(JSON.stringify(p));
+      clipboard.postits.push(clone);
       updateBB(clone, clipboard.boundingBox);
     }
   });
@@ -1322,6 +1391,16 @@ function pasteClipboard() {
     attributeIdMap[oldAttr.id] = newAttr.id;
   });
 
+  // Cole os post-its
+  clipboard.postits.forEach(oldPostit => {
+    let newPostit = JSON.parse(JSON.stringify(oldPostit));
+    newPostit.id = postitIdCounter++;
+    newPostit.x += dx;
+    newPostit.y += dy;
+    newPostit.selected = true; // os novos colados ficam selecionados
+    postits.push(newPostit);
+  });
+
   // Após colar, salve o estado e redesenhe
   saveState();
   draw();
@@ -1359,7 +1438,14 @@ function pasteClipboard() {
     } else {
       aggregations = []; // Caso seja um estado antigo sem agregações
     }
-    
+
+    // Se a propriedade 'postits' existir no estado, restaura
+    if (state.postits) {
+      postits = JSON.parse(JSON.stringify(state.postits));
+    } else {
+      postits = []; // Caso seja um estado antigo sem post-its
+    }
+      
     draw();
   }
 
@@ -1447,7 +1533,8 @@ function pasteClipboard() {
   // Adicionar novos eventos de drag para os botões
   document.getElementById("btnMultivaluedAttribute").addEventListener("mousedown", (e) => startToolbarDrag("multivaluedAttribute", e));
   document.getElementById("btnAggregation").addEventListener("mousedown", (e) => startToolbarDrag("aggregation", e));
-  
+  document.getElementById("btnPostit").addEventListener("mousedown", (e) => startToolbarDrag("postit", e));
+
   
   // Adicionando event listeners para os botões mobile
   function addMobileListeners() {
@@ -1564,9 +1651,11 @@ function pasteClipboard() {
         relationships = [];
         specializations = [];
         aggregations = [];
+        postits = [];
         fontSize = 18;
         clearSelection();
         draw();
+        saveState();
       });
       document.getElementById("btnClear-mobile").addEventListener("click", () => {
         saveState();
@@ -1575,9 +1664,11 @@ function pasteClipboard() {
         relationships = [];
         specializations = [];
         aggregations = [];
+        postits = [];
         fontSize = 18;
         clearSelection();
         draw();
+        saveState();
       });
 
 
@@ -1738,6 +1829,7 @@ function loadFromLocalStorage() {
       relationships = data.relationships || [];
       specializations = data.specializations || [];
       aggregations = data.aggregations || [];
+      postits = data.postits || []; 
 
       // Restaura contadores - importante garantir que sejam números!
       entityIdCounter = typeof data.entityIdCounter === 'number' ? data.entityIdCounter : 0;
@@ -1745,6 +1837,7 @@ function loadFromLocalStorage() {
       relationshipIdCounter = typeof data.relationshipIdCounter === 'number' ? data.relationshipIdCounter : 0;
       specializationIdCounter = typeof data.specializationIdCounter === 'number' ? data.specializationIdCounter : 0;
       aggregationIdCounter = typeof data.aggregationIdCounter === 'number' ? data.aggregationIdCounter : 0;
+      postitIdCounter = typeof data.postitIdCounter === 'number' ? data.postitIdCounter : 0;  
       
       // Restaura configurações visuais
       if (data.fontSize) fontSize = data.fontSize;
@@ -1777,11 +1870,13 @@ function saveToLocalStorage() {
       relationships,
       specializations,
       aggregations,
+      postits, 
       entityIdCounter,
       attributeIdCounter,
       relationshipIdCounter,
       specializationIdCounter,
-      aggregationIdCounter, // Adicionar este contador
+      postitIdCounter,
+      aggregationIdCounter, 
       fontSize,
       panOffset
     };
@@ -1854,7 +1949,8 @@ function saveState() {
     attributes: JSON.parse(JSON.stringify(attributes)),
     relationships: JSON.parse(JSON.stringify(relationships)),
     specializations: JSON.parse(JSON.stringify(specializations)),
-    aggregations: JSON.parse(JSON.stringify(aggregations))
+    aggregations: JSON.parse(JSON.stringify(aggregations)),
+    postits: JSON.parse(JSON.stringify(postits))  // Adicione esta linha
   };
   undoStack.push(state);
   redoStack = [];
@@ -1877,11 +1973,13 @@ function saveDiagramToFile() {
       relationships,
       specializations,
       aggregations,
+      postits, 
       entityIdCounter,
       attributeIdCounter,
       relationshipIdCounter,
       specializationIdCounter,
       aggregationIdCounter,
+      postitIdCounter, 
       fontSize,
       panOffset,
       version: "1.0" // Útil para compatibilidade futura
@@ -1951,6 +2049,8 @@ function loadDiagramFromFile(file) {
         
         // ADICIONE ESTA LINHA PARA CARREGAR AGREGAÇÕES
         aggregations = diagramData.aggregations || [];
+
+        postits = diagramData.postits || [];  // Adicione esta linha
         
         // Carrega os contadores
         entityIdCounter = diagramData.entityIdCounter || 0;
@@ -1960,6 +2060,7 @@ function loadDiagramFromFile(file) {
         
         // Adicione o contador de agregações
         aggregationIdCounter = diagramData.aggregationIdCounter || 0;
+        postitIdCounter = diagramData.postitIdCounter || 0;  // Adicione esta linha
         
         // Carrega as configurações visuais
         if (diagramData.fontSize) fontSize = diagramData.fontSize;
@@ -2086,24 +2187,84 @@ function showNotification(message, type = "info") {
       if (currentLine !== "") lines.push(currentLine);
       return lines;
     }
-    function drawWrappedText(context, text, centerX, centerY, maxWidth, isPrimary) {
-      context.textAlign = "center";
+    
+    function drawWrappedText(context, text, centerX, centerY, maxWidth, isPrimary, align = "center") {
       context.textBaseline = "middle";
       const lines = wrapText(context, text, maxWidth);
       const lineHeight = fontSize * 1.2;
       const totalHeight = lines.length * lineHeight;
       let y = centerY - totalHeight / 2 + lineHeight / 2;
+      
       for (let i = 0; i < lines.length; i++) {
         let line = lines[i];
-        context.fillText(line, centerX, y);
-        if (isPrimary && i === 0) {
-          const textWidth = context.measureText(line).width;
-          context.fillRect(centerX - textWidth/2, y + fontSize*0.4, textWidth, 1);
+        let x = centerX;
+        
+        if (align === "center") {
+          context.textAlign = "center";
+          context.fillText(line, x, y);
+          
+          if (isPrimary && i === 0) {
+            const textWidth = context.measureText(line).width;
+            context.fillRect(centerX - textWidth/2, y + fontSize*0.4, textWidth, 1);
+          }
+        } 
+        else if (align === "left") {
+          context.textAlign = "left";
+          x = centerX - maxWidth / 2 + 10; // Margem de 10px da esquerda
+          context.fillText(line, x, y);
+          
+          if (isPrimary && i === 0) {
+            const textWidth = context.measureText(line).width;
+            context.fillRect(x, y + fontSize*0.4, textWidth, 1);
+          }
         }
+        else if (align === "justify" && i < lines.length - 1) { // Não justificar a última linha
+          // Para justificar, precisamos dividir o texto em palavras e redistribuir o espaço
+          context.textAlign = "left";
+          x = centerX - maxWidth / 2 + 10; // Margem de 10px da esquerda
+          
+          const words = line.split(' ');
+          if (words.length > 1) { // Só justificar se tivermos mais de uma palavra
+            const textWidth = context.measureText(line).width;
+            const spaceWidth = context.measureText(' ').width;
+            const totalSpaces = words.length - 1;
+            const additionalSpacePerWord = (maxWidth - 20 - textWidth + spaceWidth * totalSpaces) / totalSpaces;
+            
+            let currentX = x;
+            for (let j = 0; j < words.length; j++) {
+              context.fillText(words[j], currentX, y);
+              currentX += context.measureText(words[j]).width;
+              
+              if (j < words.length - 1) {
+                currentX += spaceWidth + additionalSpacePerWord;
+              }
+            }
+          } else {
+            // Se for apenas uma palavra, desenha normalmente
+            context.fillText(line, x, y);
+          }
+          
+          if (isPrimary && i === 0) {
+            context.fillRect(x, y + fontSize*0.4, maxWidth - 20, 1);
+          }
+        }
+        else { // Última linha de um texto justificado ou outros casos
+          context.textAlign = "left";
+          x = centerX - maxWidth / 2 + 10;
+          context.fillText(line, x, y);
+          
+          if (isPrimary && i === 0) {
+            const textWidth = context.measureText(line).width;
+            context.fillRect(x, y + fontSize*0.4, textWidth, 1);
+          }
+        }
+        
         y += lineHeight;
       }
+      
       return lines;
     }
+
     function getRectBorderPoint(cx, cy, dx, dy, hw, hh) {
       if (dx === 0 && dy === 0) return { x: cx, y: cy };
       const scaleX = hw / Math.abs(dx);
@@ -3013,7 +3174,48 @@ function drawConnectionLine(context, r, conn, e) {
       });
 
 
-
+      // Desenha os post-its
+      postits.forEach(p => {
+        context.save();
+        context.shadowColor = "rgba(0,0,0,0.3)";
+        context.shadowBlur = 5;
+        context.shadowOffsetX = 2;
+        context.shadowOffsetY = 2;
+        context.fillStyle = p.color || normalColors.postit.fill;
+        context.strokeStyle = p.selected ? "#60a5fa" : normalColors.postit.stroke;
+        context.lineWidth = p.selected ? 3 : 1;
+        
+        // Desenha o retângulo do post-it
+        context.beginPath();
+        context.roundRect(p.x, p.y, p.width, p.height, 8);
+        context.fill();
+        context.stroke();
+        
+        // Desenha o texto do post-it
+        context.fillStyle = "#000000";
+        context.font = `${fontSize}px Poppins`;
+        drawWrappedText(context, p.text, p.x + p.width/2, p.y + p.height/2, p.width - 20, false, "justify");
+        
+        // Desenha as alças de redimensionamento se selecionado
+        if (p.selected) {
+          p.resizeHandles = [
+            { x: p.x - handleSize/2, y: p.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: p.x + p.width - handleSize/2, y: p.y - handleSize/2, width: handleSize, height: handleSize },
+            { x: p.x - handleSize/2, y: p.y + p.height - handleSize/2, width: handleSize, height: handleSize },
+            { x: p.x + p.width - handleSize/2, y: p.y + p.height - handleSize/2, width: handleSize, height: handleSize }
+          ];
+          p.resizeHandles.forEach(handle => {
+            context.fillStyle = "#ffffff";
+            context.strokeStyle = "#000000";
+            context.fillRect(handle.x, handle.y, handle.width, handle.height);
+            context.strokeRect(handle.x, handle.y, handle.width, handle.height);
+          });
+        } else {
+          p.resizeHandles = [];
+        }
+        
+        context.restore();
+      });
       
       
       
@@ -3450,6 +3652,32 @@ function drawPreview() {
       ctx.fill();
       ctx.stroke();
       break;
+    case "postit":
+      // Preview para post-it
+      ctx.fillStyle = normalColors.postit.fill;
+      ctx.strokeStyle = normalColors.postit.stroke;
+      ctx.beginPath();
+      ctx.roundRect(
+        centerX - 100,  // 100 = metade da largura padrão
+        centerY - 60,   // 60 = metade da altura padrão
+        200,            // largura padrão
+        120,            // altura padrão
+        8               // arredondamento das bordas
+      );
+      ctx.fill();
+      ctx.stroke();
+      
+      // Linhas simulando texto
+      ctx.beginPath();
+      ctx.moveTo(centerX - 70, centerY - 30);
+      ctx.lineTo(centerX + 70, centerY - 30);
+      ctx.moveTo(centerX - 70, centerY);
+      ctx.lineTo(centerX + 50, centerY);
+      ctx.moveTo(centerX - 70, centerY + 30);
+      ctx.lineTo(centerX + 20, centerY + 30);
+      ctx.strokeStyle = "rgba(0,0,0,0.3)";
+      ctx.stroke();
+      break;
   }
   
   ctx.restore();
@@ -3563,6 +3791,19 @@ function createObjectAt(type, cx, cy) {
       objType: "aggregation"
     };
     aggregations.push(newAgg);
+  } else if (type === "postit") {
+    const newPostit = {
+      id: postitIdCounter++,
+      x: cx - 100, // centraliza horizontalmente
+      y: cy - 60,  // centraliza verticalmente
+      width: 200,
+      height: 120,
+      text: "Clique duas vezes para editar esta anotação",
+      color: "#ffff88", // amarelo claro padrão
+      selected: false,
+      objType: "postit"
+    };
+    postits.push(newPostit);
   }
   
   saveState();
@@ -3633,6 +3874,7 @@ function createObjectAt(type, cx, cy) {
       relationships.forEach(r => r.selected = false);
       specializations.forEach(s => s.selected = false);
       aggregations.forEach(a => a.selected = false);
+      postits.forEach(p => p.selected = false);
       
       selectedConnection = null;
       selectedSpecConnection = null;
@@ -3642,7 +3884,7 @@ function createObjectAt(type, cx, cy) {
 
     function checkResizeHandles(x, y) {
     let found = null;
-    [...entities, ...attributes, ...relationships, ...specializations, ...aggregations].forEach(el => {
+    [...entities, ...attributes, ...relationships, ...specializations, ...aggregations, ...postits].forEach(el => {
       if (el.selected && el.resizeHandles) {
         el.resizeHandles.forEach((handle, idx) => {
           if (isInsideRect({x,y}, handle)) {
@@ -3913,6 +4155,15 @@ function createObjectAt(type, cx, cy) {
           }
         }
 
+
+        // Verifica post-its
+        for (let i = postits.length - 1; i >= 0; i--) {
+          const p = postits[i];
+          if (x >= p.x && x <= p.x + p.width && y >= p.y && y <= p.y + p.height) {
+            return { type: "postit", element: p };
+          }
+        }
+
         
 
         return null;
@@ -4016,7 +4267,8 @@ function onToolbarDragEnd(evt) {
     }
 
     
-function onCanvasStart(evt) {
+
+    function onCanvasStart(evt) {
   // Fechar o submenu se estiver aberto
   if (submenu) {
     $(submenu).remove();
@@ -4079,6 +4331,14 @@ function onCanvasStart(evt) {
         x: resizingObject.x,
         y: resizingObject.y,
         size: resizingObject.size
+      };
+    } else if (resizingObject.objType === "postit") {
+      // Inicialize dados para redimensionamento de post-it
+      resizingInitial = {
+        x: resizingObject.x,
+        y: resizingObject.y,
+        width: resizingObject.width,
+        height: resizingObject.height
       };
     }
     
@@ -4233,6 +4493,7 @@ function onCanvasStart(evt) {
       case "relationship":
       case "specialization":
       case "aggregation":
+      case "postit":  // Agora dentro do switch
         // Esta é a mudança principal: verificar se Ctrl está pressionado
         if (isCtrlPressed) {
           // Alterna a seleção do objeto clicado sem afetar outros
@@ -4242,7 +4503,8 @@ function onCanvasStart(evt) {
           clearSelection();
           hit.element.selected = true;
         }
-        let selectedObjects = [...entities, ...attributes, ...relationships, ...specializations, ...aggregations].filter(obj => obj.selected);
+        
+        let selectedObjects = [...entities, ...attributes, ...relationships, ...specializations, ...aggregations, ...postits].filter(obj => obj.selected);
         if (selectedObjects.length > 1) {
           isDraggingGroup = true;
           groupMouseStart = pos;
@@ -4375,6 +4637,7 @@ function onCanvasStart(evt) {
     selectionRect = { x: pos.x, y: pos.y, width: 0, height: 0 };
   }
 }
+
 
     function distanceBetween(a, b) {
       return Math.hypot(b.x - a.x, b.y - a.y);
@@ -4541,9 +4804,49 @@ function onCanvasStart(evt) {
           let newSize = 2 * Math.max(Math.abs(pos.x - resizingObject.x), Math.abs(pos.y - resizingObject.y));
           if (newSize < 40) newSize = 40;
           resizingObject.size = newSize;
+        } else if (resizingObject.objType === "postit") {
+    // Adicione aqui o seu código para redimensionar post-its
+    let init = resizingInitial;
+    if (resizeHandleIndex === 0) {
+        let newX = pos.x;
+        let newY = pos.y;
+        let newWidth = (init.x + init.width) - newX;
+        let newHeight = (init.y + init.height) - newY;
+        if (newWidth < 100) { newWidth = 100; newX = init.x + init.width - 100; }
+        if (newHeight < 60) { newHeight = 60; newY = init.y + init.height - 60; }
+        resizingObject.x = newX;
+        resizingObject.y = newY;
+        resizingObject.width = newWidth;
+        resizingObject.height = newHeight;
+      } else if (resizeHandleIndex === 1) {
+          let newY = pos.y;
+          let newWidth = pos.x - init.x;
+          let newHeight = (init.y + init.height) - newY;
+          if (newWidth < 100) newWidth = 100;
+          if (newHeight < 60) { newHeight = 60; newY = init.y + init.height - 60; }
+          resizingObject.y = newY;
+          resizingObject.width = newWidth;
+          resizingObject.height = newHeight;
+        } else if (resizeHandleIndex === 2) {
+          let newX = pos.x;
+          let newWidth = (init.x + init.width) - newX;
+          let newHeight = pos.y - init.y;
+          if (newWidth < 100) { newWidth = 100; newX = init.x + init.width - 100; }
+          if (newHeight < 60) newHeight = 60;
+          resizingObject.x = newX;
+          resizingObject.width = newWidth;
+          resizingObject.height = newHeight;
+        } else if (resizeHandleIndex === 3) {
+          let newWidth = pos.x - init.x;
+          let newHeight = pos.y - init.y;
+          if (newWidth < 100) newWidth = 100;
+          if (newHeight < 60) newHeight = 60;
+          resizingObject.width = newWidth;
+          resizingObject.height = newHeight;
         }
-        draw();
-        return;
+      }
+          draw();
+          return;
       }
 
       if (isSelecting) {
@@ -4689,6 +4992,8 @@ function onCanvasEnd(evt) {
         objectsToSelect.push(e);
       }
     });
+
+
     
     // ATRIBUTOS: Verifica quais atributos estão dentro da área de seleção
     attributes.forEach(a => {
@@ -4742,6 +5047,16 @@ function onCanvasEnd(evt) {
             agg.y + rectSize < selectionRect.y || 
             agg.y - rectSize > selectionRect.y + selectionRect.height)) {
         objectsToSelect.push(agg);
+      }
+    });
+
+    postits.forEach(p => {
+      // Verifica se o post-it intersecta com a área de seleção
+      if (!(p.x + p.width < selectionRect.x || 
+            p.x > selectionRect.x + selectionRect.width ||
+            p.y + p.height < selectionRect.y || 
+            p.y > selectionRect.y + selectionRect.height)) {
+        objectsToSelect.push(p);
       }
     });
 
@@ -5329,7 +5644,9 @@ function onCanvasDblClick(evt){
           let compY = hit.type === "entity" ? hit.element.y + (hit.element.height || defaultEntityHeight)/2 : hit.element.y;
           showInlineEditor(hit.element, compX, compY);
           
-        }  else if (hit.type === "specialization") {
+        } else if (hit.type === "postit") {
+          showPostitEditor(hit.element, hit.element.x + hit.element.width/2, hit.element.y + hit.element.height/2);
+        } else if (hit.type === "specialization") {
           showSpecTypeEditor(hit.element, hit.element.x, hit.element.y);
         } else if (hit.type === "connection") {
           const e = entities.find(en => en.id === hit.connection.entityId);
@@ -5466,7 +5783,54 @@ function onCanvasDblClick(evt){
       });
     }
 
+
+function showPostitEditor(postit, centerX, centerY) {
+  if (inlineInput) $(inlineInput).remove();
   
+  // Converter posição do mundo para a tela
+  let rect = canvas.getBoundingClientRect();
+  let screenX = rect.left + (postit.x + panOffset.x) * zoom;
+  let screenY = rect.top + (postit.y + panOffset.y) * zoom;
+  let screenWidth = postit.width * zoom;
+  let screenHeight = postit.height * zoom;
+  
+  // Criar um textarea com o tamanho aproximado do post-it
+  inlineInput = $("<textarea class='p-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-500 bg-yellow-100 text-black' />")
+    .val(postit.text)
+    .css({
+      position: "absolute",
+      fontSize: `${fontSize * 0.9}px`,
+      zIndex: 1000,
+      width: `${screenWidth - 10}px`,
+      height: `${screenHeight - 10}px`,
+      left: `${screenX + 5}px`,
+      top: `${screenY + 5}px`,
+      resize: "none",
+      textAlign: "left" 
+    });
+  
+  $("body").append(inlineInput);
+  inlineInput.focus().select();
+  
+  inlineInput.on("blur", function() {
+    postit.text = inlineInput.val();
+    $(inlineInput).remove();
+    inlineInput = null;
+    saveState();
+    draw();
+  }).on("keydown", function(e) {
+    if (e.key === "Enter" && e.ctrlKey) {
+      e.preventDefault(); // Impede a inserção de uma quebra de linha adicional
+      inlineInput.blur(); // Salva com Ctrl+Enter
+    }
+    // Adicionando este manipulador explícito para a tecla de espaço
+    if (e.key === " " || e.code === "Space") {
+      e.stopPropagation(); // Impede que o evento se propague para os manipuladores de documento
+      // Permitir comportamento padrão (não chamar preventDefault)
+    }
+    // Não cancela o evento padrão para outras teclas ou Enter sem Ctrl
+  });
+}    
 
 function showSubmenu(element, x, y) {
   // Função para fechar o submenu visualmente, mantendo estado
@@ -5498,7 +5862,7 @@ function showSubmenu(element, x, y) {
    // Opções comuns para elementos que podem criar relacionamentos
    if (element.objType === "entity" || element.objType === "relationship" || 
       element.objType === "specialization") {
-    items.push({
+      items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
       label: "Relacionar",
       id: "menuRelate",
@@ -5596,13 +5960,7 @@ function showSubmenu(element, x, y) {
     }
 
 
-    
-
-
-    
-
-
-    
+  
     items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
       label: "Deletar",
@@ -5769,7 +6127,62 @@ function showSubmenu(element, x, y) {
         draw();
       }
     });
+
+
+    
   }
+
+
+
+  // 3. Adicionar o post-it ao menu de contexto (submenu)
+if (element.objType === "postit") {
+  // Opção para mudar cor
+  items.push({
+    icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>',
+    label: "Mudar Cor",
+    id: "menuChangeColor",
+    action: function(e) {
+      e.preventDefault();
+      closeSubmenuVisual();
+      
+      // Cores possíveis para o post-it
+      const colors = [
+        "#ffff88", // amarelo (padrão)
+        "#fff8dc", // creme
+        "#90ee90", // verde claro
+        "#add8e6", // azul claro
+        "#ffb6c1", // rosa claro
+        "#e6e6fa"  // lavanda
+      ];
+      
+      // Encontra o índice da cor atual e avança para a próxima
+      let currentIndex = colors.indexOf(element.color || colors[0]);
+      let nextIndex = (currentIndex + 1) % colors.length;
+      element.color = colors[nextIndex];
+      
+      saveState();
+      draw();
+    }
+  });
+  
+  // Opção para deletar
+  items.push({
+    icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+    label: "Deletar",
+    id: "menuDelete",
+    action: function(e) {
+      e.preventDefault();
+      closeSubmenuVisual();
+      
+      // Remove o post-it
+      postits = postits.filter(p => p.id !== element.id);
+      
+      saveState();
+      clearSelection();
+      draw();
+    }
+  });
+}
 
 
 
@@ -5812,10 +6225,12 @@ function showSubmenu(element, x, y) {
                   y: element.y - (element.size || relationshipSize)/2, 
                   width: element.size || relationshipSize, 
                   height: element.size || relationshipSize }
-              : { x: element.x - (element.size || defaultSpecializationSize)/2, 
-                  y: element.y - (element.size || defaultSpecializationSize)/2, 
-                  width: element.size || defaultSpecializationSize, 
-                  height: element.size || defaultSpecializationSize };
+              : element.objType === "postit"
+                ? { x: element.x, y: element.y, width: element.width, height: element.height }
+                : { x: element.x - (element.size || defaultSpecializationSize)/2, 
+                    y: element.y - (element.size || defaultSpecializationSize)/2, 
+                    width: element.size || defaultSpecializationSize, 
+                    height: element.size || defaultSpecializationSize };
 
   // Obtém a posição do canvas na página
   let canvasRect = canvas.getBoundingClientRect();
@@ -6285,6 +6700,7 @@ function getSubmenuHit(x, y) {
       entities = entities.filter(e => !e.selected);
       relationships = relationships.filter(r => !r.selected);
       specializations = specializations.filter(s => !s.selected);
+      postits = postits.filter(p => !p.selected); 
 
       // 4) Filtra atributos que pertenciam a entidades/relacionamentos removidos
       attributes = attributes.filter(a => {
@@ -6423,6 +6839,14 @@ function getSubmenuHit(x, y) {
                     }
                 });
             }
+        });
+
+        // Processar post-its
+        postits.forEach(p => {
+          minX = Math.min(minX, p.x);
+          minY = Math.min(minY, p.y);
+          maxX = Math.max(maxX, p.x + p.width);
+          maxY = Math.max(maxY, p.y + p.height);
         });
         
         // Adicionar uma margem
