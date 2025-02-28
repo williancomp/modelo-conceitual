@@ -1586,6 +1586,7 @@ function pasteClipboard() {
       document.addEventListener("keydown", (e) => {
         if (e.key === "Control" || e.key === "Meta") { // Meta para suporte a Mac
           isCtrlPressed = true;
+          updateCursor();
         }
 
         // Não intercepta teclas se estiver editando texto
@@ -1632,6 +1633,7 @@ function pasteClipboard() {
       document.addEventListener("keyup", (e) => {
         if (e.key === "Control" || e.key === "Meta") {
           isCtrlPressed = false;
+          updateCursor();
         }
         if (e.code === 'Space') {
           isSpacePressed = false;
@@ -4800,6 +4802,15 @@ function onCanvasEnd(evt) {
     
 
     let inlineInput = null, inlineSelect = null, inlineSpecSelect = null;
+
+function updateCursor() {
+  if (isCtrlPressed) {
+    canvas.style.cursor = "pointer"; // ou você pode usar uma imagem personalizada
+  } else {
+    canvas.style.cursor = "default";
+  }
+}
+
 
 canvas.addEventListener("click", function(evt) {
   let pos = getMousePos(evt);
