@@ -1159,7 +1159,6 @@
 }
 
 
-
 function pasteClipboard() {
   if (!clipboard) return;
   
@@ -1201,7 +1200,6 @@ function pasteClipboard() {
     newRel.y += dy;
     newRel.selected = true;
     
-    // AQUI ESTÁ A PRIMEIRA CORREÇÃO:
     // Filtrar conexões para manter apenas aquelas com entidades que também foram copiadas
     if (newRel.connections) {
       newRel.connections = newRel.connections.filter(conn => 
@@ -1212,6 +1210,14 @@ function pasteClipboard() {
       newRel.connections.forEach(conn => {
         if (entityIdMap[conn.entityId] !== undefined) {
           conn.entityId = entityIdMap[conn.entityId];
+          
+          // CORREÇÃO: Também deslocar os breakpoints das conexões
+          if (conn.breakpoints && conn.breakpoints.length > 0) {
+            conn.breakpoints.forEach(bp => {
+              bp.x += dx;
+              bp.y += dy;
+            });
+          }
         }
       });
     }
@@ -1237,6 +1243,14 @@ function pasteClipboard() {
       newSpec.connections.forEach(conn => {
         if (entityIdMap[conn.entityId] !== undefined) {
           conn.entityId = entityIdMap[conn.entityId];
+          
+          // CORREÇÃO: Também deslocar os breakpoints das conexões
+          if (conn.breakpoints && conn.breakpoints.length > 0) {
+            conn.breakpoints.forEach(bp => {
+              bp.x += dx;
+              bp.y += dy;
+            });
+          }
         }
       });
     }
@@ -1267,6 +1281,14 @@ function pasteClipboard() {
         if (conn.relationshipId && relationshipIdMap[conn.relationshipId] !== undefined) {
           conn.relationshipId = relationshipIdMap[conn.relationshipId];
         }
+        
+        // CORREÇÃO: Também deslocar os breakpoints das conexões
+        if (conn.breakpoints && conn.breakpoints.length > 0) {
+          conn.breakpoints.forEach(bp => {
+            bp.x += dx;
+            bp.y += dy;
+          });
+        }
       });
     }
     
@@ -1275,7 +1297,6 @@ function pasteClipboard() {
   });
 
   // Cole os atributos (atualizando o parentId se necessário)
-  // MOVER ESTE BLOCO PARA DEPOIS DOS RELACIONAMENTOS
   clipboard.attributes.forEach(oldAttr => {
     let newAttr = JSON.parse(JSON.stringify(oldAttr));
     newAttr.id = attributeIdCounter++;
@@ -1283,7 +1304,6 @@ function pasteClipboard() {
     newAttr.y += dy;
     newAttr.selected = true;
     
-    // AQUI ESTÁ A SEGUNDA CORREÇÃO:
     // Verifica e atualiza parentId baseado no tipo de parent
     if (newAttr.parentType === "entity" && entityIdMap[newAttr.parentId] !== undefined) {
       newAttr.parentId = entityIdMap[newAttr.parentId];
@@ -1306,6 +1326,8 @@ function pasteClipboard() {
   saveState();
   draw();
 }
+  
+  
   // Método para salvar antes de fechar a página
   window.addEventListener('beforeunload', (e) => {
     if (hasUnsavedChanges) {
