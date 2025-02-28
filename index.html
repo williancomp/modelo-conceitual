@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modelagem Conceitual – Nova Era</title>
+  <title>ModelaDB – Ferramenta para Modelagem Conceitual de Banco de Dados</title>
   <link href="./fonts.css" rel="stylesheet">
   <script src="./tailwind-3.4.16.js"></script>
   <script src="./jquery-3.6.0.min.js"></script>
@@ -518,7 +518,10 @@
     </button>
     
     <!-- Logo - sem alterações -->
-    <div class="navbar-brand">ModelaDB</div>
+    <div class="navbar-brand flex items-center">
+      <span class="mr-1">ModelaDB</span>
+     
+    </div>
     
     <!-- Menu redesenhado (desktop) -->
     <div class="desktop-menu flex flex-1 items-center">
@@ -553,6 +556,13 @@
             </svg>
             <span>Exportar</span>
             <span class="tooltip-text">Exportar diagrama como imagem</span>
+          </div>
+          <div id="btnAbout" class="menu-item tooltip">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Sobre</span>
+            <span class="tooltip-text">Informações sobre ModelaDB</span>
           </div>
         </div>
       </div>
@@ -898,7 +908,9 @@
     
     </div>
 
-
+    <div class="fixed bottom-2 left-2 text-xs text-gray-400 bg-gray-900 bg-opacity-90 px-2 py-1 rounded z-40">
+      © ModelaDB | Prof. Dr. Willian Garcias de Assunção - <span>Universidade de Rio Verde (UniRV)</span>
+    </div>
   </main>
   
   <!-- Input oculto para upload de arquivo -->
@@ -1798,6 +1810,36 @@ document.addEventListener("DOMContentLoaded", function() {
         showNotification("Formato de arquivo não suportado. Use arquivos .merdb", "error");
       }
     }
+  });
+
+  // Adicionar o modal "Sobre" ao body programaticamente
+  const aboutModalHTML = `
+    <div id="aboutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h3 class="text-xl font-bold text-white mb-4">Sobre ModelaDB</h3>
+        <p class="text-white mb-2">Ferramenta para Modelagem Conceitual de Banco de Dados</p>
+        <p class="text-white mb-6">Versão 1.0</p>
+        <div class="border-t border-gray-600 pt-4">
+          <p class="font-semibold text-white">Desenvolvido por:</p>
+          <p class="text-white">Prof. Dr. Willian Garcias de Assunção</p>
+          <p class="text-blue-400">Universidade de Rio Verde (UniRV)</p>
+        </div>
+        <div class="flex justify-end mt-6">
+          <button id="aboutCloseBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition">Fechar</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', aboutModalHTML);
+  
+  // Adicionar os event listeners após criar os elementos
+  document.getElementById("btnAbout").addEventListener("click", function() {
+    document.getElementById("aboutModal").classList.remove("hidden");
+  });
+  
+  document.getElementById("aboutCloseBtn").addEventListener("click", function() {
+    document.getElementById("aboutModal").classList.add("hidden");
   });
 });
 
@@ -6766,6 +6808,31 @@ function getSubmenuHit(x, y) {
     }
 
 
+    // Adicionar este código dentro do script existente
+  document.addEventListener("DOMContentLoaded", function() {
+    const welcomeModal = document.getElementById("welcomeModal");
+    const closeWelcomeBtn = document.getElementById("closeWelcomeBtn");
+    const startUsingBtn = document.getElementById("startUsingBtn");
+    
+    // Verifica se é a primeira visita
+    const hasVisited = localStorage.getItem("modelaDBVisited");
+    if (hasVisited) {
+      welcomeModal.classList.add("hidden");
+    }
+    
+    function closeWelcome() {
+      welcomeModal.classList.add("hidden");
+      localStorage.setItem("modelaDBVisited", "true");
+    }
+    
+    closeWelcomeBtn.addEventListener("click", closeWelcome);
+    startUsingBtn.addEventListener("click", closeWelcome);
+  });
+
+
+ 
+ 
+
     document.getElementById("btnEntity").addEventListener("mousedown", (e) => startToolbarDrag("entity", e));
     document.getElementById("btnAttribute").addEventListener("mousedown", (e) => startToolbarDrag("attribute", e));
     document.getElementById("btnDerivedAttribute").addEventListener("mousedown", (e) => startToolbarDrag("derivedAttribute", e));
@@ -6909,5 +6976,44 @@ function getSubmenuHit(x, y) {
     saveState();
     draw();
   </script>
+
+<div id="welcomeModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[1100]">
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-white">Bem-vindo ao ModelaDB</h3>
+      <button id="closeWelcomeBtn" class="text-gray-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="text-white space-y-4">
+      <p>Ferramenta para Modelagem Conceitual de Banco de Dados</p>
+      <div class="border-t border-gray-600 pt-4">
+        <p class="font-semibold">Desenvolvido por:</p>
+        <p>Prof. Dr. Willian Garcias de Assunção</p>
+        <p class="text-blue-400">Universidade de Rio Verde (UniRV)</p>
+      </div>
+    </div>
+    <button id="startUsingBtn" class="mt-6 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-500 transition">
+      Começar a usar
+    </button>
+  </div>
+</div>
+<div id="aboutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+    <h3 class="text-xl font-bold text-white mb-4">Sobre ModelaDB</h3>
+    <p class="text-white mb-2">Ferramenta para Modelagem Conceitual de Banco de Dados</p>
+    <p class="text-white mb-6">Versão 1.0</p>
+    <div class="border-t border-gray-600 pt-4">
+      <p class="font-semibold text-white">Desenvolvido por:</p>
+      <p class="text-white">Prof. Dr. Willian Garcias de Assunção</p>
+      <p class="text-blue-400">Universidade de Rio Verde (UniRV)</p>
+    </div>
+    <div class="flex justify-end mt-6">
+      <button id="aboutCloseBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition">Fechar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
