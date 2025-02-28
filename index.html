@@ -880,6 +880,7 @@
 
     let clipboard = null;
     let lastMousePos = { x: 0, y: 0 };
+    let isCtrlPressed = false;
 
     // Novas constantes para dimensionamento dos atributos
     const ATTR_CIRCLE_RADIUS = 12; // Raio do círculo do atributo
@@ -1192,26 +1193,6 @@ function pasteClipboard() {
     entityIdMap[oldEntity.id] = newEntity.id;
   });
 
-  // Cole os atributos (atualizando o parentId se necessário)
-  clipboard.attributes.forEach(oldAttr => {
-    let newAttr = JSON.parse(JSON.stringify(oldAttr));
-    newAttr.id = attributeIdCounter++;
-    newAttr.x += dx;
-    newAttr.y += dy;
-    newAttr.selected = true;
-    if (newAttr.parentType === "entity" && entityIdMap[newAttr.parentId] !== undefined) {
-      newAttr.parentId = entityIdMap[newAttr.parentId];
-    } else if (newAttr.parentType === "attribute" && attributeIdMap[newAttr.parentId] !== undefined) {
-      newAttr.parentId = attributeIdMap[newAttr.parentId];
-    } else if (newAttr.parentType === "relationship" && relationshipIdMap[newAttr.parentId] !== undefined) {
-      newAttr.parentId = relationshipIdMap[newAttr.parentId];
-    } else if (newAttr.parentType === "aggregation" && aggregationIdMap[newAttr.parentId] !== undefined) {
-      newAttr.parentId = aggregationIdMap[newAttr.parentId];
-    }
-    attributes.push(newAttr);
-    attributeIdMap[oldAttr.id] = newAttr.id;
-  });
-
   // Cole os relacionamentos (atualizando as conexões)
   clipboard.relationships.forEach(oldRel => {
     let newRel = JSON.parse(JSON.stringify(oldRel));
@@ -1219,13 +1200,22 @@ function pasteClipboard() {
     newRel.x += dx;
     newRel.y += dy;
     newRel.selected = true;
+    
+    // AQUI ESTÁ A PRIMEIRA CORREÇÃO:
+    // Filtrar conexões para manter apenas aquelas com entidades que também foram copiadas
     if (newRel.connections) {
+      newRel.connections = newRel.connections.filter(conn => 
+        entityIdMap[conn.entityId] !== undefined
+      );
+      
+      // Atualizar os IDs das entidades nas conexões
       newRel.connections.forEach(conn => {
         if (entityIdMap[conn.entityId] !== undefined) {
           conn.entityId = entityIdMap[conn.entityId];
         }
       });
     }
+    
     relationships.push(newRel);
     relationshipIdMap[oldRel.id] = newRel.id;
   });
@@ -1237,13 +1227,20 @@ function pasteClipboard() {
     newSpec.x += dx;
     newSpec.y += dy;
     newSpec.selected = true;
+    
+    // Similar à correção para relacionamentos
     if (newSpec.connections) {
+      newSpec.connections = newSpec.connections.filter(conn => 
+        entityIdMap[conn.entityId] !== undefined
+      );
+      
       newSpec.connections.forEach(conn => {
         if (entityIdMap[conn.entityId] !== undefined) {
           conn.entityId = entityIdMap[conn.entityId];
         }
       });
     }
+    
     specializations.push(newSpec);
     specializationIdMap[oldSpec.id] = newSpec.id;
   });
@@ -1255,7 +1252,14 @@ function pasteClipboard() {
     newAgg.x += dx;
     newAgg.y += dy;
     newAgg.selected = true;
+    
+    // Similar à correção para relacionamentos
     if (newAgg.connections) {
+      newAgg.connections = newAgg.connections.filter(conn => 
+        (conn.entityId && entityIdMap[conn.entityId] !== undefined) ||
+        (conn.relationshipId && relationshipIdMap[conn.relationshipId] !== undefined)
+      );
+      
       newAgg.connections.forEach(conn => {
         if (conn.entityId && entityIdMap[conn.entityId] !== undefined) {
           conn.entityId = entityIdMap[conn.entityId];
@@ -1265,16 +1269,43 @@ function pasteClipboard() {
         }
       });
     }
+    
     aggregations.push(newAgg);
     aggregationIdMap[oldAgg.id] = newAgg.id;
+  });
+
+  // Cole os atributos (atualizando o parentId se necessário)
+  // MOVER ESTE BLOCO PARA DEPOIS DOS RELACIONAMENTOS
+  clipboard.attributes.forEach(oldAttr => {
+    let newAttr = JSON.parse(JSON.stringify(oldAttr));
+    newAttr.id = attributeIdCounter++;
+    newAttr.x += dx;
+    newAttr.y += dy;
+    newAttr.selected = true;
+    
+    // AQUI ESTÁ A SEGUNDA CORREÇÃO:
+    // Verifica e atualiza parentId baseado no tipo de parent
+    if (newAttr.parentType === "entity" && entityIdMap[newAttr.parentId] !== undefined) {
+      newAttr.parentId = entityIdMap[newAttr.parentId];
+    } else if (newAttr.parentType === "attribute" && attributeIdMap[newAttr.parentId] !== undefined) {
+      newAttr.parentId = attributeIdMap[newAttr.parentId];
+    } else if (newAttr.parentType === "relationship" && relationshipIdMap[newAttr.parentId] !== undefined) {
+      newAttr.parentId = relationshipIdMap[newAttr.parentId];
+    } else if (newAttr.parentType === "aggregation" && aggregationIdMap[newAttr.parentId] !== undefined) {
+      newAttr.parentId = aggregationIdMap[newAttr.parentId];
+    } else {
+      // Se o parent não foi copiado, não adicione este atributo
+      return; // Skip this attribute
+    }
+    
+    attributes.push(newAttr);
+    attributeIdMap[oldAttr.id] = newAttr.id;
   });
 
   // Após colar, salve o estado e redesenhe
   saveState();
   draw();
 }
-
-
   // Método para salvar antes de fechar a página
   window.addEventListener('beforeunload', (e) => {
     if (hasUnsavedChanges) {
@@ -1553,6 +1584,10 @@ function pasteClipboard() {
     // Configuração dos eventos do teclado
     function setupKeyboardEvents() {
       document.addEventListener("keydown", (e) => {
+        if (e.key === "Control" || e.key === "Meta") { // Meta para suporte a Mac
+          isCtrlPressed = true;
+        }
+
         // Não intercepta teclas se estiver editando texto
         if (document.activeElement && 
             (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) {
@@ -1595,6 +1630,9 @@ function pasteClipboard() {
       });
       
       document.addEventListener("keyup", (e) => {
+        if (e.key === "Control" || e.key === "Meta") {
+          isCtrlPressed = false;
+        }
         if (e.code === 'Space') {
           isSpacePressed = false;
           isPanning = false;
@@ -4171,7 +4209,12 @@ function onCanvasStart(evt) {
       case "relationship":
       case "specialization":
       case "aggregation":
-        if (!hit.element.selected) {
+        // Esta é a mudança principal: verificar se Ctrl está pressionado
+        if (isCtrlPressed) {
+          // Alterna a seleção do objeto clicado sem afetar outros
+          hit.element.selected = !hit.element.selected;
+        } else if (!hit.element.selected) {
+          // Comportamento padrão quando Ctrl não está pressionado
           clearSelection();
           hit.element.selected = true;
         }
@@ -4300,7 +4343,9 @@ function onCanvasStart(evt) {
         return;
     }
   } else {
-    clearSelection();
+    if (!isCtrlPressed) {
+      clearSelection();
+    }
     isSelecting = true;
     selectionStart = pos;
     selectionRect = { x: pos.x, y: pos.y, width: 0, height: 0 };
@@ -4604,7 +4649,7 @@ function onCanvasEnd(evt) {
   }
   
   if (isSelecting) {
-    // CORREÇÃO: Armazena objetos que serão selecionados
+    // CORREÇÃO: Lista de objetos a serem selecionados
     const objectsToSelect = [];
     
     // ENTIDADES: Verifica quais entidades estão dentro da área de seleção
@@ -4675,10 +4720,17 @@ function onCanvasEnd(evt) {
         objectsToSelect.push(agg);
       }
     });
+
+
     
     // CORREÇÃO: Limpa a seleção atual apenas se não tivermos a tecla Shift pressionada
     // Nota: Para adicionar suporte a Shift, você pode verificar evt.shiftKey
     if (!evt.shiftKey) {
+      clearSelection();
+    }
+
+
+    if (!isCtrlPressed) {
       clearSelection();
     }
     
@@ -5409,6 +5461,7 @@ function showSubmenu(element, x, y) {
 
   let items = [];
   
+  
    // Opções comuns para elementos que podem criar relacionamentos
    if (element.objType === "entity" || element.objType === "relationship" || 
       element.objType === "specialization") {
@@ -5462,6 +5515,60 @@ function showSubmenu(element, x, y) {
         draw();
       }
     });
+
+
+
+    // SE FOR UM LOSANGO ENTAO POSSO MUDAR PARA AGREGAÇÃO
+    if (element.objType === "relationship") {
+      items.push({
+        icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1" /><polygon points="12 8 16 12 12 16 8 12" /></svg>',
+        label: "Mudar para Agregação",
+        id: "menuConvertToAggregation",
+        action: function(e) {
+          e.preventDefault();
+          closeSubmenuVisual();
+          
+          // Criar um novo objeto agregação com os mesmos dados do relacionamento
+          const newAgg = {
+            id: aggregationIdCounter++,
+            x: element.x,
+            y: element.y,
+            size: element.size || relationshipSize,
+            name: element.name,
+            connections: [...element.connections], // Copiar as conexões existentes
+            selected: element.selected,
+            objType: "aggregation"
+          };
+          
+          // Adicionar a nova agregação
+          aggregations.push(newAgg);
+          
+          // Transferir os atributos associados ao relacionamento para a agregação
+          attributes.forEach(attr => {
+            if (attr.parentType === "relationship" && attr.parentId === element.id) {
+              attr.parentType = "aggregation";
+              attr.parentId = newAgg.id;
+            }
+          });
+          
+          // Remover o relacionamento original
+          relationships = relationships.filter(r => r.id !== element.id);
+          
+          // Salvar estado, limpar seleção e redesenhar
+          saveState();
+          clearSelection();
+          draw();
+        }
+      });
+    }
+
+
+    
+
+
+    
+
+
     
     items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
@@ -5520,6 +5627,61 @@ function showSubmenu(element, x, y) {
     });
     
     items.push({
+      icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 4 20 12 12 20 4 12" /></svg>',
+      label: "Mudar para Relacionamento",
+      id: "menuConvertToRelationship",
+      action: function(e) {
+        e.preventDefault();
+        closeSubmenuVisual();
+        
+        // Criar um novo objeto relacionamento com os mesmos dados da agregação
+        const newRel = {
+          id: relationshipIdCounter++,
+          x: element.x,
+          y: element.y,
+          size: element.size || relationshipSize,
+          name: element.name,
+          connections: [], // Inicializa com array vazio
+          selected: element.selected,
+          objType: "relationship"
+        };
+        
+        // Copia as conexões da agregação para o relacionamento
+        // (mantendo apenas as conexões com entidades)
+        if (element.connections) {
+          element.connections.forEach(conn => {
+            if (conn.entityId) {
+              newRel.connections.push({
+                entityId: conn.entityId,
+                cardinality: conn.cardinality,
+                breakpoints: conn.breakpoints
+              });
+            }
+          });
+        }
+        
+        // Adicionar o novo relacionamento
+        relationships.push(newRel);
+        
+        // Transferir os atributos associados à agregação para o relacionamento
+        attributes.forEach(attr => {
+          if (attr.parentType === "aggregation" && attr.parentId === element.id) {
+            attr.parentType = "relationship";
+            attr.parentId = newRel.id;
+          }
+        });
+        
+        // Remover a agregação original
+        aggregations = aggregations.filter(a => a.id !== element.id);
+        
+        // Salvar estado, limpar seleção e redesenhar
+        saveState();
+        clearSelection();
+        draw();
+      }
+    });
+
+    items.push({
       icon: '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
       label: "Deletar",
       id: "menuDelete",
@@ -5535,7 +5697,7 @@ function showSubmenu(element, x, y) {
         clearSelection();
         draw();
       }
-    });
+    })
   }
 
   // Opções para atributos - verificação para todos os tipos de atributos
